@@ -1,0 +1,1139 @@
+{% extends "game/base.html" %}
+{% load accounting_tags %}
+{% load index_tags %}
+{% load l10n %}
+{% block content %}
+
+<style>
+  /* ── Floating spend card ── */
+  #spend-card {
+    position: fixed;
+    top: 80px;
+    right: 16px;
+    width: calc((100vw - 1140px) / 2 - 16px);
+    min-width: 160px;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.07);
+    z-index: 1000;
+    box-sizing: border-box;
+  }
+
+  #spend-card .sc-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #6c757d;
+    margin-bottom: 12px;
+  }
+
+  #spend-card .sc-row {
+    margin-bottom: 9px;
+  }
+
+  #spend-card .sc-row-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 3px;
+  }
+
+  #spend-card .sc-label {
+    font-size: 12px;
+    color: #495057;
+  }
+
+  #spend-card .sc-amount {
+    font-size: 12px;
+    font-weight: 600;
+    color: #212529;
+  }
+
+  #spend-card .sc-track {
+    height: 5px;
+    background: #e9ecef;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  #spend-card .sc-bar {
+    height: 5px;
+    border-radius: 3px;
+    width: 0%;
+    transition: width .3s ease;
+  }
+
+  #spend-card .sc-bar-cogs      { background: #20c997; }
+  #spend-card .sc-bar-rent      { background: #7048e8; }
+  #spend-card .sc-bar-capex     { background: #228be6; }
+
+  #spend-card hr.sc-divider {
+    border: none;
+    border-top: 1px solid #dee2e6;
+    margin: 10px 0;
+  }
+
+  #spend-card .sc-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  #spend-card .sc-total-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #212529;
+  }
+
+  #spend-card .sc-total-amount {
+    font-size: 15px;
+    font-weight: 700;
+    color: #212529;
+  }
+
+  #spend-card .sc-cash-label {
+    font-size: 10px;
+    color: #6c757d;
+    text-align: right;
+    margin-top: 1px;
+  }
+
+  #spend-card .sc-usage-track {
+    height: 7px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 9px;
+  }
+
+  #spend-card .sc-usage-bar {
+    height: 7px;
+    border-radius: 4px;
+    background: #20c997;
+    width: 0%;
+    transition: width .3s ease;
+  }
+
+  #spend-card .sc-usage-bar.over-budget {
+    background: #fa5252;
+  }
+
+  #spend-card .sc-usage-label {
+    font-size: 10px;
+    color: #6c757d;
+    margin-top: 3px;
+    text-align: right;
+  }
+
+  #spend-card .sc-over-budget-warning {
+    display: none;
+    font-size: 11px;
+    color: #fa5252;
+    font-weight: 600;
+    margin-top: 6px;
+    text-align: center;
+  }
+
+  /* ── Ad boost section ── */
+  #spend-card .sc-boost-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  #spend-card .sc-boost-turn {
+    font-size: 11px;
+    color: #6c757d;
+  }
+
+  #spend-card .sc-boost-value {
+    font-size: 11px;
+    font-weight: 600;
+    color: #f76707;
+  }
+
+  #spend-card .sc-boost-value.no-boost {
+    color: #adb5bd;
+    font-weight: 400;
+  }
+
+  #spend-card .sc-no-campaign {
+    font-size: 11px;
+    color: #adb5bd;
+    font-style: italic;
+  }
+
+  @media (max-width: 1200px) {
+    #spend-card {
+      position: static;
+      width: 100%;
+      margin-bottom: 16px;
+    }
+  }
+
+  /* ── Ad campaign tooltip ── */
+  .ad-tooltip-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    margin-left: 6px;
+  }
+
+  .ad-tooltip-wrap .qmark {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #e9ecef;
+    color: #6c757d;
+    font-size: 10px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+    user-select: none;
+  }
+
+  .ad-tooltip-wrap .tooltip-box {
+    display: none;
+    position: absolute;
+    left: 22px;
+    top: -4px;
+    width: 240px;
+    background: #212529;
+    color: #f8f9fa;
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 10px 12px;
+    border-radius: 6px;
+    z-index: 200;
+  }
+
+  .ad-tooltip-wrap:hover .tooltip-box {
+    display: block;
+  }
+
+  /* ── Insurance tooltip ── */
+  .insurance-tooltip-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    margin-left: 6px;
+  }
+
+  .insurance-tooltip-wrap .qmark {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #e9ecef;
+    color: #6c757d;
+    font-size: 10px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+    user-select: none;
+  }
+
+  .insurance-tooltip-wrap .tooltip-box {
+    display: none;
+    position: absolute;
+    left: 22px;
+    top: -4px;
+    width: 260px;
+    background: #212529;
+    color: #f8f9fa;
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 10px 12px;
+    border-radius: 6px;
+    z-index: 200;
+  }
+
+  .insurance-tooltip-wrap:hover .tooltip-box {
+    display: block;
+  }
+
+  /* ── Insurance table select styling ── */
+  select[id*="coverage_taken"] {
+    border-radius: 4px;
+    border: 1px solid #ced4da;
+    padding: 3px 8px;
+    font-size: 0.875rem;
+    color: #495057;
+    background-color: #fff;
+    cursor: pointer;
+  }
+
+  select[id*="coverage_taken"]:focus {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+  }
+
+  .stat-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #f1f3f5;
+    border: 1px solid #dee2e6;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 13px;
+    color: #212529;
+    white-space: nowrap;
+  }
+
+  .pill-label {
+    color: #6c757d;
+    font-size: 11px;
+  }
+
+  .pill-sep {
+    color: #adb5bd;
+    margin: 0 1px;
+  }
+
+  .pill-sub {
+    color: #6c757d;
+    font-size: 12px;
+  }
+
+  #extra-pills {
+    display: none;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  #extra-pills.visible {
+    display: inline-flex;
+  }
+
+  #toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: 1px dashed #adb5bd;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: #6c757d;
+    cursor: pointer;
+  }
+
+  #toggle-btn:hover {
+    background: #f1f3f5;
+  }
+
+  #toggle-btn.open i {
+    transform: rotate(180deg);
+  }
+
+  br {
+     display: block;
+     margin: 10px 0;
+  }
+
+
+  /* ── Boost schedule pills ── */
+  #ad-campaign-schedule { line-height: 1.8; }
+</style>
+
+<!-- ═══════════════ FLOATING SPEND CARD ═══════════════ -->
+<div id="spend-card">
+
+  <!-- ── Planned Spend section ── -->
+  <div class="sc-title">💰 Planned spend</div>
+
+  <div class="sc-row">
+    <div class="sc-row-header">
+      <span class="sc-label">Cost of Goods Sold ("COGS")</span>
+      <span class="sc-amount" id="sc-cogs">$0</span>
+    </div>
+    <div class="sc-track"><div class="sc-bar sc-bar-cogs" id="sc-bar-cogs"></div></div>
+  </div>
+
+  <div class="sc-row">
+    <div class="sc-row-header">
+      <span class="sc-label">Operating Expenses ("Opex")</span>
+      <span class="sc-amount" id="sc-opex">{{ player.difficulty.rent_cost|accounting }}</span>
+    </div>
+    <div class="sc-track"><div class="sc-bar sc-bar-rent" id="sc-bar-opex"></div></div>
+  </div>
+
+  <div class="sc-row">
+    <div class="sc-row-header">
+      <span class="sc-label">Capital Expenditures ("Capex")</span>
+      <span class="sc-amount" id="sc-capex">$0</span>
+    </div>
+    <div class="sc-track"><div class="sc-bar sc-bar-capex" id="sc-bar-capex"></div></div>
+  </div>
+
+  <hr class="sc-divider">
+
+  <div class="sc-total-row">
+    <span class="sc-total-label">Remaining Cash</span>
+    <span class="sc-total-amount" id="sc-remaining">{{ player.cash|accounting }}</span>
+  </div>
+  <div class="sc-cash-label">Total planned spend: <span id="sc-total">$0</span></div>
+
+  <div class="sc-usage-track">
+    <div class="sc-usage-bar" id="sc-usage-bar"></div>
+  </div>
+  <div class="sc-usage-label" id="sc-usage-label">0% of cash used</div>
+  <div class="sc-over-budget-warning" id="sc-over-budget-warning">⚠ Insufficient Funds!</div>
+
+  <!-- ── Ad Boost section ── -->
+  <hr class="sc-divider">
+  <div class="sc-title">📢 Ad boost</div>
+
+  {% if current_boost > 0 or upcoming_boosts %}
+    <div class="sc-boost-row">
+      <span class="sc-boost-turn">This turn</span>
+      {% if current_boost > 0 %}
+        <span class="sc-boost-value">+{{ current_boost }}%</span>
+      {% else %}
+        <span class="sc-boost-value no-boost">+0%</span>
+      {% endif %}
+    </div>
+    {% for turn_num, boost_pct in upcoming_boosts %}
+      <div class="sc-boost-row">
+        <span class="sc-boost-turn">Turn +{{ forloop.counter }}</span>
+        {% if boost_pct > 0 %}
+          <span class="sc-boost-value">+{{ boost_pct }}%</span>
+        {% else %}
+          <span class="sc-boost-value no-boost">+0%</span>
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% else %}
+    <span class="sc-no-campaign">No active campaign</span>
+  {% endif %}
+
+</div>
+<!-- ════════════════════════════════════════════════════ -->
+
+
+<!-- Pass ad profile data from Django to JS -->
+{{ ad_profiles_json|json_script:"ad-profiles-data" }}
+{{ equipment_json|json_script:"equipment-data" }}
+
+<!-- Wrap all main content so it stays left of the card -->
+<div class="production-content">
+
+  <!-- Header Row -->
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap">
+
+    <!-- Left: Profile Image + Name -->
+    <div class="d-flex align-items-center mb-2 mb-md-0">
+      <img src="{{ request.user.profile.profile_picture.url }}"
+           alt="Profile"
+           class="rounded-circle mr-3"
+           width="50"
+           height="50">
+      <div>
+        <h2 class="mb-0">Production Planning 🧸</h2>
+        <span class="badge badge-secondary" style="font-size: 1em; vertical-align: middle;">{{ player.company_name }}</span>
+        <small class="text-muted d-block">{{ player.name }}</small>
+      </div>
+    </div>
+
+    <!-- Right: Player Stats -->
+      <div>
+        <span class="stat-pill"><span class="pill-label">Turn</span> {{ player.turn_number }} / {{ player.difficulty.max_turns }}</span>
+        <span class="stat-pill"><span class="pill-label">Factory Spaces</span> {{ player.factory_space }}</span>
+        <span class="stat-pill" style="margin-bottom: 5px;"><span class="pill-label">Cash</span> {{ player.cash|accounting }} <span class="pill-sep">/</span> <span class="pill-sub">{{ player.difficulty.winning_cash|accounting }}</span></span>
+        <br>
+        <div id="extra-pills">
+          <span class="stat-pill"><span class="pill-label">Rent</span> {{ player.difficulty.rent_cost|accounting }}</span>
+          <span class="stat-pill"><span class="pill-label">Tax</span> {{ player.difficulty.tax_rate|percentage }}</span>
+
+        </div>
+
+        <button id="toggle-btn" onclick="toggleExtra()" type="button">
+          <span id="btn-text">see more</span>
+          <i class="ti ti-chevron-down"></i>
+        </button>
+      </div>
+
+  </div>
+
+  <form method="POST">
+    {% csrf_token %}
+    {{ toyformset.management_form }}
+    {{ coverageformset.management_form }}
+
+
+    {% if toyformset.non_form_errors %}
+      <div class="alert alert-danger">
+        {{ toyformset.non_form_errors }}
+      </div>
+    {% endif %}
+
+    {% if coverageformset.non_form_errors %}
+      <div class="alert alert-danger">
+        {{ coverageformset.non_form_errors }}
+      </div>
+    {% endif %}
+
+    {% for note in notifications %}
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ note }}
+        <button type="button" class="close" data-dismiss="alert">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+
+
+    <!-- ========== INVESTMENTS CARD ========== -->
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <strong>🏗 Investments
+        <div class="ad-tooltip-wrap">
+              <span class="qmark">?</span>
+              <div class="tooltip-box">
+                Invest money into your business to increase profitability in future periods.
+              </div>
+        </div>
+        </strong>
+        <button
+          class="btn btn-outline-secondary btn-sm"
+          type="button"
+          data-toggle="collapse"
+          data-target="#investmentPanel"
+          aria-expanded="false"
+          aria-controls="investmentPanel">
+          Expand / Collapse
+        </button>
+      </div>
+
+      <div class="collapse" id="investmentPanel">
+        <div class="card-body bg-light">
+
+          <!-- Factory Expansion -->
+          <div class="card mb-3">
+            <div class="card-header d-flex align-items-center">
+              Factory Expansion
+              <div class="ad-tooltip-wrap">
+                <span class="qmark">?</span>
+                <div class="tooltip-box">
+                  Each additional space purchased allows you to manufacture one more unit in your factory. Additional space will become available in the following turn.
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <table class="table table-bordered table-sm mb-0">
+                <thead class="table-secondary">
+                  <tr>
+                    <th>Additional Factory Space</th>
+                    <th>Cost per Space</th>
+                    <th>Total Cost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      {{ inv_expansion_form.extra_space }}
+                      {% if inv_expansion_form.extra_space.errors %}
+                        <div class="text-danger small">{{ inv_expansion_form.extra_space.errors }}</div>
+                      {% endif %}
+                    </td>
+                    <td>{{ player.difficulty.factory_space_cost|accounting }}</td>
+                    <td id="expansion-total-cost">-</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Equipment Purchase -->
+          <div class="card mb-3">
+            <div class="card-header d-flex align-items-center">
+              Equipment Purchase
+              <div class="ad-tooltip-wrap">
+                <span class="qmark">?</span>
+                <div class="tooltip-box">
+                  Purchase equipment to reduce your cost per unit on all toys.
+                  Equipment can only be purchased once per game and takes effect on the following turn.
+                  Equipment is depreciated over a useful life of 10 years (cost savings will continue).
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <table class="table table-bordered table-sm mb-0">
+                <thead class="table-secondary">
+                  <tr>
+                    <th>Equipment</th>
+                    <th>Cost</th>
+                    <th>Cost Savings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      {{ equipment_form.equipment }}
+                      {% if player.equipment_bought %}
+                        <div class="text-muted small mt-1">Equipment already purchased this game.</div>
+                      {% endif %}
+                      {% if equipment_form.equipment.errors %}
+                        <div class="text-danger small">{{ equipment_form.equipment.errors }}</div>
+                      {% endif %}
+                    </td>
+                    <td id="equipment-cost">-</td>
+                    <td id="equipment-savings">-</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+
+          <!-- Advertisement Campaign -->
+          <div class="card mb-3">
+            <div class="card-header d-flex align-items-center">
+              Advertisement Campaign
+              <div class="ad-tooltip-wrap">
+                <span class="qmark">?</span>
+                <div class="tooltip-box">
+                  Advertising campaigns boost demand for your toys over the next few turns (new demand % = demand % * (1 + boost %) ), then tapers off to zero.
+                  The cost is deducted immediately this turn. Boosts will be applied in the next turn. Demand maxes out at 100%.
+                </div>
+              </div>
+            </div>
+
+            <div class="card-body">
+              <table class="table table-bordered table-sm mb-0">
+                <thead class="table-secondary">
+                  <tr>
+                    <th>Campaign Type</th>
+                    <th>Cost</th>
+                    <th>Boost Schedule</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      {{ ad_form.ad_campaign }}
+                      {% if ad_form.ad_campaign.errors %}
+                        <div class="text-danger small">{{ ad_form.ad_campaign.errors }}</div>
+                      {% endif %}
+                    </td>
+                    <td id="ad-campaign-cost">-</td>
+                    <td id="ad-campaign-schedule">-</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+
+
+
+
+
+
+    <!-- ========== INSURANCE CARD ========== -->
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <strong>
+          🛡 Insurance Coverage
+          <div class="insurance-tooltip-wrap">
+            <span class="qmark">?</span>
+            <div class="tooltip-box">
+              Pay a fixed premium now to avoid a potentially larger disaster cost this turn.
+              If you assume the risk and a disaster occurs, the full disaster cost is deducted from your cash.
+              See Insurance Event distributions to see the likelihood of a disaster for each event.
+            </div>
+          </div>
+        </strong>
+        <button
+          class="btn btn-outline-secondary btn-sm"
+          type="button"
+          data-toggle="collapse"
+          data-target="#insurancePanel"
+          aria-expanded="false"
+          aria-controls="insurancePanel">
+          Expand / Collapse
+        </button>
+      </div>
+
+      <div class="collapse" id="insurancePanel">
+        <div class="px-3 pt-2 pb-1">
+          <a href="{% url 'insurance_distribution' %}" class="small">Insurance Event Distributions</a>
+        </div>
+        <div class="card-body bg-light p-0">
+          <table class="table table-bordered table-sm mb-0">
+            <thead class="table-secondary">
+              <tr>
+                <th>Event</th>
+                <th>Premium Cost</th>
+                <th>Decision</th>
+                <th>Remember Selection</th>
+              </tr>
+            </thead>
+            <tbody id="insurance-table-body">
+              {% for form in coverageformset %}
+                {% with event=insurance_events|index:forloop.counter0%}
+                <tr>
+                  <td>{{ event.name }}</td>
+                  <td class="insurance-premium-val"
+                      data-premium="{{ event.premium_cost|unlocalize }}">
+                    {{ event.premium_cost|accounting }}
+                  </td>
+                  <td>
+                    {{ form.coverage_taken }}
+                    {% if form.coverage_taken.errors %}
+                      <div class="text-danger small">{{ form.coverage_taken.errors }}</div>
+                    {% endif %}
+  <!--                  {{ form.id }}-->
+                  </td>
+                  <td class="text-center">
+                    <input type="checkbox"
+                           class="remember-checkbox"
+                           data-event-id="{{ event.pk }}">
+                  </td>
+                </tr>
+              {% endwith %}
+              {% empty %}
+              <tr>
+                <td colspan="4" class="text-center text-muted">No insurance events available.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+
+        <!-- ========== Financing Card ========== -->
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <strong>🏦 Financing
+        <div class="ad-tooltip-wrap">
+              <span class="qmark">?</span>
+              <div class="tooltip-box">
+                Take on Investors to Raise Capital to fund Growth Projects.
+              </div>
+        </div>
+        </strong>
+        <button
+          class="btn btn-outline-secondary btn-sm"
+          type="button"
+          data-toggle="collapse"
+          data-target="#financingPanel"
+          aria-expanded="false"
+          aria-controls="financingPanel">
+          Expand / Collapse
+        </button>
+      </div>
+
+      <div class="collapse" id="financingPanel">
+        <div class="card-body bg-light">
+
+          <!-- Loan -->
+          <div class="card mb-3">
+            <div class="card-header d-flex align-items-center">
+              Bank Loan
+              <div class="ad-tooltip-wrap">
+                <span class="qmark">?</span>
+                <div class="tooltip-box">
+                  Take on a debt investor.
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <table class="table table-bordered table-sm mb-0">
+                <thead class="table-secondary">
+                  <tr>
+                    <th>Interest Rate</th>
+                    <th>Loan Tenure</th>
+                    <th>Max Opening Leverage Ratio</th>
+                    <th>Max Credit Available</th>
+                    <th>Borrowed Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>{{ loan.interest_rate }}</td>
+                    <td>{{ loan.loan_length }} years</td>
+                    <td>{{ loan.max_leverage_ratio }}x</td>
+                    <td>{{ loan.max_amount_available_to_borrow }}</td>
+                    <td>
+                      {{ loan_form.borrowed_amount }}
+                      {% if loan_form.borrowed_amount.errors %}
+                        <div class="text-danger small">{{ loan_form.borrowed_amount.errors }}</div>
+                      {% endif %}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+
+        </div>
+      </div>
+    </div>
+
+
+
+
+
+
+
+
+
+
+    <!-- ========== TOY TABLE ========== -->
+
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <strong>
+          📋 Production Planning
+          <div class="insurance-tooltip-wrap">
+            <span class="qmark">?</span>
+            <div class="tooltip-box">
+              Decide how many of each toy to manufacture based on their revenue, cost, demand distributions, and your available factory space.
+              Once your plan is submitted, it is up to the will of the dice to see how many units are sold.
+
+              Styles in children's toys move quickly, as a result - no inventory is kept for unsold toys.
+            </div>
+          </div>
+        </strong>
+      </div>
+
+      <div class="mt-1 mb-2">
+        <a href="{% url 'demand_distribution' %}" class="small">Demand Distributions</a>
+      </div>
+
+    <table class="table table-hover">
+      <thead class="table-dark">
+        <tr>
+          <th>Toy</th>
+          <th>Units to Manufacture</th>
+          <th>Revenue per Unit</th>
+          <th>Cost per Unit</th>
+          <th>Cost of Units</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for form, toy, adj_cost in form_and_toys %}
+        <tr>
+          <td>{{ toy.name }}</td>
+          <td>
+            {{ form.units_to_manufacture }}
+            {% if form.units_to_manufacture.errors %}
+              <div class="text-danger small">{{ form.units_to_manufacture.errors }}</div>
+            {% endif %}
+          </td>
+          <td>{{ toy.price_per_unit|accounting }}</td>
+          <td class="unit-cost-val" data-cost="{{ adj_cost|unlocalize }}">{{ adj_cost|accounting }}</td>
+          <td class="row-total-cost">-</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot class="table-light font-weight-bold">
+        <tr>
+          <td>Grand Total</td>
+          <td id="total-units">- <span> / {{ player.factory_space }} </span></td>
+          <td></td>
+          <td></td>
+          <td id="grand-total-cost">-</td>
+        </tr>
+      </tfoot>
+    </table>
+    </div>
+    <button type="submit" name="submit_choices" class="btn btn-primary">
+      Submit
+    </button>
+  </form>
+
+</div><!-- /.production-content -->
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+  const rows                  = document.querySelectorAll('tbody:not(#insurance-table-body) tr');
+  const totalUnitsDisplay     = document.getElementById('total-units');
+  const grandTotalCostDisplay = document.getElementById('grand-total-cost');
+  const expansionTotalDisplay = document.getElementById('expansion-total-cost');
+  const adCostDisplay         = document.getElementById('ad-campaign-cost');
+  const adScheduleDisplay     = document.getElementById('ad-campaign-schedule');
+
+  const total_available_spaces = {{ player.factory_space }};
+  const total_cash_available   = {{ player.cash|unlocalize }};
+  const costPerSpace           = {{ player.difficulty.factory_space_cost|unlocalize }};
+  const rentCost               = {{ player.difficulty.rent_cost|unlocalize }};
+
+  const adProfiles = JSON.parse(document.getElementById('ad-profiles-data').textContent);
+
+  /* ── spend card elements ── */
+  const scCogs       = document.getElementById('sc-cogs');
+  const scOpex       = document.getElementById('sc-opex');
+  const scCapex      = document.getElementById('sc-capex');
+  const scBarCogs    = document.getElementById('sc-bar-cogs');
+  const scBarOpex    = document.getElementById('sc-bar-opex');
+  const scBarCapex   = document.getElementById('sc-bar-capex');
+  const scTotal      = document.getElementById('sc-total');
+  const scUsageBar   = document.getElementById('sc-usage-bar');
+  const scUsageLabel = document.getElementById('sc-usage-label');
+  const scWarning    = document.getElementById('sc-over-budget-warning');
+
+
+function fmt(value) {
+    if (value === 0) return '-';
+    const isWhole = value === Math.floor(value);
+    const formatted = isWhole
+        ? Math.round(value).toLocaleString()
+        : (Math.round(value * 10) / 10).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    if (value < 0 ) return '($' + formatted * -1 + ')';
+    return '$' + formatted;
+}
+
+  function barPct(value, max) {
+    if (max === 0) return 0;
+    return Math.min(100, Math.round((value / max) * 100));
+  }
+
+  function updateSpendCard(cogs, capex, adCost, premiumCost) {
+    premiumCost = premiumCost || 0;
+    const opex   = rentCost + adCost + premiumCost;
+    const total  = cogs + opex + capex;
+    const maxBar = Math.max(cogs, opex, capex, 1);
+
+    scCogs.textContent  = fmt(cogs);
+    scOpex.textContent  = fmt(opex);
+    scCapex.textContent = fmt(capex);
+    scTotal.textContent = fmt(total);
+    document.getElementById('sc-remaining').textContent = fmt(total_cash_available - total);
+
+    scBarCogs.style.width  = barPct(cogs, maxBar)  + '%';
+    scBarOpex.style.width  = barPct(opex, maxBar)  + '%';
+    scBarCapex.style.width = barPct(capex, maxBar) + '%';
+
+    const usagePct = total_cash_available > 0
+      ? Math.min(100, Math.round((total / total_cash_available) * 100))
+      : 0;
+
+    scUsageBar.style.width   = usagePct + '%';
+    scUsageLabel.textContent = usagePct + '% of cash used';
+
+    const overBudget = total > total_cash_available;
+    scUsageBar.classList.toggle('over-budget', overBudget);
+    scWarning.style.display = overBudget ? 'block' : 'none';
+  }
+
+  function getCurrentSpends() {
+    const equipCostEl = document.getElementById('equipment-cost');
+    return {
+      cogs:  parseFloat(grandTotalCostDisplay.dataset.value) || 0,
+      capex: parseFloat(expansionTotalDisplay.dataset.value) + (parseFloat(equipCostEl?.dataset.value) || 0),
+      ad:    parseFloat(adCostDisplay.dataset.value)         || 0,
+    };
+  }
+
+  /* ── insurance premium calculation ── */
+  function getInsurancePremiumCost() {
+    let total = 0;
+    document.querySelectorAll('#insurance-table-body tr').forEach(function(row) {
+      const premiumCell = row.querySelector('.insurance-premium-val');
+      const select      = row.querySelector('select[id*="coverage_taken"]');
+      if (premiumCell && select && select.value === 'insure') {
+        total += parseFloat(premiumCell.dataset.premium) || 0;
+      }
+    });
+    return total;
+  }
+
+  function updateCalculations() {
+    let grandTotalUnits = 0;
+    let grandTotalCost  = 0;
+
+    rows.forEach(function (row) {
+      const input       = row.querySelector('input[id*="units_to_manufacture"]');
+      const costCell    = row.querySelector('.unit-cost-val');
+      const rowCostDisp = row.querySelector('.row-total-cost');
+
+      if (input && costCell) {
+        const costPerUnit = parseFloat(costCell.dataset.cost) || 0;
+        const units       = parseInt(input.value) || 0;
+        const rowCost     = units * costPerUnit;
+
+        rowCostDisp.textContent = fmt(rowCost);
+        grandTotalUnits += units;
+        grandTotalCost  += rowCost;
+      }
+    });
+
+    totalUnitsDisplay.textContent = grandTotalUnits.toLocaleString() + ' / ' + total_available_spaces;
+    totalUnitsDisplay.style.color = grandTotalUnits > total_available_spaces ? '#fa5252' : '';
+    grandTotalCostDisplay.textContent = fmt(grandTotalCost);
+    grandTotalCostDisplay.dataset.value = grandTotalCost;
+
+    const s = getCurrentSpends();
+    updateSpendCard(grandTotalCost, s.capex, s.ad, getInsurancePremiumCost());
+  }
+
+  function updateExpansionCost() {
+    const expansionInput = document.querySelector('#id_extra_space');
+    const spaces = parseInt(expansionInput.value) || 0;
+    const total  = spaces * costPerSpace;
+    expansionTotalDisplay.textContent = fmt(total);
+    expansionTotalDisplay.dataset.value = total;
+
+    const s = getCurrentSpends();
+    updateSpendCard(s.cogs, total, s.ad, getInsurancePremiumCost());
+  }
+
+  /* ── equipment JSON from Django ── */
+  const equipmentProfiles = JSON.parse(document.getElementById('equipment-data').textContent);
+
+  function updateEquipmentDisplay() {
+    const equipSelect  = document.querySelector('#id_equipment');
+    const selectedId   = equipSelect ? equipSelect.value : null;
+    const eq           = selectedId ? equipmentProfiles[selectedId] : null;
+    const equipCostEl  = document.getElementById('equipment-cost');
+    const equipSaveEl  = document.getElementById('equipment-savings');
+
+    if (eq) {
+      equipCostEl.textContent    = fmt(eq.cost);
+      equipCostEl.dataset.value  = eq.cost;
+      equipSaveEl.textContent    = Math.round((1 - eq.cost_savings_percent) * 100) + '% cost reduction';
+    } else {
+      equipCostEl.textContent   = '-';
+      equipCostEl.dataset.value = 0;
+      equipSaveEl.textContent   = '-';
+    }
+
+    const s = getCurrentSpends();
+    updateSpendCard(s.cogs, s.capex, s.ad, getInsurancePremiumCost());
+  }
+
+  const equipSelect = document.querySelector('#id_equipment');
+  if (equipSelect) equipSelect.addEventListener('change', updateEquipmentDisplay);
+
+  function updateAdCost() {
+    const adSelect   = document.querySelector('#id_ad_campaign');
+    const selectedId = adSelect ? adSelect.value : null;
+    const profile    = selectedId ? adProfiles[selectedId] : null;
+
+    if (profile) {
+      const schedule = profile.boost_schedule;
+
+      adCostDisplay.textContent   = fmt(profile.cost);
+      adCostDisplay.dataset.value = profile.cost;
+
+      /* ── Boost schedule pills ── */
+      adScheduleDisplay.innerHTML = schedule.map(function(v, i) {
+        const pct = Math.round(v * 100);
+        const bg  = pct >= 20 ? '#d3f9d8' : pct >= 10 ? '#fff3bf' : pct > 0 ? '#ffe3e3': '#d3d3d3';
+        const col = pct >= 20 ? '#2f9e44' : pct >= 10 ? '#e67700' : pct > 0 ? '#c92a2a': '#48494B';
+        return '<span style="display:inline-block;background:' + bg + ';color:' + col + ';border-radius:4px;' +
+               'padding:1px 7px;font-size:11px;font-weight:600;margin:1px 2px;white-space:nowrap;">' +
+               '+' + pct + '% T' + (i + 1) +
+               '</span>';
+      }).join('');
+
+    } else {
+      adCostDisplay.textContent     = '-';
+      adCostDisplay.dataset.value   = 0;
+      adScheduleDisplay.innerHTML   = '-';
+    }
+
+    const s = getCurrentSpends();
+    updateSpendCard(s.cogs, s.capex, parseFloat(adCostDisplay.dataset.value) || 0, getInsurancePremiumCost());
+  }
+
+  /* ── event listeners: toy units ── */
+  rows.forEach(function (row) {
+    const input = row.querySelector('input[id*="units_to_manufacture"]');
+    if (input) input.addEventListener('input', updateCalculations);
+  });
+
+  /* ── event listeners: factory expansion ── */
+  const expansionInput = document.querySelector('#id_extra_space');
+  if (expansionInput) expansionInput.addEventListener('input', updateExpansionCost);
+
+  /* ── event listeners: ad campaign ── */
+  const adSelect = document.querySelector('#id_ad_campaign');
+  if (adSelect) adSelect.addEventListener('change', updateAdCost);
+
+  /* ── event listeners: insurance coverage selects ── */
+  document.querySelectorAll('select[id*="coverage_taken"]').forEach(function(sel) {
+    sel.addEventListener('change', function() {
+      const row = sel.closest('tr');
+      const cb  = row.querySelector('.remember-checkbox');
+      if (cb && cb.checked) {
+        localStorage.setItem('insurance_' + cb.dataset.eventId, sel.value);
+      }
+      const s = getCurrentSpends();
+      updateSpendCard(s.cogs, s.capex, s.ad, getInsurancePremiumCost());
+    });
+  });
+
+  /* ── event listeners: remember checkboxes ── */
+  document.querySelectorAll('.remember-checkbox').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+      const eventId = cb.dataset.eventId;
+      const row     = cb.closest('tr');
+      const sel     = row.querySelector('select[id*="coverage_taken"]');
+      if (cb.checked && sel) {
+        localStorage.setItem('insurance_' + eventId, sel.value);
+      } else {
+        localStorage.removeItem('insurance_' + eventId);
+      }
+    });
+  });
+
+  /* ── on page load: restore saved insurance choices ── */
+  document.querySelectorAll('.remember-checkbox').forEach(function(cb) {
+    const eventId = cb.dataset.eventId;
+    const saved   = localStorage.getItem('insurance_' + eventId);
+    if (saved !== null) {
+      const row = cb.closest('tr');
+      const sel = row.querySelector('select[id*="coverage_taken"]');
+      if (sel) sel.value = saved;
+      cb.checked = true;
+    }
+  });
+
+  /* ── seed dataset values so cross-calls work on first run ── */
+  grandTotalCostDisplay.dataset.value = 0;
+  expansionTotalDisplay.dataset.value = 0;
+  adCostDisplay.dataset.value         = 0;
+
+  updateCalculations();
+  updateExpansionCost();
+  updateAdCost();
+
+  /* updateSpendCard once more after restoring saved choices so
+     premiums from remembered selections are reflected immediately */
+  const s = getCurrentSpends();
+  updateSpendCard(s.cogs, s.capex, s.ad, getInsurancePremiumCost());
+
+  document.getElementById('toggle-btn').addEventListener('click', function() {
+    const extra = document.getElementById('extra-pills');
+    const isOpen = extra.classList.toggle('visible');
+    this.classList.toggle('open', isOpen);
+    document.getElementById('btn-text').textContent = isOpen ? 'see less' : 'see more';
+  });
+
+
+});
+</script>
+
+{% endblock content %}

@@ -1,0 +1,32 @@
+{% extends "game/base.html" %}
+
+{% block content %}
+<h2>Toy Demand Distribution - % of Manufactured Toys Sold per Dice Roll</h2>
+
+<table class="table table-bordered text-center">
+    <thead class="table-dark">
+        <tr>
+            <th>Toy</th>
+            {% for i in percentage_range %}
+                <th style="font-size: 2rem; line-height: 1;">{{ i }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in toy_distributions %}
+        <tr>
+            <td>{{ item.toy.name }}</td>
+            {% for prob in item.percentages %}
+                <td>{{ prob|floatformat:0 }}%</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+<div>
+<a class="mr-2" href="{% url 'game-production' %}">Back to Production Planning</a>
+</div>
+
+{% endblock %}

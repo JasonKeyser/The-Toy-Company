@@ -1,0 +1,370 @@
+{% extends "game/base.html" %}
+{% load accounting_tags %}
+{% load math_tags %}
+{% block content %}
+
+<style>
+  /* ── Financial Summary card ── */
+  .fin-card {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 12px;
+  }
+
+  .fin-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #6c757d;
+    margin-bottom: 14px;
+  }
+
+
+  .fin-row {
+    display: flex;
+    align-items: baseline;
+    flex-grow: 0;
+    justify-content: space-between;
+    padding: 6px 0;
+    color: #212529;
+  }
+
+
+
+  .fin-row.subtotal {
+    border-top: 1px solid #adb5bd;
+    font-weight: 600;
+  }
+
+  .fin-row.expandable {
+    cursor: pointer;
+    user-select: none;
+
+  }
+
+  .fin-row.expandable:hover .fin-label {
+    color: #212529;
+  }
+
+  .fin-label {
+    color: #212529;
+    width: 125px;
+    align-items: flex-start;
+    gap: 5px;
+  }
+
+  .fin-child-label {
+    color: #6c757d;
+    width: 113px;
+    align-items: flex-start;
+    gap: 5px;
+  }
+
+  .fin-label.muted {
+    color: #6c757d;
+    font-weight: 400;
+  }
+
+  .expand-icon {
+    font-size: 9px;
+    color: #adb5bd;
+    transition: transform 0.2s ease;
+    display: inline-block;
+    line-height: 1;
+  }
+
+  .expand-icon.open {
+    transform: rotate(90deg);
+  }
+
+  .fin-children {
+    display: none;
+    padding-left: 12px;
+    border-left: 2px solid #dee2e6;
+    margin-left: 2px;
+  }
+
+  .fin-children.open {
+    display: block;
+  }
+
+  .fin-child-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 3px 0;
+    font-size: 11px;
+    color: #6c757d;
+  }
+
+  .fin-value {
+    display: flex;
+    font-weight: 600;
+    width: 40px;
+    justify-content: center;
+  }
+
+  .fcf-positive { color: #2f9e44; }
+  .fcf-negative { color: #c92a2a; }
+</style>
+
+<!-- Header Row -->
+<div class="d-flex align-items-center justify-content-between flex-wrap mb-4">
+
+  <!-- Left: Profile Image + Title + Player Name -->
+  <div class="d-flex align-items-center mb-2 mb-md-0">
+    <img src="{{ request.user.profile.profile_picture.url }}"
+         alt="Profile"
+         class="rounded-circle mr-3"
+         width="50"
+         height="50">
+    <div>
+      <h2 class="mb-0">Financial History 📈</h2>
+      <span class="badge badge-secondary" style="font-size: 1em; vertical-align: middle;">{{ turn.player.company_name }}</span>
+      <small class="text-muted d-block">{{ turn.player.name }}</small>
+    </div>
+  </div>
+
+  <!-- Right: Turn Stats -->
+  <div class="text-md-right">
+    <div>
+      <strong>Turn Completed:</strong> {{ turn.turn_number }}/{{ turn.player.difficulty.max_turns }}<br>
+      <strong>Ending Cash:</strong> {{ turn.player.cash|accounting_round }}<br>
+      <strong>Cash to Win:</strong> {{ turn.player.difficulty.winning_cash|accounting_round }}
+    </div>
+  </div>
+
+</div>
+
+<!-- Table + Financial Summary side by side -->
+<div class="production-content">
+  <div class="d-flex align-items-start" style="gap: 24px;">
+
+    <!-- Financial Summary Card -->
+    <div class="fin-card flex-grow-1">
+
+      <div class="fin-title">Financial Summary</div>
+
+        <div class="fin-row">
+          <span class="fin-label muted">Turn #</span>
+          {% for t in turns %}
+            <span class="fin-value">{{ t.turn_number }}</span>
+          {% endfor %}
+        </div>
+
+        <div class="fin-row">
+          <span class="fin-label muted">Revenue</span>
+          {% for t in turns %}
+            <span class="fin-value">{{ t.revenue|accounting_round }}</span>
+          {% endfor %}
+        </div>
+
+        <div class="fin-row">
+          <span class="fin-label muted">Cost of goods sold</span>
+          {% for t in turns %}
+            <span class="fin-value">{{ t.Cost_of_Goods_Sold|accounting_round_exp }}</span>
+          {% endfor %}
+        </div>
+
+        <div class="fin-row subtotal">
+          <span class="fin-label">Gross profit</span>
+          {% for t in turns %}
+            <span class="fin-value">{{ t.gross_profit|accounting_round }}</span>
+          {% endfor %}
+        </div>
+
+        <div class="fin-row expandable" onclick="toggle('opex')">
+          <span class="fin-label muted">
+            <span class="expand-icon" id="icon-opex">&#9658;</span>
+            Operating expenses
+          </span>
+          {% for t in turns %}
+            <span class="fin-value">{{ t.operating_expenses|accounting_round_exp }}</span>
+          {% endfor %}
+        </div>
+        <div class="fin-children" id="children-opex">
+          <div class="fin-child-row">
+            <span class="fin-child-label">Rent</span>
+            {% for t in turns %}
+              <span class="fin-value">{{ t.player.difficulty.rent_cost|accounting_round_exp }}</span>
+            {% endfor %}
+          </div>
+
+            <div class="fin-child-row">
+              <span class="fin-child-label">Disaster Cost</span>
+              {% for t in turns %}
+                <span class="fin-value">{{ t.disaster_cost|accounting_round_exp }}</span>
+              {% endfor %}
+            </div>
+
+            <div class="fin-child-row">
+              <span class="fin-child-label">Premium Cost</span>
+              {% for t in turns %}
+                <span class="fin-value">{{ t.premium_cost|accounting_round_exp }}</span>
+              {% endfor %}
+            </div>
+
+          <div class="fin-child-row">
+            <span class="fin-child-label">Advertising</span>
+            {% for t in turns %}
+            <span class="fin-value">
+              {{ t.ad_cost|accounting_round_exp }}
+            </span>
+            {% endfor %}
+          </div>
+        </div>
+
+
+        <div class="fin-row subtotal">
+          <span class="fin-label">EBITDA</span>
+          {% for t in turns %}
+            <span class="fin-value">
+              {{ t.EBITDA|accounting_round}}
+            </span>
+          {% endfor %}
+        </div>
+
+        <div class="fin-row expandable" onclick="toggle('other exp')">
+          <span class="fin-label muted">
+            <span class="expand-icon" id="icon-other exp">&#9658;</span>
+            Other Costs
+          </span>
+          {% for t in turns %}
+            <span class="fin-value">
+                {{ t.other_costs|accounting_round_exp }}
+            </span>
+          {% endfor %}
+        </div>
+
+        <div class="fin-children" id="children-other exp">
+          <div class="fin-child-row">
+            <span class="fin-child-label">Depreciation</span>
+            {% for t in turns %}
+              <span class="fin-value">
+                  {{ t.depreciation|accounting_round_exp }}
+              </span>
+            {% endfor %}
+          </div>
+
+          <div class="fin-child-row">
+            <span class="fin-child-label">Tax Expense</span>
+            {% for t in turns %}
+              <span class="fin-value">
+                  {{ t.taxes|accounting_round_exp }}
+              </span>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="fin-row subtotal">
+          <span class="fin-label">Net income</span>
+          {% for t in turns %}
+            <span class="fin-value">{{ t.net_income|accounting_round }}</span>
+          {% endfor %}
+        </div>
+
+        <div class="fin-row expandable" onclick="toggle('capex')">
+          <span class="fin-label muted">
+            <span class="expand-icon" id="icon-capex">&#9658;</span>
+            Capital expenditures
+          </span>
+          {% for t in turns %}
+            <span class="fin-value">
+                {{ t.total_capex|accounting_round_exp }}
+            </span>
+          {% endfor %}
+        </div>
+        <div class="fin-children" id="children-capex">
+          <div class="fin-child-row">
+            <span class="fin-child-label">Factory Expansion</span>
+            {% for t in turns %}
+              <span class="fin-value">
+                  {{ t.expansion_cost|accounting_round_exp }}
+              </span>
+            {% endfor %}
+          </div>
+          <div class="fin-child-row">
+            <span class="fin-child-label">Equipment Purchase</span>
+            {% for t in turns %}
+              <span class="fin-value">
+                  {{ t.equipment_cost|accounting_round_exp }}
+              </span>
+            {% endfor %}
+          </div>
+        </div>
+
+
+        <div class="fin-row expandable" onclick="toggle('noncash')">
+          <span class="fin-label muted">
+            <span class="expand-icon" id="icon-noncash">&#9658;</span>
+            Non-cash expenses
+          </span>
+          {% for t in turns %}
+            <span class="fin-value">
+                {{ t.depreciation|accounting_round }}
+            </span>
+          {% endfor %}
+        </div>
+        <div class="fin-children" id="children-noncash">
+          <div class="fin-child-row">
+            <span class="fin-child-label">Depreciation</span>
+            {% for t in turns %}
+              <span class="fin-value">
+                  {{ t.depreciation|accounting_round }}
+              </span>
+            {% endfor %}
+          </div>
+        </div>
+
+
+        <div class="fin-row subtotal">
+          <span class="fin-label">Free cash flow</span>
+          {% for t in turns %}
+            <span class="fin-value {% if t.free_cash_flow > 0 %}fcf-positive{% else %}fcf-negative{% endif %}">
+              {{ t.free_cash_flow|accounting_round }}
+            </span>
+          {% endfor %}
+        </div>
+
+        <hr style="margin: 8px 0; border-color: #dee2e6;">
+
+        <div class="fin-row">
+          <span class="fin-label muted">Beginning cash</span>
+          {% for t in turns %}
+            <span class="fin-value">{{ t.beginning_cash|accounting_round }}</span>
+          {% endfor %}
+        </div>
+
+        <div class="fin-row">
+          <span class="fin-label muted">Ending cash</span>
+          {% for t in turns %}
+            <span class="fin-value">{{ t.ending_cash|accounting_round }}</span>
+          {% endfor %}
+        </div>
+    </div>
+  </div><!-- /.d-flex -->
+</div>
+
+<!-- Next Turn Button -->
+<div>
+<a class="mr-2" href="{% url 'turn-summary' %}">Back to Turn Summary</a>
+</div>
+
+<a href="{% url 'game-production' %}" class="btn btn-primary mt-3">
+  Start Next Turn
+</a>
+
+<script>
+function toggle(id) {
+  var icon     = document.getElementById('icon-' + id);
+  var children = document.getElementById('children-' + id);
+  var isOpen   = children.classList.contains('open');
+  children.classList.toggle('open', !isOpen);
+  icon.classList.toggle('open', !isOpen);
+}
+</script>
+
+{% endblock content %}

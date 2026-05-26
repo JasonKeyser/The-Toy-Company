@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+.venv/
+env/
+
+# Django
+db.sqlite3
+*.log
+media/
+
+# PyCharm
+.idea/
+
+# Secrets (CRITICAL)
+.env
+secrets.py

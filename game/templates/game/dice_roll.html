@@ -1,0 +1,347 @@
+{% extends "game/base.html" %}
+
+{% block content %}
+<h2 class="text-center mb-4">🎲 Demand Roll</h2>
+
+<style>
+  @keyframes countup-in {
+    0%   { opacity: 0; transform: scale(0.5); }
+    60%  { opacity: 1; transform: scale(1.08); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  .boost-countup {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #f76707;
+    min-height: 22px;
+    opacity: 0;
+  }
+
+  .boost-countup.show {
+    animation: countup-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  .boost-countup .boost-arrow {
+    color: #20c997;
+    font-size: 12px;
+  }
+
+  /* ── d20 face ── */
+  .d20-face {
+    width: 80px;
+    height: 80px;
+    position: relative;
+    clip-path: polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);
+    background: #dee2e6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 5px auto;
+    transition: background 0.3s ease, transform 0.15s ease;
+  }
+
+  .d20-face .d20-num {
+    font-size: 1.9rem;
+    font-weight: 800;
+    color: #343a40;
+    line-height: 1;
+    user-select: none;
+  }
+
+  /* final colour states */
+  .d20-face.roll-high  { background: #d3f9d8; }
+  .d20-face.roll-mid   { background: #fff3bf; }
+  .d20-face.roll-low   { background: #ffe3e3; }
+
+  .d20-face.roll-high  .d20-num { color: #2f9e44; }
+  .d20-face.roll-mid   .d20-num { color: #e67700; }
+  .d20-face.roll-low   .d20-num { color: #c92a2a; }
+
+  /* insurance disaster states */
+  .d20-face.ins-disaster { background: #ffe3e3; }
+  .d20-face.ins-safe     { background: #d3f9d8; }
+  .d20-face.ins-disaster .d20-num { color: #c92a2a; }
+  .d20-face.ins-safe     .d20-num { color: #2f9e44; }
+
+  /* insurance section fade-in */
+  #insurance-section {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  #insurance-section.visible {
+    opacity: 1;
+  }
+</style>
+
+<!-- ── Toy demand dice ── -->
+<div class="d-flex flex-wrap justify-content-center gap-3">
+
+  {% for decision in turn.production_decisions.all %}
+  <div class="col-auto text-center">
+    <div class="dice-box bg-light border rounded py-2 fs-5 p-2">
+
+      <div class="mb-1">{{ decision.toy.name }}</div>
+
+      <div class="dice-roll-wrap"
+           style="height:90px; display:flex; align-items:center; justify-content:center;"
+           data-roll="{{ decision.roll|default:0 }}"
+           data-demand="{{ decision.demand_percent|default:0 }}"
+           data-manufactured="{{ decision.units_manufactured|default:0 }}"
+           data-boost="{{ decision.demand_boost_applied|default:0 }}">
+        <div class="d20-face">
+          <span class="d20-num">1</span>
+        </div>
+      </div>
+
+      <div class="dice-info"></div>
+      <div class="boost-countup" style="display:none;"></div>
+
+    </div>
+  </div>
+  {% endfor %}
+
+</div>
+
+<!-- ── Insurance disaster dice ── -->
+{% if turn.insurance_decisions.all %}
+<div id="insurance-section" class="mt-4">
+
+  <h5 class="text-center mb-3">🛡 Disaster Roll</h5>
+
+  <div class="d-flex flex-wrap justify-content-center gap-3">
+
+    {% for outcome in turn.insurance_decisions.all %}
+    <div class="col-auto text-center">
+      <div class="dice-box bg-light border rounded py-2 fs-5 p-2">
+
+        <div class="mb-1">{{ outcome.insurance_event.name }}</div>
+
+        {% if outcome.coverage_active %}
+          <div style="height:90px; display:flex; align-items:center; justify-content:center; font-size:2.5rem; color:#20c997;">
+            🛡
+          </div>
+          <div class="dice-info">
+            <small class="text-success fw-semibold">Insured</small><br>
+            <small class="text-muted">Premium: ${{ outcome.premium_cost }}</small>
+          </div>
+
+        {% else %}
+          <div class="ins-dice-wrap"
+               style="height:90px; display:flex; align-items:center; justify-content:center;"
+               data-roll="{{ outcome.dice_roll|default:1 }}"
+               data-disaster="{{ outcome.disaster_cost_realized }}">
+            <div class="d20-face">
+              <span class="d20-num">1</span>
+            </div>
+          </div>
+          <div class="dice-info disaster-info"></div>
+
+        {% endif %}
+
+      </div>
+    </div>
+    {% endfor %}
+
+  </div>
+</div>
+{% endif %}
+
+<button class="btn btn-primary w-100 mt-3"
+        id="continue-btn"
+        style="display:none;"
+        onclick="window.location.href='{% url 'turn-summary' %}'">
+  Continue to Financial Results
+</button>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  const toyWraps    = document.querySelectorAll(".dice-roll-wrap");
+  const insWraps    = document.querySelectorAll(".ins-dice-wrap");
+  const insSection  = document.getElementById("insurance-section");
+  const continueBtn = document.getElementById("continue-btn");
+
+  let toyAnimsRemaining = toyWraps.length;
+
+  /* ── Add hexagon outline SVG to a face on finalize ── */
+  function addOutline(face, strokeColor) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;';
+    svg.setAttribute('viewBox', '0 0 80 80');
+    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    poly.setAttribute('points', '40,2 76,20 76,60 40,78 4,60 4,20');
+    poly.setAttribute('fill', 'none');
+    poly.setAttribute('stroke-width', '2.5');
+    poly.setAttribute('stroke', strokeColor);
+    svg.appendChild(poly);
+    face.appendChild(svg);
+  }
+
+  /* ── Called once all toy dice have settled ── */
+  function runInsuranceDice() {
+    if (insSection) insSection.classList.add("visible");
+
+    insWraps.forEach(function (wrap, index) {
+      const finalVal   = parseInt(wrap.dataset.roll) || 1;
+      const disaster   = parseFloat(wrap.dataset.disaster) || 0;
+      const isDisaster = disaster > 0;
+      const face       = wrap.querySelector('.d20-face');
+      const numSpan    = face.querySelector('.d20-num');
+
+      let step = 0;
+      const totalSteps = 12 + Math.floor(Math.random() * 8);
+      let currentDelay = 25;
+
+      function animate() {
+        numSpan.textContent = Math.floor(Math.random() * 20) + 1;
+
+        const maxHeight   = 35;
+        const currentJump = Math.max(0, maxHeight - (step * 2.5));
+        const yOffset     = step % 2 === 0 ? -currentJump : 0;
+        const squash      = (step % 2 !== 0 && step > totalSteps - 4) ? 0.85 : 1;
+
+        face.style.transform  = `translateY(${yOffset}px) scaleY(${squash})`;
+        face.style.transition = `transform ${currentDelay}ms ease-out`;
+
+        step++;
+        if (step < totalSteps) {
+          currentDelay += 15;
+          setTimeout(animate, currentDelay);
+        } else {
+          finalize();
+        }
+      }
+
+      function finalize() {
+        face.style.transform = "translateY(0) scaleY(1)";
+        numSpan.textContent  = finalVal;
+
+        face.classList.remove('roll-high', 'roll-mid', 'roll-low');
+        face.classList.add(isDisaster ? 'ins-disaster' : 'ins-safe');
+
+        const strokeColor = isDisaster ? '#c92a2a' : '#2f9e44';
+        addOutline(face, strokeColor);
+
+        const infoDiv = wrap.closest('.dice-box').querySelector('.disaster-info');
+        if (isDisaster) {
+          infoDiv.innerHTML = `<small class="text-danger fw-semibold">💥 $${Math.round(disaster).toLocaleString()} loss</small>`;
+        } else {
+          infoDiv.innerHTML = `<small class="text-success">✅ No disaster</small>`;
+        }
+
+        if (index === insWraps.length - 1) {
+          setTimeout(function () { continueBtn.style.display = 'block'; }, 400);
+        }
+      }
+
+      setTimeout(animate, index * 200);
+    });
+
+    if (insWraps.length === 0) {
+      setTimeout(function () { continueBtn.style.display = 'block'; }, 400);
+    }
+  }
+
+  /* ── Toy dice ── */
+  if (toyAnimsRemaining === 0) {
+    runInsuranceDice();
+    return;
+  }
+
+  toyWraps.forEach(function (wrap, index) {
+    const finalVal        = parseInt(wrap.dataset.roll)         || 1;
+    const demandPercent   = wrap.dataset.demand                 || 0;
+    const unitsMade       = parseInt(wrap.dataset.manufactured) || 0;
+    const boostApplied    = parseFloat(wrap.dataset.boost)      || 0;
+    const boostPct        = Math.round(boostApplied * 100);
+    const face            = wrap.querySelector('.d20-face');
+    const numSpan         = face.querySelector('.d20-num');
+
+    if (unitsMade === 0) {
+      numSpan.textContent        = '—';
+      face.style.background      = 'transparent';
+      face.style.clipPath        = 'none';
+      numSpan.style.fontSize     = '1.5rem';
+      numSpan.style.color        = '#adb5bd';
+      const infoDiv = wrap.closest('.dice-box').querySelector('.dice-info');
+      infoDiv.innerHTML = '<small class="text-muted">Not produced</small>';
+
+      toyAnimsRemaining--;
+      if (toyAnimsRemaining === 0) setTimeout(runInsuranceDice, 600);
+      return;
+    }
+
+    let step = 0;
+    const totalSteps = 12 + Math.floor(Math.random() * 8);
+    let currentDelay = 25;
+
+    function animate() {
+      numSpan.textContent = Math.floor(Math.random() * 20) + 1;
+
+      const maxHeight   = 35;
+      const currentJump = Math.max(0, maxHeight - (step * 2.5));
+      const yOffset     = step % 2 === 0 ? -currentJump : 0;
+      const squash      = (step % 2 !== 0 && step > totalSteps - 4) ? 0.85 : 1;
+
+      face.style.transform  = `translateY(${yOffset}px) scaleY(${squash})`;
+      face.style.transition = `transform ${currentDelay}ms ease-out`;
+
+      step++;
+      if (step < totalSteps) {
+        currentDelay += 15;
+        setTimeout(animate, currentDelay);
+      } else {
+        finalize();
+      }
+    }
+
+    function finalize() {
+      face.style.transform = "translateY(0) scaleY(1)";
+      numSpan.textContent  = finalVal;
+
+      face.classList.remove('roll-high', 'roll-mid', 'roll-low');
+      if      (finalVal > 13) face.classList.add('roll-high');
+      else if (finalVal > 6)  face.classList.add('roll-mid');
+      else                    face.classList.add('roll-low');
+
+      const strokeColor = finalVal > 13 ? '#2f9e44' : finalVal > 6 ? '#e67700' : '#c92a2a';
+      addOutline(face, strokeColor);
+
+      const infoDiv = wrap.closest('.dice-box').querySelector('.dice-info');
+      infoDiv.innerHTML = `<small>Demand: ${demandPercent}% | Units: ${unitsMade}</small>`;
+
+      if (boostPct > 0) {
+        const boostDiv = wrap.closest('.dice-box').querySelector('.boost-countup');
+        boostDiv.style.display = 'flex';
+        boostDiv.innerHTML = `<span class="boost-arrow">↑</span><span class="boost-num">0</span>% ad boost`;
+        const bNum = boostDiv.querySelector('.boost-num');
+        setTimeout(function () {
+          boostDiv.classList.add('show');
+          var start = null;
+          var dur   = 600;
+          function countUp(ts) {
+            if (!start) start = ts;
+            var prog = Math.min((ts - start) / dur, 1);
+            bNum.textContent = Math.round(prog * boostPct);
+            if (prog < 1) requestAnimationFrame(countUp);
+          }
+          requestAnimationFrame(countUp);
+        }, 200);
+      }
+
+      toyAnimsRemaining--;
+      if (toyAnimsRemaining === 0) setTimeout(runInsuranceDice, 600);
+    }
+
+    setTimeout(animate, index * 200);
+  });
+
+});
+</script>
+
+{% endblock %}

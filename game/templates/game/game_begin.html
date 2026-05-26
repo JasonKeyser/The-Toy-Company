@@ -1,0 +1,105 @@
+{% extends "game/base.html" %}
+{% block content %}
+
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8">
+
+      <!-- ===================== -->
+      <!-- Game Rules Card -->
+      <!-- ===================== -->
+      <div class="card shadow-sm border-0 mb-5">
+        <div class="card-body text-center">
+
+          <h3 class="card-title text-center mb-4">🧸 The Toy Company</h3>
+
+          <ul class="list-group list-group-flush mb-4">
+            <li class="list-group-item">
+              Are you savvy enough to run a toy factory?
+            </li>
+            <li class="list-group-item">
+              Decide each year what toys to manufacture and how spend/invest company money.
+            </li>
+            <li class="list-group-item">
+              Make it to a networth of $1 million in 30 years without going bankrupt and you win!
+            </li>
+          </ul>
+
+          <!-- Expandable Background Section -->
+          <div class="text-center mb-3">
+            <button
+              class="btn btn-outline-secondary btn-sm"
+              type="button"
+              data-toggle="collapse"
+              data-target="#gameBackground"
+              aria-expanded="false"
+              aria-controls="gameBackground">
+              Scenario Background
+            </button>
+          </div>
+
+          <div class="collapse" id="gameBackground">
+            <div class="card card-body bg-light">
+              <h5 class="mb-3">Toy Company Background</h5>
+              <p>
+                You are an ambitious twenty-year old who has just inherited the modest family toy factory. You do not wish to run the factory conservatively like your parents and grandparents - instead you want to grow the business massively, and make enough money to buy an oceanside property in the bahamas - but be careful; if you don't balance risk and reward properly you may run your business into the ground and squander everything.
+              </p>
+              <p>
+                You have a small runway of savings built up, and wish to make investments in equipment and infrastructure to operate more efficiently. You have fixed cost in the way of renting the factory. You will have to battle against capacity issues, as your factory has limited floor space for manufacturing, and of course the highly unpredictable demand for children's toys.
+              </p>
+              <p class="mb-0">
+                Win when you have reached enough money to retire in your Bahama Dream Property before you are too old to enjoy it!
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ===================== -->
+      <!-- Start Game Card -->
+      <!-- ===================== -->
+      <div class="card shadow p-4">
+        <h2 class="card-title text-center mb-4">Start a New Game</h2>
+
+        <form method="post" action="{% url 'game-begin' %}">
+          {% csrf_token %}
+
+          <!-- Difficulty Selection -->
+          <div class="form-group mb-4">
+            <label for="difficulty">Select Difficulty</label>
+            <select class="form-control" id="difficulty" name="difficulty" required>
+              <option value="" disabled selected>Choose difficulty</option>
+              <option value="easy">Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+          </div>
+
+          <!-- Factory Name -->
+          <div class="form-group mb-4">
+            <label for="factory_name">Company Name</label>
+            <input
+              type="text"
+              class="form-control"
+              id="factory_name"
+              name="factory_name"
+              placeholder="e.g. Tinker Toy Co."
+              maxlength="100"
+            />
+            <small class="form-text text-muted">What will you name your toy empire?</small>
+          </div>
+
+          <!-- Start Game Button -->
+          <button type="submit" class="btn btn-primary btn-block btn-lg">
+            Start Game
+          </button>
+
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% endblock content %}

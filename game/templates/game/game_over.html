@@ -1,0 +1,68 @@
+{% extends "game/base.html" %}
+{% load accounting_tags %}
+{% block content %}
+
+<div class="d-flex flex-column justify-content-center align-items-center" style="min-height: 70vh;">
+
+  <!-- Win / Lose Alert -->
+  {% if player.status == "won" %}
+    <div class="alert alert-success text-center py-4 w-100">
+      <h1 class="display-4">{{ player.company_name }} won on {{ player.difficulty.name }} mode!</h1>
+      <p class="lead">Congratulations! 🎉</p>
+    </div>
+
+    <button
+      class="btn btn-success btn-lg mb-3"
+      type="button"
+      data-toggle="collapse"
+      data-target="#beachHouseReveal"
+      aria-expanded="false"
+      aria-controls="beachHouseReveal">
+      🏖️ Click to See Your Beach Property
+    </button>
+
+    <div class="collapse" id="beachHouseReveal">
+      <img id="beach-house-img"
+       src=""
+       alt="Your Bahamas beach house"
+       class="img-fluid rounded shadow mb-4"
+       style="max-width: 800px;">
+    </div>
+
+    <script>
+      const beachHouses = [
+        "https://images.unsplash.com/photo-1499793983690-e29da59ef1c2",
+        "https://images.unsplash.com/photo-1517541866997-ea18e32ea9e9?q=80&w=880&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+        "https://plus.unsplash.com/premium_photo-1664121799972-98e5aa03d31b?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+        "https://images.unsplash.com/photo-1517541866997-ea18e32ea9e9?q=80&w=1480&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+        "https://images.unsplash.com/photo-1618292227562-76f0595082cb?q=80&w=688&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+      ];
+
+      const randomUrl = beachHouses[Math.floor(Math.random() * beachHouses.length)];
+      document.getElementById('beach-house-img').src = randomUrl;
+    </script>
+
+
+  {% else %}
+    <div class="alert alert-danger text-center py-4 w-100">
+      <h1 class="display-4">Game Over</h1>
+      <p class="lead">
+          {{player.company_name }} {{ player.lost_reason }}
+      </p>
+    </div>
+  {% endif %}
+
+  <!-- Game Stats -->
+  <div class="card bg-secondary text-light text-center mb-4" style="max-width: 400px;">
+    <div class="card-body">
+      <h5 class="card-title">Game Stats</h5>
+      <p class="card-text"><strong>Turns:</strong> {{ player.turn_number }}</p>
+      <p class="card-text"><strong>Total Cash:</strong> {{ player.cash|accounting }}</p>
+    </div>
+  </div>
+
+  <!-- New Game Button -->
+  <a href="{% url 'game-begin' %}" class="btn btn-warning btn-lg">Play Again</a>
+</div>
+
+{% endblock content %}

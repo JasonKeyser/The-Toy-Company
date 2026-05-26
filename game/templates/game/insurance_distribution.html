@@ -1,0 +1,32 @@
+{% extends "game/base.html" %}
+{% load accounting_tags %}
+{% block content %}
+<h2>Insurance Event Distribution - Cost of Disaster per Dice Roll</h2>
+
+<table class="table table-bordered text-center">
+    <thead class="table-dark">
+        <tr>
+            <th>Event</th>
+            {% for i in cost_range %}
+                <th style="font-size: 2rem; line-height: 1;">{{ i }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in insurance_distributions %}
+        <tr>
+            <td>{{ item.insurance_event.name }}</td>
+            {% for cost in item.disaster_costs %}
+                <td>{{ cost|accounting }}</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+<div>
+<a class="mr-2" href="{% url 'game-production' %}">Back to Production Planning</a>
+</div>
+
+{% endblock %}

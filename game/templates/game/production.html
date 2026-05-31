@@ -996,7 +996,7 @@ function fmt(value) {
     expansionTotalDisplay.dataset.value = total;
 
     const s = getCurrentSpends();
-    updateSpendCard(s.cogs, total, s.ad, getInsurancePremiumCost());
+    updateSpendCard(s.cogs, s.capex, s.ad, getInsurancePremiumCost());
   }
 
   /* ── equipment JSON from Django ── */

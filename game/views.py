@@ -180,13 +180,20 @@ def game(request):
         if toyformset.is_valid() and inv_expansion_form.is_valid() and ad_form.is_valid() and coverageformset.is_valid() and equipment_form.is_valid()\
                 and loan_form.is_valid():
 
-            selected_ad_profile = ad_form.cleaned_data.get("ad_campaign")
-            if selected_ad_profile:
-                ad_cost = selected_ad_profile.cost
+            difficulty = player.difficulty
+
+            if difficulty.ads_enabled:
+                selected_ad_profile = ad_form.cleaned_data.get("ad_campaign")
+                if selected_ad_profile:
+                    ad_cost = selected_ad_profile.cost
             else:
+                selected_ad_profile = None
                 ad_cost = 0
 
-            selected_equipment = equipment_form.cleaned_data.get("equipment")
+            if difficulty.equipment_enabled:
+                selected_equipment = equipment_form.cleaned_data.get("equipment")
+            else:
+                selected_equipment = None
 
             if selected_equipment:
                 equipment_cost = selected_equipment.cost
@@ -212,19 +219,19 @@ def game(request):
             insurance_coverage_choices = {}
             premium_cost = 0
 
-            for iform, insurance_event in zip(coverageformset, insurance_events):
-                coverage_taken = iform.cleaned_data.get("coverage_taken", 0)
-                if coverage_taken:
-                    premium_cost += insurance_event.premium_cost
-                insurance_coverage_choices[insurance_event] = coverage_taken
-
-
+            if difficulty.insurance_enabled:
+                for iform, insurance_event in zip(coverageformset, insurance_events):
+                    coverage_taken = iform.cleaned_data.get("coverage_taken", 0)
+                    if coverage_taken:
+                        premium_cost += insurance_event.premium_cost
+                    insurance_coverage_choices[insurance_event] = coverage_taken
 
             extra_space = inv_expansion_form.cleaned_data.get("extra_space", 0)
             expansion_cost = extra_space * player.difficulty.factory_space_cost
 
-            borrowed_amount = loan_form.cleaned_data.get("borrowed_amount", 0)
-            player.cash += borrowed_amount
+            if difficulty.financing_enabled:
+                borrowed_amount = loan_form.cleaned_data.get("borrowed_amount", 0)
+                player.cash += borrowed_amount
 
             rent = player.difficulty.rent_cost
             cogs = toy_cost
@@ -243,7 +250,7 @@ def game(request):
                 player.save()
 
 
-                if selected_ad_profile:
+                if selected_ad_profile and difficulty.ads_enabled:
                     AdvertisingCampaign.objects.create(
                         player=player,
                         profile=selected_ad_profile,

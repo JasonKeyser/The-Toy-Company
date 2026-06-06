@@ -65,6 +65,12 @@ class Difficulty(models.Model):
     rent_cost = models.DecimalField(max_digits=12, decimal_places=2)
     tax_rate = models.DecimalField(max_digits=12, decimal_places=2)
 
+    insurance_enabled = models.BooleanField(default=True)
+    financing_enabled = models.BooleanField(default=True)
+    ads_enabled = models.BooleanField(default=True)
+    equipment_enabled = models.BooleanField(default=True)
+
+
     def __str__(self):
         return self.get_name_display()
 

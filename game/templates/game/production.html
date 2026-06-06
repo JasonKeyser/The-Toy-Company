@@ -555,6 +555,7 @@
           </div>
 
           <!-- Equipment Purchase -->
+          {% if player.difficulty.equipment_enabled %}
           <div class="card mb-3">
             <div class="card-header d-flex align-items-center">
               Equipment Purchase
@@ -594,9 +595,10 @@
               </table>
             </div>
           </div>
-
+          {% endif %}
 
           <!-- Advertisement Campaign -->
+          {% if player.difficulty.ads_enables %}
           <div class="card mb-3">
             <div class="card-header d-flex align-items-center">
               Advertisement Campaign
@@ -633,6 +635,7 @@
               </table>
             </div>
           </div>
+          {% endif %}
 
         </div>
       </div>
@@ -645,6 +648,7 @@
 
 
     <!-- ========== INSURANCE CARD ========== -->
+    {% if player.difficulty.insurance_enabled %}
     <div class="card shadow-sm border-0 mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
         <strong>
@@ -716,9 +720,10 @@
         </div>
       </div>
     </div>
-
+    {% endif %}
 
         <!-- ========== Financing Card ========== -->
+    {% if player.difficulty.financing_enabled %}
     <div class="card shadow-sm border-0 mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
         <strong>🏦 Financing
@@ -782,7 +787,7 @@
               </table>
             </div>
           </div>
-
+          {% endif %}
 
         </div>
       </div>
@@ -893,8 +898,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const scUsageLabel = document.getElementById('sc-usage-label');
   const scWarning    = document.getElementById('sc-over-budget-warning');
 
-
-function fmt(value) {
+  function fmt(value) {
     if (value === 0) return '-';
     const isWhole = value === Math.floor(value);
     const formatted = isWhole
@@ -902,7 +906,7 @@ function fmt(value) {
         : (Math.round(value * 10) / 10).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     if (value < 0 ) return '($' + formatted * -1 + ')';
     return '$' + formatted;
-}
+  }
 
   function barPct(value, max) {
     if (max === 0) return 0;
@@ -942,7 +946,7 @@ function fmt(value) {
     return {
       cogs:  parseFloat(grandTotalCostDisplay.dataset.value) || 0,
       capex: parseFloat(expansionTotalDisplay.dataset.value) + (parseFloat(equipCostEl?.dataset.value) || 0),
-      ad:    parseFloat(adCostDisplay.dataset.value)         || 0,
+      ad:    parseFloat(adCostDisplay?.dataset.value) || 0,  // ✅ added ?.
     };
   }
 
@@ -1010,13 +1014,11 @@ function fmt(value) {
     const equipSaveEl  = document.getElementById('equipment-savings');
 
     if (eq) {
-      equipCostEl.textContent    = fmt(eq.cost);
-      equipCostEl.dataset.value  = eq.cost;
-      equipSaveEl.textContent    = Math.round((1 - eq.cost_savings_percent) * 100) + '% cost reduction';
+      if (equipCostEl) { equipCostEl.textContent = fmt(eq.cost); equipCostEl.dataset.value = eq.cost; }        // ✅ null guard
+      if (equipSaveEl) { equipSaveEl.textContent = Math.round((1 - eq.cost_savings_percent) * 100) + '% cost reduction'; }  // ✅ null guard
     } else {
-      equipCostEl.textContent   = '-';
-      equipCostEl.dataset.value = 0;
-      equipSaveEl.textContent   = '-';
+      if (equipCostEl) { equipCostEl.textContent = '-'; equipCostEl.dataset.value = 0; }  // ✅ null guard
+      if (equipSaveEl) { equipSaveEl.textContent = '-'; }                                  // ✅ null guard
     }
 
     const s = getCurrentSpends();
@@ -1034,28 +1036,28 @@ function fmt(value) {
     if (profile) {
       const schedule = profile.boost_schedule;
 
-      adCostDisplay.textContent   = fmt(profile.cost);
-      adCostDisplay.dataset.value = profile.cost;
+      if (adCostDisplay) { adCostDisplay.textContent = fmt(profile.cost); adCostDisplay.dataset.value = profile.cost; }  // ✅ null guard
 
       /* ── Boost schedule pills ── */
-      adScheduleDisplay.innerHTML = schedule.map(function(v, i) {
-        const pct = Math.round(v * 100);
-        const bg  = pct >= 20 ? '#d3f9d8' : pct >= 10 ? '#fff3bf' : pct > 0 ? '#ffe3e3': '#d3d3d3';
-        const col = pct >= 20 ? '#2f9e44' : pct >= 10 ? '#e67700' : pct > 0 ? '#c92a2a': '#48494B';
-        return '<span style="display:inline-block;background:' + bg + ';color:' + col + ';border-radius:4px;' +
-               'padding:1px 7px;font-size:11px;font-weight:600;margin:1px 2px;white-space:nowrap;">' +
-               '+' + pct + '% T' + (i + 1) +
-               '</span>';
-      }).join('');
+      if (adScheduleDisplay) {  // ✅ null guard
+        adScheduleDisplay.innerHTML = schedule.map(function(v, i) {
+          const pct = Math.round(v * 100);
+          const bg  = pct >= 20 ? '#d3f9d8' : pct >= 10 ? '#fff3bf' : pct > 0 ? '#ffe3e3': '#d3d3d3';
+          const col = pct >= 20 ? '#2f9e44' : pct >= 10 ? '#e67700' : pct > 0 ? '#c92a2a': '#48494B';
+          return '<span style="display:inline-block;background:' + bg + ';color:' + col + ';border-radius:4px;' +
+                 'padding:1px 7px;font-size:11px;font-weight:600;margin:1px 2px;white-space:nowrap;">' +
+                 '+' + pct + '% T' + (i + 1) +
+                 '</span>';
+        }).join('');
+      }
 
     } else {
-      adCostDisplay.textContent     = '-';
-      adCostDisplay.dataset.value   = 0;
-      adScheduleDisplay.innerHTML   = '-';
+      if (adCostDisplay)    { adCostDisplay.textContent = '-'; adCostDisplay.dataset.value = 0; }  // ✅ null guard
+      if (adScheduleDisplay) { adScheduleDisplay.innerHTML = '-'; }                                 // ✅ null guard
     }
 
     const s = getCurrentSpends();
-    updateSpendCard(s.cogs, s.capex, parseFloat(adCostDisplay.dataset.value) || 0, getInsurancePremiumCost());
+    updateSpendCard(s.cogs, s.capex, parseFloat(adCostDisplay?.dataset.value) || 0, getInsurancePremiumCost());  // ✅ added ?.
   }
 
   /* ── event listeners: toy units ── */
@@ -1114,7 +1116,7 @@ function fmt(value) {
   /* ── seed dataset values so cross-calls work on first run ── */
   grandTotalCostDisplay.dataset.value = 0;
   expansionTotalDisplay.dataset.value = 0;
-  adCostDisplay.dataset.value         = 0;
+  if (adCostDisplay) adCostDisplay.dataset.value = 0;  // ✅ null guard
 
   updateCalculations();
   updateExpansionCost();
@@ -1131,7 +1133,6 @@ function fmt(value) {
     this.classList.toggle('open', isOpen);
     document.getElementById('btn-text').textContent = isOpen ? 'see less' : 'see more';
   });
-
 
 });
 </script>

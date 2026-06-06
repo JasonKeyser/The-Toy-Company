@@ -65,6 +65,10 @@ class Difficulty(models.Model):
     rent_cost = models.DecimalField(max_digits=12, decimal_places=2)
     tax_rate = models.DecimalField(max_digits=12, decimal_places=2)
 
+    #financing related
+    min_loan_amount = models.DecimalField(max_digits=12, decimal_places=2, default=100)
+    min_years_of_financial_history = models.IntegerField(default=3)
+
     insurance_enabled = models.BooleanField(default=True)
     financing_enabled = models.BooleanField(default=True)
     ads_enabled = models.BooleanField(default=True)
@@ -205,28 +209,55 @@ class AdvertisingCampaign(models.Model):
         return f"Campaign for {self.player} (turn {self.purchased_on_turn})"
 
 
-class Loan(models.Model):
-    player = models.ForeignKey(Player, on_delete=models.CASCADE) #add a related name?
+class PlayerLoan(models.Model):
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='loans')
+    taken_on_turn = models.IntegerField()
 
-    #term sheet
-    interest_rate = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    loan_length = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    max_leverage_ratio = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    max_amount_available_to_borrow = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    minimum_available_credit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    # Locked-in terms
+    principal = models.DecimalField(max_digits=12, decimal_places=2)
+    annual_interest_rate = models.DecimalField(max_digits=6, decimal_places=4)
+    loan_length = models.IntegerField()  # in turns
+    annual_payment = models.DecimalField(max_digits=12, decimal_places=2)
 
-    #what happened this turn
-    player_able_to_borrow = models.BooleanField(default=False)
-    money_borrowed_this_turn = models.BooleanField(default=False)
-    money_borrowed_on_turn = models.IntegerField(default=0)
-    amount_borrowed = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    # Running balance
+    outstanding_balance = models.DecimalField(max_digits=12, decimal_places=2)
+    is_paid_off = models.BooleanField(default=False)
 
-    #amortization schedule
-    balance_begin_turn = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    balance_end_turn = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    loan_year = models.IntegerField(default=0)
-    principal_payment_due = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    interest_payment_due = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    def compute_annual_payment(self):
+        r = self.annual_interest_rate
+        n = self.loan_length
+        P = self.principal
+        return P * r * (1 + r) ** n / ((1 + r) ** n - 1)
+
+    def interest_due(self):
+        return self.outstanding_balance * self.annual_interest_rate
+
+    def principal_due(self):
+        return self.annual_payment - self.interest_due()
+
+
+# class Loan(models.Model):
+#     player = models.ForeignKey(Player, on_delete=models.CASCADE) #add a related name?
+#
+#     #term sheet
+#     interest_rate = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+#     loan_length = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+#     max_leverage_ratio = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+#     max_amount_available_to_borrow = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+#     minimum_available_credit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+#
+#     #what happened this turn
+#     player_able_to_borrow = models.BooleanField(default=False)
+#     money_borrowed_this_turn = models.BooleanField(default=False)
+#     money_borrowed_on_turn = models.IntegerField(default=0)
+#     amount_borrowed = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+#
+#     #amortization schedule
+#     balance_begin_turn = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+#     balance_end_turn = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+#     loan_year = models.IntegerField(default=0)
+#     principal_payment_due = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+#     interest_payment_due = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
 
 

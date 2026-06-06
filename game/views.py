@@ -3,7 +3,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 import datetime
 from django.contrib.auth.models import User
 from .models import Post, Toy, Player, Turn, ToyProductionOutcome, Difficulty, Game, AdvertisingProfile, \
-    AdvertisingCampaign, InsuranceEvent, Equipment, InsuranceEventOutcome, Loan
+    AdvertisingCampaign, InsuranceEvent, Equipment, InsuranceEventOutcome, PlayerLoan
 from .services.game_engine import GameEngine
 from django.views.generic import (
     ListView,
@@ -154,20 +154,28 @@ def game(request):
     #set loan parameters
     last_turn = Turn.objects.filter(player=player).order_by("-turn_number").first()
     if last_turn:
-        last_turn_EBITDA = last_turn.EBITDA
+        trailing_ebitda = last_turn.EBITDA
     else:
-        last_turn_EBITDA = 0
+        trailing_ebitda = 0
     max_leverage_ratio = 10
-    minimum_available_credit = 100
 
-    loan = Loan.objects.create(
-        player = player,
-        interest_rate = .10,
-        loan_length = 10,
-        max_leverage_ratio = max_leverage_ratio,
-        max_amount_available_to_borrow = max( last_turn_EBITDA * max_leverage_ratio, minimum_available_credit),
-    )
+    # loan = Loan.objects.create(
+    #     player = player,
+    #     interest_rate = .10,
+    #     loan_length = 10,
+    #     max_leverage_ratio = max_leverage_ratio,
+    #     max_amount_available_to_borrow = max( last_turn_EBITDA * max_leverage_ratio, minimum_available_credit),
+    # )
 
+    # trailing_ebitda = compute_trailing_avg_ebitda(player, turns=3)
+    minimum_credit_available = player.difficulty.min_loan_amount
+    min_years_of_financial_history = player.difficulty.min_years_of_financial_history
+    loan_offer = {
+        "interest_rate": 0.10,
+        "loan_length": 10,
+        "max_credit": max( trailing_ebitda * max_leverage_ratio, minimum_credit_available ),
+        "eligible": player.turn_number > min_years_of_financial_history,
+    }
 
     if request.method == "POST":
         toyformset = UnitsFormSet(request.POST, factory_space=player.factory_space, prefix="toys")
@@ -184,8 +192,7 @@ def game(request):
 
             if difficulty.ads_enabled:
                 selected_ad_profile = ad_form.cleaned_data.get("ad_campaign")
-                if selected_ad_profile:
-                    ad_cost = selected_ad_profile.cost
+                ad_cost = selected_ad_profile.cost if selected_ad_profile else 0
             else:
                 selected_ad_profile = None
                 ad_cost = 0
@@ -232,6 +239,14 @@ def game(request):
             if difficulty.financing_enabled:
                 borrowed_amount = loan_form.cleaned_data.get("borrowed_amount", 0)
                 player.cash += borrowed_amount
+                if borrowed_amount > 0:
+                    loan = PlayerLoan.objects.create(
+                        player=player,
+                        taken_on_turn=player.turn_number,
+                        annual_interest_rate= loan_offer["interest_rate"],
+                        loan_length= loan_offer["loan_length"],
+                        principal= borrowed_amount,
+                    )
 
             rent = player.difficulty.rent_cost
             cogs = toy_cost
@@ -279,6 +294,10 @@ def game(request):
                 f"⚙️ {player.equipment_name} now installed! "
                 f"Cost per unit on all toys is reduced by {savings_pct}%."
             )
+        if last_turn == min_years_of_financial_history:
+            notifications.append(
+                f"💵 {player.company_name} now eligible for debt financing! "
+            )
 
         toyformset = UnitsFormSet(factory_space=player.factory_space, prefix="toys")
         coverageformset = CoverageFormSet(prefix="coverage")
@@ -309,7 +328,6 @@ def game(request):
         for e in equipment
     }
 
-
     return render(request, "game/production.html", {
             "player": player,
             "current_boost":current_boost,
@@ -318,8 +336,8 @@ def game(request):
             "coverageformset": coverageformset,
             "insurance_events": insurance_events,
             "inv_expansion_form": inv_expansion_form,
+            "loan_offer": loan_offer,
             "loan_form": loan_form,
-            "loan": loan,
             "ad_form": ad_form,
             "available_ad_profiles": available_ad_profiles,
             "current_boost": round(current_boost * 100),
@@ -328,6 +346,7 @@ def game(request):
             "equipment_form": equipment_form,
             "equipment_json": equipment_json,
             'notifications': notifications,
+
         })
 
 

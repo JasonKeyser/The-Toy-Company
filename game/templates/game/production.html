@@ -772,12 +772,16 @@
                 </thead>
                 <tbody>
                   <tr>
-                    <td>{{ loan.interest_rate }}</td>
-                    <td>{{ loan.loan_length }} years</td>
-                    <td>{{ loan.max_leverage_ratio }}x</td>
-                    <td>{{ loan.max_amount_available_to_borrow }}</td>
+                    <td>{{ loan_offer.interest_rate }}</td>
+                    <td>{{ loan_offer.loan_length }} years</td>
+                    <td>{{ loan_offer.max_leverage_ratio }}x</td>
+                    <td>{{ loan_offer.max_credit }}</td>
                     <td>
-                      {{ loan_form.borrowed_amount }}
+                      {% if loan_offer.eligible %}
+                        {{ loan_form.borrowed_amount }}
+                      {% else %}
+                        <div class="text-muted small mt-1">Must have {{ player.difficulty.min_years_of_financial_history }} years of financial history to take out a loan.</div>
+                      {% endif %}
                       {% if loan_form.borrowed_amount.errors %}
                         <div class="text-danger small">{{ loan_form.borrowed_amount.errors }}</div>
                       {% endif %}

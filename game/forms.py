@@ -58,7 +58,6 @@ class EquipmentForm(forms.Form):
         return equipment_purchased
 
 
-#LOAN FORM HERE NEEDED
 class LoanForm(forms.Form):
     borrowed_amount = forms.IntegerField(
         min_value=0,

@@ -107,11 +107,18 @@ class GameEngine:
         else:
             depreciation = 0
 
-        if player.PlayerLoan.objects.filter(is_paid_off = False) > 0:
-            interest_expense = player.PlayerLoan.objects.filter(is_paid_off = False).interest_due()
-            principal_payment = player.PlayerLoan.objects.filter(is_paid_off = False).principal_due()
-        else:
-            interest_expense = 0
+        active_loans = player.loans.filter(is_paid_off=False)
+        interest_expense = 0
+        principal_payment = 0
+        for loan in active_loans:
+            interest_expense += loan.interest_due()
+            principal_payment += loan.principal_due()
+            loan.outstanding_balance -= loan.annual_payment()
+            if loan.outstanding_balance == 0:
+                loan.is_paid_off = True
+            loan.save()
+
+
         EBT = EBITDA - depreciation - interest_expense
         tax_expense = max( EBT * player.difficulty.tax_rate, 0)
         other_costs = tax_expense + depreciation

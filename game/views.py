@@ -248,7 +248,10 @@ def game(request):
                         annual_interest_rate= loan_offer["interest_rate"],
                         loan_length= loan_offer["loan_length"],
                         principal= borrowed_amount,
+                        outstanding_balance= borrowed_amount,
                     )
+                    loan.annual_payment = loan.compute_annual_payment()
+
 
             rent = player.difficulty.rent_cost
             cogs = toy_cost
@@ -265,6 +268,7 @@ def game(request):
                 player.factory_space += extra_space
                 player.cash -= capex
                 player.save()
+                loan.save()
 
 
                 if selected_ad_profile and difficulty.ads_enabled:

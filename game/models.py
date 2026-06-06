@@ -156,6 +156,7 @@ class Turn(models.Model):
     total_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     taxes = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     depreciation = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    interest_expense = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     EBT = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     other_costs = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     net_income = models.DecimalField(max_digits=12, decimal_places=2, default=0)
@@ -165,6 +166,7 @@ class Turn(models.Model):
     expansion_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     equipment_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     total_capex = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    principal_payment = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     free_cash_flow = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
     beginning_cash = models.DecimalField(max_digits=12, decimal_places=2, default=0)

@@ -107,7 +107,12 @@ class GameEngine:
         else:
             depreciation = 0
 
-        EBT = EBITDA - depreciation
+        if player.PlayerLoan.objects.filter(is_paid_off = False) > 0:
+            interest_expense = player.PlayerLoan.objects.filter(is_paid_off = False).interest_due()
+            principal_payment = player.PlayerLoan.objects.filter(is_paid_off = False).principal_due()
+        else:
+            interest_expense = 0
+        EBT = EBITDA - depreciation - interest_expense
         tax_expense = max( EBT * player.difficulty.tax_rate, 0)
         other_costs = tax_expense + depreciation
         total_cost = total_cogs + operating_expenses + other_costs
@@ -124,6 +129,7 @@ class GameEngine:
         turn.operating_expenses = operating_expenses
         turn.EBITDA = EBITDA
         turn.depreciation = depreciation
+        turn.interest_expense = interest_expense
         turn.taxes = tax_expense
         turn.other_costs = other_costs
         turn.total_cost = total_cost
@@ -136,8 +142,9 @@ class GameEngine:
         turn.equipment_cost = equipment_cost
         turn.total_capex = total_capex
 
-        #eventually need to add non-cash charges to this
-        turn.free_cash_flow = net_income - total_capex + depreciation
+
+        turn.principal_payment = principal_payment
+        turn.free_cash_flow = net_income - total_capex + depreciation - principal_payment
 
         turn.beginning_cash = player.cash #remove any borrowed funds?
         turn.ending_cash = player.cash + turn.free_cash_flow

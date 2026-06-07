@@ -61,7 +61,7 @@ class Difficulty(models.Model):
     max_turns = models.IntegerField(default=20)
     starting_factory_space = models.IntegerField(default=150)
     factory_space_cost = models.DecimalField(max_digits=12, decimal_places=2, null=True)
-    winning_cash = models.DecimalField(max_digits=12, decimal_places=2)
+    winning_networth = models.DecimalField(max_digits=12, decimal_places=2)
     rent_cost = models.DecimalField(max_digits=12, decimal_places=2)
     tax_rate = models.DecimalField(max_digits=12, decimal_places=2)
 
@@ -94,7 +94,8 @@ class Player(models.Model):
     age = models.IntegerField(default=20)
     turn_number = models.IntegerField(default=1)
 
-    cash = models.DecimalField(max_digits=12, decimal_places=0)
+    cash = models.DecimalField(max_digits=12, decimal_places=0, default=0)
+    total_equity = models.DecimalField(max_digits=12, decimal_places=0, default=0)
     factory_space = models.IntegerField(default=150)
 
     status = models.CharField(default="still_playing", null=True,blank=True)
@@ -148,6 +149,7 @@ class Turn(models.Model):
     player = models.ForeignKey(Player, on_delete=models.CASCADE)
     turn_number = models.IntegerField()
 
+    # income_statement
     revenue = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     Cost_of_Goods_Sold = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     gross_profit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
@@ -163,14 +165,49 @@ class Turn(models.Model):
     ad_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     disaster_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     premium_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+
+    # cash flow statement
+    free_cash_flow = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    operating_cf = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+
+    #CFI
     expansion_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     equipment_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     total_capex = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    investing_cf = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    # CFF
     principal_payment = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    free_cash_flow = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    loan_proceeds = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    financing_cf = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    change_in_cash = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
     beginning_cash = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     ending_cash = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+
+    # balance sheet
+    #assets
+    cash = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    # eventually - add inventory
+    gross_equipment = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    accumulated_depreciation_equipment = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    property = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    gross_ppe = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    total_assets = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    #liabilities
+    loans_payable = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    #shareholders equity
+    retained_earnings = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    # eventually will add in equity investors
+    total_equity = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -238,28 +275,6 @@ class PlayerLoan(models.Model):
         return self.annual_payment - self.interest_due()
 
 
-# class Loan(models.Model):
-#     player = models.ForeignKey(Player, on_delete=models.CASCADE) #add a related name?
-#
-#     #term sheet
-#     interest_rate = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-#     loan_length = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-#     max_leverage_ratio = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-#     max_amount_available_to_borrow = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-#     minimum_available_credit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-#
-#     #what happened this turn
-#     player_able_to_borrow = models.BooleanField(default=False)
-#     money_borrowed_this_turn = models.BooleanField(default=False)
-#     money_borrowed_on_turn = models.IntegerField(default=0)
-#     amount_borrowed = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-#
-#     #amortization schedule
-#     balance_begin_turn = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-#     balance_end_turn = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-#     loan_year = models.IntegerField(default=0)
-#     principal_payment_due = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-#     interest_payment_due = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
 
 

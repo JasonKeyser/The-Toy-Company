@@ -133,7 +133,7 @@
     <div>
       <strong>Turn Completed:</strong> {{ turn.turn_number }}/{{ turn.player.difficulty.max_turns }}<br>
       <strong>Ending Cash:</strong> {{ turn.player.cash|accounting_round }}<br>
-      <strong>Cash Goal:</strong> {{ turn.player.difficulty.winning_cash|accounting_round }}
+      <strong>Networth:</strong> {{ turn.player.total_equity|accounting_round }}
     </div>
   </div>
 

@@ -7,7 +7,7 @@ from game.models import Turn, ToyProductionOutcome, Player, InsuranceEventOutcom
 
 
 def check_player_status(player):
-    if player.cash >= player.difficulty.winning_cash:
+    if player.cash >= player.difficulty.winning_networth:
         player.status = "won"
     elif player.cash <= 0:
         player.status = "lost"
@@ -30,16 +30,18 @@ def get_total_boost(player, current_turn):
 
 class GameEngine:
     @transaction.atomic
-    def process_turn(self, player, toy_production_choices, insurance_choices, ad_cost, capex_choices, cost_savings_coefficient):
+    def process_turn(self, player, toy_production_choices, insurance_choices, ad_cost, capex_choices, cost_savings_coefficient, borrowed_amount):
 
         total_revenue = Decimal("0.00")
         total_cogs = Decimal("0.00")
 
         # 1️⃣ Create Turn FIRST
+        last_turn = Turn.objects.filter(player=player).order_by("-turn_number").first()
         turn = Turn.objects.create(
             player=player,
             turn_number=player.turn_number
         )
+
 
         # 2️⃣ Process each toy
         for toy, units_manufactured in toy_production_choices.items():
@@ -119,14 +121,61 @@ class GameEngine:
             loan.save()
 
 
+        # income statement inputs
         EBT = EBITDA - depreciation - interest_expense
         tax_expense = max( EBT * player.difficulty.tax_rate, 0)
         other_costs = tax_expense + depreciation
         total_cost = total_cogs + operating_expenses + other_costs
         net_income = total_revenue - total_cost
+
+        #capex inputs
         expansion_cost = capex_choices['expansion_cost']
         equipment_cost = capex_choices['equipment_cost']
         total_capex = expansion_cost + equipment_cost
+
+        # financing inputs
+        loan_proceeds = borrowed_amount
+        principal_paid = principal_payment
+
+        # ── Cash Flow Statement ───────────────────────
+        operating_cf = net_income + depreciation
+        investing_cf = -total_capex
+        financing_cf = loan_proceeds - principal_paid
+        change_in_cash = operating_cf + investing_cf + financing_cf
+        free_cash_flow = net_income - total_capex + depreciation - (interest_expense * 1 - player.difficulty.tax_rate)
+        # THERE IS A DIFFERENCE BETWEEN FREE CASH FLOW AND CHANGE IN CASH
+            # Free Cashflow is a metric used to measure profitability and ultimately drives business value
+            # Change in cash includes cash flow from financing which is not indicative of business performance but shows the actual change in cash
+
+        # ── Balance Sheet ─────────────────────────────
+        ending_cash = player.cash + change_in_cash
+        gross_equipment = last_turn.gross_equipment + equipment_cost
+        accumulated_depreciation_equipment = last_turn.accumulated_depreciation_equipment + depreciation
+        net_equipment = gross_equipment - accumulated_depreciation_equipment
+        property = last_turn.property + expansion_cost
+        gross_ppe = net_equipment + property
+        loans_payable = player.loans_payable - principal_paid + loan_proceeds
+        retained_earnings = player.retained_earnings + net_income
+
+        starting_retained_earnings = player.difficulty.starting_cash
+        if player.turn_number == 1:
+            retained_earnings += starting_retained_earnings
+
+        total_assets = ending_cash + gross_ppe
+        total_liabilities = loans_payable
+        total_equity = retained_earnings
+
+        # ── Integrity checks ──────────────────────────
+        if total_assets != total_liabilities + total_equity:
+            raise ValueError(
+                f"Balance sheet doesn't balance: "
+                f"assets={total_assets}, L+E={total_liabilities + total_equity}"
+            )
+        if loans_payable != loan.outstanding_balance:
+            raise ValueError(
+                f"Loan Values Don't Match: "
+                f"Loans Payable: {loans_payable}, loan outstanding balance{loan.outstanding_balance}"
+            )
 
 
         # 4️⃣ Save financial summary on Turn
@@ -145,20 +194,45 @@ class GameEngine:
         turn.ad_cost = ad_cost
         turn.disaster_cost = total_disaster_cost_realized
         turn.premium_cost = total_premium_cost
+
+        turn.free_cash_flow = free_cash_flow
+
+        #CFO
+        turn.operating_cf = operating_cf
+
+        #CFI
         turn.expansion_cost = expansion_cost
         turn.equipment_cost = equipment_cost
         turn.total_capex = total_capex
+        turn.investing_cf = investing_cf
 
-
+        #CFF
         turn.principal_payment = principal_payment
-        turn.free_cash_flow = net_income - total_capex + depreciation - principal_payment
+        turn.loan_proceeds = loan_proceeds
+        turn.financing_cf = financing_cf
 
-        turn.beginning_cash = player.cash #remove any borrowed funds?
-        turn.ending_cash = player.cash + turn.free_cash_flow
+        # Balance Sheet
+
+        #assets
+        turn.beginning_cash = player.cash
+        turn.ending_cash = player.cash + change_in_cash
+        turn.gross_equipment = gross_equipment
+        turn.accumulated_depreciation_equipment = accumulated_depreciation_equipment
+        turn.property = property
+        turn.gross_ppe = gross_ppe
+        turn.total_assets = total_assets
+
+        #liabilities
+        turn.loans_payable = loans_payable
+
+        #equity
+        turn.retained_earnings = retained_earnings
+        turn.total_equity = total_equity
+
         turn.save()
 
         # 5️⃣ Update player AFTER Turn is saved
-        player.cash += net_income
+        player.cash += change_in_cash
         player.cost_savings_coefficient = cost_savings_coefficient
         player.turn_number += 1
 

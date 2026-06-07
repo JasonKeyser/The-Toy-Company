@@ -449,7 +449,8 @@
       <div>
         <span class="stat-pill"><span class="pill-label">Turn</span> {{ player.turn_number }} / {{ player.difficulty.max_turns }}</span>
         <span class="stat-pill"><span class="pill-label">Factory Spaces</span> {{ player.factory_space }}</span>
-        <span class="stat-pill" style="margin-bottom: 5px;"><span class="pill-label">Cash</span> {{ player.cash|accounting }} <span class="pill-sep">/</span> <span class="pill-sub">{{ player.difficulty.winning_cash|accounting }}</span></span>
+        <span class="stat-pill" style="margin-bottom: 5px;"><span class="pill-label">Cash</span> {{ player.cash|accounting }}</span>
+        <span class="stat-pill" style="margin-bottom: 5px;"><span class="pill-label">Networth</span> {{ player.total_equity|accounting }} <span class="pill-sep">/</span> <span class="pill-sub">{{ player.difficulty.winning_networth|accounting }}</span></span>
         <br>
         <div id="extra-pills">
           <span class="stat-pill"><span class="pill-label">Rent</span> {{ player.difficulty.rent_cost|accounting }}</span>

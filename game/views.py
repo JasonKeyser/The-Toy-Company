@@ -100,6 +100,7 @@ def game_begin(request):
             difficulty=difficulty_obj,
             name=user.username,
             cash=difficulty_obj.starting_cash,
+            total_equity = difficulty_obj.starting_cash, # no liabilities or other assets at game begin so need this for it BS to balance
             factory_space = difficulty_obj.starting_factory_space,
             company_name = company_name
         )
@@ -150,16 +151,6 @@ def game(request):
 
     equipment = Equipment.objects.all()
     notifications = []
-
-    # loan = Loan.objects.create(
-    #     player = player,
-    #     interest_rate = .10,
-    #     loan_length = 10,
-    #     max_leverage_ratio = max_leverage_ratio,
-    #     max_amount_available_to_borrow = max( last_turn_EBITDA * max_leverage_ratio, minimum_available_credit),
-    # )
-
-    # trailing_ebitda = compute_trailing_avg_ebitda(player, turns=3)
 
     #set loan parameters
     last_turn = Turn.objects.filter(player=player).order_by("-turn_number").first()
@@ -238,11 +229,30 @@ def game(request):
             extra_space = inv_expansion_form.cleaned_data.get("extra_space", 0)
             expansion_cost = extra_space * player.difficulty.factory_space_cost
 
+
             if difficulty.financing_enabled:
                 borrowed_amount = loan_form.cleaned_data.get("borrowed_amount", 0)
-                player.cash += borrowed_amount
+            else:
+                borrowed_amount = 0
+
+            rent = player.difficulty.rent_cost
+            cogs = toy_cost
+            opex = rent + ad_cost + premium_cost
+            capex = expansion_cost + equipment_cost
+
+            total_proposed_spend = cogs + opex + capex
+            if total_proposed_spend > (player.cash + borrowed_amount):
+                toyformset._non_form_errors = toyformset.error_class([
+                    f"Insufficent Funds! Total planned expenditure is ${round(total_proposed_spend, 0)}, but you only have ${round(player.cash + borrowed_amount,0)}."
+                ])
+            else:
+
+                player.factory_space += extra_space
+                player.save()
+
+
                 if borrowed_amount > 0:
-                    loan = PlayerLoan.objects.create(
+                    loan = PlayerLoan(
                         player=player,
                         taken_on_turn=player.turn_number,
                         annual_interest_rate= loan_offer["interest_rate"],
@@ -251,24 +261,7 @@ def game(request):
                         outstanding_balance= borrowed_amount,
                     )
                     loan.annual_payment = loan.compute_annual_payment()
-
-
-            rent = player.difficulty.rent_cost
-            cogs = toy_cost
-            opex = rent + ad_cost + premium_cost
-            capex = expansion_cost + equipment_cost
-
-            total_proposed_spend = cogs + opex + capex
-            if total_proposed_spend > player.cash:
-                toyformset._non_form_errors = toyformset.error_class([
-                    f"Insufficent Funds! Total planned expenditure is ${round(total_proposed_spend, 0)}, but you only have ${round(player.cash,0)}."
-                ])
-            else:
-
-                player.factory_space += extra_space
-                player.cash -= capex
-                player.save()
-                loan.save()
+                    loan.save()
 
 
                 if selected_ad_profile and difficulty.ads_enabled:
@@ -284,7 +277,7 @@ def game(request):
                 }
 
                 engine = GameEngine()
-                turn = engine.process_turn(player, toy_production_choices, insurance_coverage_choices, ad_cost, capex_choices, cost_savings_coefficient)
+                turn = engine.process_turn(player, toy_production_choices, insurance_coverage_choices, ad_cost, capex_choices, cost_savings_coefficient, borrowed_amount)
                 return render(request, "game/dice_roll.html", {"turn": turn})
 
     else:

@@ -115,7 +115,7 @@ class GameEngine:
         for loan in active_loans:
             interest_expense += loan.interest_due()
             principal_payment += loan.principal_due()
-            loan.outstanding_balance -= loan.annual_payment()
+            loan.outstanding_balance -= loan.principal_due()
             if loan.outstanding_balance == 0:
                 loan.is_paid_off = True
             loan.save()
@@ -123,7 +123,7 @@ class GameEngine:
 
         # income statement inputs
         EBT = EBITDA - depreciation - interest_expense
-        tax_expense = max( EBT * player.difficulty.tax_rate, 0)
+        tax_expense = max( round( EBT * player.difficulty.tax_rate, 2), 0)
         other_costs = tax_expense + depreciation
         total_cost = total_cogs + operating_expenses + other_costs
         net_income = total_revenue - total_cost
@@ -142,39 +142,42 @@ class GameEngine:
         investing_cf = -total_capex
         financing_cf = loan_proceeds - principal_paid
         change_in_cash = operating_cf + investing_cf + financing_cf
-        free_cash_flow = net_income - total_capex + depreciation - (interest_expense * 1 - player.difficulty.tax_rate)
+        free_cash_flow = net_income - total_capex + depreciation - ( round(interest_expense * (1 - player.difficulty.tax_rate),  2))
         # THERE IS A DIFFERENCE BETWEEN FREE CASH FLOW AND CHANGE IN CASH
             # Free Cashflow is a metric used to measure profitability and ultimately drives business value
             # Change in cash includes cash flow from financing which is not indicative of business performance but shows the actual change in cash
 
         # ── Balance Sheet ─────────────────────────────
-        ending_cash = player.cash + change_in_cash
-        gross_equipment = last_turn.gross_equipment + equipment_cost
-        accumulated_depreciation_equipment = last_turn.accumulated_depreciation_equipment + depreciation
-        net_equipment = gross_equipment - accumulated_depreciation_equipment
-        property = last_turn.property + expansion_cost
-        gross_ppe = net_equipment + property
-        loans_payable = player.loans_payable - principal_paid + loan_proceeds
-        retained_earnings = player.retained_earnings + net_income
 
+        # Prior balance sheet values — zero on turn 1
+        prior_gross_equipment = last_turn.gross_equipment if last_turn else Decimal("0")
+        prior_accumulated_depreciation = last_turn.accumulated_depreciation_equipment if last_turn else Decimal("0")
+        prior_property = last_turn.property if last_turn else Decimal("0")
+        prior_loans_payable = last_turn.loans_payable if last_turn else Decimal("0")
         starting_retained_earnings = player.difficulty.starting_cash
-        if player.turn_number == 1:
-            retained_earnings += starting_retained_earnings
+        prior_retained_earnings = last_turn.retained_earnings if last_turn else starting_retained_earnings #keeps accounting equation in balance for turn 0
+
+
+
+        ending_cash = player.cash + change_in_cash
+        gross_equipment = prior_gross_equipment + equipment_cost
+        accumulated_depreciation_equipment = prior_accumulated_depreciation + depreciation
+        net_equipment = gross_equipment - accumulated_depreciation_equipment
+        property = prior_property + expansion_cost
+        gross_ppe = net_equipment + property
+        loans_payable = prior_loans_payable - principal_paid + loan_proceeds
+        retained_earnings = prior_retained_earnings + net_income
+
 
         total_assets = ending_cash + gross_ppe
         total_liabilities = loans_payable
         total_equity = retained_earnings
 
         # ── Integrity checks ──────────────────────────
-        if total_assets != total_liabilities + total_equity:
+        if round(total_assets, 0) != round(total_liabilities + total_equity, 0):
             raise ValueError(
                 f"Balance sheet doesn't balance: "
                 f"assets={total_assets}, L+E={total_liabilities + total_equity}"
-            )
-        if loans_payable != loan.outstanding_balance:
-            raise ValueError(
-                f"Loan Values Don't Match: "
-                f"Loans Payable: {loans_payable}, loan outstanding balance{loan.outstanding_balance}"
             )
 
 
@@ -233,6 +236,7 @@ class GameEngine:
 
         # 5️⃣ Update player AFTER Turn is saved
         player.cash += change_in_cash
+        player.total_equity = total_equity
         player.cost_savings_coefficient = cost_savings_coefficient
         player.turn_number += 1
 

@@ -344,6 +344,10 @@
 
   /* ── Boost schedule pills ── */
   #ad-campaign-schedule { line-height: 1.8; }
+
+
+  #spend-card .sc-bar-loan { background: #2f9e44; }
+
 </style>
 
 <!-- ═══════════════ FLOATING SPEND CARD ═══════════════ -->
@@ -389,6 +393,22 @@
   </div>
   <div class="sc-usage-label" id="sc-usage-label">0% of cash used</div>
   <div class="sc-over-budget-warning" id="sc-over-budget-warning">⚠ Insufficient Funds!</div>
+
+  <hr class="sc-divider">
+
+  <!-- ── Funding section ── -->
+  {% if player.difficulty.financing_enabled %}
+  <div class="sc-title">💵 Funding</div>
+  <div class="sc-row">
+    <div class="sc-row-header">
+      <span class="sc-label">Loan Proceeds</span>
+      <span class="sc-amount" id="sc-loan-proceeds" style="color: #2f9e44;">+$0</span>
+    </div>
+  </div>
+  {% endif %}
+
+
+
 
   <!-- ── Ad Boost section ── -->
   <hr class="sc-divider">
@@ -780,8 +800,10 @@
                     <td>
                       {% if loan_offer.eligible %}
                         {{ loan_form.borrowed_amount }}
-                      {% else %}
+                      {% elif loan_offer.min_yrs_met == False %}
                         <div class="text-muted small mt-1">{{ player.difficulty.min_years_of_financial_history }} years of financial history required to take out a loan.</div>
+                      {% elif loan_offer.current_loan_outstanding == False %}
+                        <div class="text-muted small mt-1">Current Loan Outstanding</div>
                       {% endif %}
                       {% if loan_form.borrowed_amount.errors %}
                         <div class="text-danger small">{{ loan_form.borrowed_amount.errors }}</div>
@@ -918,30 +940,43 @@ document.addEventListener('DOMContentLoaded', function () {
     return Math.min(100, Math.round((value / max) * 100));
   }
 
+  function getLoanProceeds() {
+    const loanInput = document.querySelector('#id_borrowed_amount');
+    return parseFloat(loanInput?.value) || 0;
+  }
+
   function updateSpendCard(cogs, capex, adCost, premiumCost) {
     premiumCost = premiumCost || 0;
-    const opex   = rentCost + adCost + premiumCost;
-    const total  = cogs + opex + capex;
-    const maxBar = Math.max(cogs, opex, capex, 1);
+    const loanProceeds  = getLoanProceeds();
+    const opex          = rentCost + adCost + premiumCost;
+    const total         = cogs + opex + capex;
+    const effectiveCash = total_cash_available + loanProceeds;
+    const maxBar        = Math.max(cogs, opex, capex, 1);
 
     scCogs.textContent  = fmt(cogs);
     scOpex.textContent  = fmt(opex);
     scCapex.textContent = fmt(capex);
     scTotal.textContent = fmt(total);
-    document.getElementById('sc-remaining').textContent = fmt(total_cash_available - total);
+    document.getElementById('sc-remaining').textContent = fmt(effectiveCash - total);
 
     scBarCogs.style.width  = barPct(cogs, maxBar)  + '%';
     scBarOpex.style.width  = barPct(opex, maxBar)  + '%';
     scBarCapex.style.width = barPct(capex, maxBar) + '%';
 
-    const usagePct = total_cash_available > 0
-      ? Math.min(100, Math.round((total / total_cash_available) * 100))
+    /* ── loan proceeds display ── */
+    const scLoanProceeds = document.getElementById('sc-loan-proceeds');
+    if (scLoanProceeds) {
+      scLoanProceeds.textContent = loanProceeds > 0 ? '+' + fmt(loanProceeds) : '$0';
+    }
+
+    const usagePct = effectiveCash > 0
+      ? Math.min(100, Math.round((total / effectiveCash) * 100))
       : 0;
 
     scUsageBar.style.width   = usagePct + '%';
-    scUsageLabel.textContent = usagePct + '% of cash used';
+    scUsageLabel.textContent = usagePct + '% of available funds used';
 
-    const overBudget = total > total_cash_available;
+    const overBudget = total > effectiveCash;
     scUsageBar.classList.toggle('over-budget', overBudget);
     scWarning.style.display = overBudget ? 'block' : 'none';
   }
@@ -951,7 +986,7 @@ document.addEventListener('DOMContentLoaded', function () {
     return {
       cogs:  parseFloat(grandTotalCostDisplay.dataset.value) || 0,
       capex: parseFloat(expansionTotalDisplay.dataset.value) + (parseFloat(equipCostEl?.dataset.value) || 0),
-      ad:    parseFloat(adCostDisplay?.dataset.value) || 0,  // ✅ added ?.
+      ad:    parseFloat(adCostDisplay?.dataset.value) || 0,
     };
   }
 
@@ -1019,11 +1054,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const equipSaveEl  = document.getElementById('equipment-savings');
 
     if (eq) {
-      if (equipCostEl) { equipCostEl.textContent = fmt(eq.cost); equipCostEl.dataset.value = eq.cost; }        // ✅ null guard
-      if (equipSaveEl) { equipSaveEl.textContent = Math.round((1 - eq.cost_savings_percent) * 100) + '% cost reduction'; }  // ✅ null guard
+      if (equipCostEl) { equipCostEl.textContent = fmt(eq.cost); equipCostEl.dataset.value = eq.cost; }
+      if (equipSaveEl) { equipSaveEl.textContent = Math.round((1 - eq.cost_savings_percent) * 100) + '% cost reduction'; }
     } else {
-      if (equipCostEl) { equipCostEl.textContent = '-'; equipCostEl.dataset.value = 0; }  // ✅ null guard
-      if (equipSaveEl) { equipSaveEl.textContent = '-'; }                                  // ✅ null guard
+      if (equipCostEl) { equipCostEl.textContent = '-'; equipCostEl.dataset.value = 0; }
+      if (equipSaveEl) { equipSaveEl.textContent = '-'; }
     }
 
     const s = getCurrentSpends();
@@ -1041,10 +1076,9 @@ document.addEventListener('DOMContentLoaded', function () {
     if (profile) {
       const schedule = profile.boost_schedule;
 
-      if (adCostDisplay) { adCostDisplay.textContent = fmt(profile.cost); adCostDisplay.dataset.value = profile.cost; }  // ✅ null guard
+      if (adCostDisplay) { adCostDisplay.textContent = fmt(profile.cost); adCostDisplay.dataset.value = profile.cost; }
 
-      /* ── Boost schedule pills ── */
-      if (adScheduleDisplay) {  // ✅ null guard
+      if (adScheduleDisplay) {
         adScheduleDisplay.innerHTML = schedule.map(function(v, i) {
           const pct = Math.round(v * 100);
           const bg  = pct >= 20 ? '#d3f9d8' : pct >= 10 ? '#fff3bf' : pct > 0 ? '#ffe3e3': '#d3d3d3';
@@ -1057,12 +1091,12 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
     } else {
-      if (adCostDisplay)    { adCostDisplay.textContent = '-'; adCostDisplay.dataset.value = 0; }  // ✅ null guard
-      if (adScheduleDisplay) { adScheduleDisplay.innerHTML = '-'; }                                 // ✅ null guard
+      if (adCostDisplay)    { adCostDisplay.textContent = '-'; adCostDisplay.dataset.value = 0; }
+      if (adScheduleDisplay) { adScheduleDisplay.innerHTML = '-'; }
     }
 
     const s = getCurrentSpends();
-    updateSpendCard(s.cogs, s.capex, parseFloat(adCostDisplay?.dataset.value) || 0, getInsurancePremiumCost());  // ✅ added ?.
+    updateSpendCard(s.cogs, s.capex, parseFloat(adCostDisplay?.dataset.value) || 0, getInsurancePremiumCost());
   }
 
   /* ── event listeners: toy units ── */
@@ -1106,6 +1140,15 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
+  /* ── event listeners: loan amount ── */
+  const loanInput = document.querySelector('#id_borrowed_amount');
+  if (loanInput) {
+    loanInput.addEventListener('input', function () {
+      const s = getCurrentSpends();
+      updateSpendCard(s.cogs, s.capex, s.ad, getInsurancePremiumCost());
+    });
+  }
+
   /* ── on page load: restore saved insurance choices ── */
   document.querySelectorAll('.remember-checkbox').forEach(function(cb) {
     const eventId = cb.dataset.eventId;
@@ -1121,14 +1164,12 @@ document.addEventListener('DOMContentLoaded', function () {
   /* ── seed dataset values so cross-calls work on first run ── */
   grandTotalCostDisplay.dataset.value = 0;
   expansionTotalDisplay.dataset.value = 0;
-  if (adCostDisplay) adCostDisplay.dataset.value = 0;  // ✅ null guard
+  if (adCostDisplay) adCostDisplay.dataset.value = 0;
 
   updateCalculations();
   updateExpansionCost();
   updateAdCost();
 
-  /* updateSpendCard once more after restoring saved choices so
-     premiums from remembered selections are reflected immediately */
   const s = getCurrentSpends();
   updateSpendCard(s.cogs, s.capex, s.ad, getInsurancePremiumCost());
 

@@ -162,12 +162,21 @@ def game(request):
 
     minimum_credit_available = player.difficulty.min_loan_amount
     min_years_of_financial_history = player.difficulty.min_years_of_financial_history
+    min_yrs_met = player.turn_number > min_years_of_financial_history
+    active_loans = player.loans.filter(is_paid_off=False)
+    if active_loans.count() > 0:
+        current_loan_outstanding = True
+    else:
+        current_loan_outstanding = False
+
     loan_offer = {
         "interest_rate": 0.10,
         "loan_length": 10,
         "max_leverage_ratio": max_leverage_ratio,
         "max_credit": max( trailing_ebitda * max_leverage_ratio, minimum_credit_available ),
-        "eligible": player.turn_number > min_years_of_financial_history,
+        "eligible": (min_yrs_met == True) and (current_loan_outstanding == False),
+        "min_yrs_met": min_yrs_met,
+        "current_loan_outstanding": current_loan_outstanding,
     }
 
     if request.method == "POST":

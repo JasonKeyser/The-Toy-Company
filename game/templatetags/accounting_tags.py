@@ -74,4 +74,4 @@ def accounting_round_exp(value):
 
 @register.filter
 def percentage(value):
-    return format( round(value, 2), "%")
+    return format( round(value, 2), ".0%")

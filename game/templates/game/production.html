@@ -583,7 +583,7 @@
               <div class="ad-tooltip-wrap">
                 <span class="qmark">?</span>
                 <div class="tooltip-box">
-                  Purchase equipment to reduce your cost per unit on all toys.
+                  Purchase equipment to reduce your cost per unit on all toys. <br><br>
                   Equipment can only be purchased once per game and takes effect on the following turn.
                   Equipment is depreciated over a useful life of 10 years (cost savings will continue).
                 </div>
@@ -626,7 +626,7 @@
               <div class="ad-tooltip-wrap">
                 <span class="qmark">?</span>
                 <div class="tooltip-box">
-                  Advertising campaigns boost demand for your toys over the next few turns (new demand % = demand % * (1 + boost %) ), then tapers off to zero.
+                  Advertising campaigns boost demand for your toys over the next few turns (new demand % = demand % * (1 + boost %) ), then tapers off to zero. <br><br>
                   The cost is deducted immediately this turn. Boosts will be applied in the next turn. Demand maxes out at 100%.
                 </div>
               </div>
@@ -677,7 +677,7 @@
           <div class="insurance-tooltip-wrap">
             <span class="qmark">?</span>
             <div class="tooltip-box">
-              Pay a fixed premium now to avoid a potentially larger disaster cost this turn.
+              Pay a fixed premium now to avoid a potentially larger disaster cost this turn. <br><br>
               If you assume the risk and a disaster occurs, the full disaster cost is deducted from your cash.
               See Insurance Event distributions to see the likelihood of a disaster for each event.
             </div>
@@ -767,6 +767,9 @@
       </div>
 
       <div class="collapse" id="financingPanel">
+        <div class="px-3 pt-2 pb-1">
+          <a href="{% url 'interest_rate_distribution' %}" class="small">Interest Rate Distribution</a>
+        </div>
         <div class="card-body bg-light">
 
           <!-- Loan -->
@@ -776,7 +779,10 @@
               <div class="ad-tooltip-wrap">
                 <span class="qmark">?</span>
                 <div class="tooltip-box">
-                  Take on a debt investor.
+                  Increase funding for your business by taking on a loan. Borrow up to the Max Credit Available. Money becomes available within the same turn. <br><br>
+                  Repay the loan over the tenure with straight-line payments. Interest rates will fluctuate over time but once you borrow you lock in that rate.
+                  You cannot borrow more money until you pay off any outstanding loans. <br><br>
+                  Failure to make payment results in a default event and you lose the game.
                 </div>
               </div>
             </div>
@@ -787,8 +793,17 @@
                     <th>Interest Rate</th>
                     <th>Loan Tenure</th>
                     <th>Trailing 3 yrs EBITDA</th>
-                    <th>Max Opening Leverage Ratio</th>
-                    <th>Max Credit Available</th>
+                    <th>Max Leverage Ratio</th>
+                    <th>Min Credit Offering</th>
+                    <th>
+                      Max Credit Offer
+                      <div class="ad-tooltip-wrap">
+                        <span class="qmark">?</span>
+                        <div class="tooltip-box">
+                          Calculated as Max of (T3yr EBITDA * Max Leverage Ratio) and (Min Credit Offering).
+                      </div>
+                    </div>
+                    </th>
                     <th>Borrowed Amount</th>
                   </tr>
                 </thead>
@@ -798,6 +813,7 @@
                     <td>{{ loan_offer.loan_length }} years</td>
                     <td>{{ loan_offer.trailing_ebitda|accounting }}</td>
                     <td>{{ loan_offer.max_leverage_ratio }}x</td>
+                    <td>{{ loan_offer.min_credit|accounting }}</td>
                     <td>{{ loan_offer.max_credit|accounting }}</td>
                     <td>
                       {% if loan_offer.eligible %}
@@ -841,7 +857,7 @@
             <span class="qmark">?</span>
             <div class="tooltip-box">
               Decide how many of each toy to manufacture based on their revenue, cost, demand distributions, and your available factory space.
-              Once your plan is submitted, it is up to the will of the dice to see how many units are sold.
+              Once your plan is submitted, it is up to the will of the dice to see how many units are sold. <br><br>
 
               Styles in children's toys move quickly, as a result - no inventory is kept for unsold toys.
             </div>

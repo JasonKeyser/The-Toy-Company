@@ -3,7 +3,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 import datetime
 from django.contrib.auth.models import User
 from .models import Post, Toy, Player, Turn, ToyProductionOutcome, Difficulty, Game, AdvertisingProfile, \
-    AdvertisingCampaign, InsuranceEvent, Equipment, InsuranceEventOutcome, PlayerLoan
+    AdvertisingCampaign, InsuranceEvent, Equipment, InsuranceEventOutcome, PlayerLoan, InterestRateProfile
 from .services.game_engine import GameEngine
 from django.views.generic import (
     ListView,
@@ -22,6 +22,7 @@ from .forms import UnitsManufacturedForm, BaseUnitsFormSet, FactoryExpansionForm
 from django.forms import formset_factory
 from django.forms.utils import ErrorList
 from django.contrib import messages
+from .services.distributions import pick_interest_rate
 
 class PostListView(ListView):
     model = Post
@@ -152,16 +153,6 @@ def game(request):
     equipment = Equipment.objects.all()
     notifications = []
 
-    #set loan parameters
-    # last_turn = Turn.objects.filter(player=player).order_by("-turn_number").first()
-
-    # if last_turn:
-    #     # trailing_ebitda = last_turn.EBITDA
-    #     trailing_ebitda = avg( Turn.objects.filter(player=player).order_by("-turn_number")[3]
-    # else:
-    #     trailing_ebitda = 0
-
-
     max_leverage_ratio = 10
 
     minimum_credit_available = player.difficulty.min_loan_amount
@@ -186,11 +177,15 @@ def game(request):
     else:
         current_loan_outstanding = False
 
+    rate_profile = player.difficulty.rate_profiles.first()
+    rolled_rate = pick_interest_rate(rate_profile) if rate_profile else 0.10
+
     loan_offer = {
-        "interest_rate": 0.10,
+        "interest_rate": rolled_rate,
         "loan_length": 10,
         "max_leverage_ratio": max_leverage_ratio,
         "trailing_ebitda": trailing_ebitda,
+        "min_credit" : minimum_credit_available,
         "max_credit": max( trailing_ebitda * max_leverage_ratio, minimum_credit_available ),
         "eligible": (min_yrs_met == True) and (current_loan_outstanding == False),
         "min_yrs_met": min_yrs_met,
@@ -457,3 +452,16 @@ def insurance_distribution_view(request):
     }
 
     return render(request, "game/insurance_distribution.html", context)
+
+
+
+@login_required
+def interest_rate_distribution_view(request):
+    game = Game.objects.last()
+    player = game.player
+    rate_profiles = InterestRateProfile.objects.filter(difficulty=player.difficulty)
+
+    context = {
+        "rate_profiles": rate_profiles,
+    }
+    return render(request, "game/interest_rate_distribution.html", context)

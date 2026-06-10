@@ -22,5 +22,6 @@ urlpatterns = [
     path('demand/', views.demand_distribution_view, name='demand_distribution'),
     path('insurance/', views.insurance_distribution_view, name='insurance_distribution'),
     path('turn_summary/', views.turn_summary, name='turn-summary'),
-    path('financial_history/', views.financial_history, name='financial-history')
+    path('financial_history/', views.financial_history, name='financial-history'),
+    path('interest-rate-distribution/', views.interest_rate_distribution_view, name='interest_rate_distribution')
 ]

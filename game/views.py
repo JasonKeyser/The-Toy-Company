@@ -169,7 +169,7 @@ def game(request):
     min_yrs_met = player.turn_number > min_years_of_financial_history
 
     if min_yrs_met:
-        last_three_turns = Turn.objects.filter(player=player).order_by("-turn_number")[:2]
+        last_three_turns = Turn.objects.filter(player=player).order_by("-turn_number")[:3]
         ebitdas = []
         for turn in last_three_turns:
             ebitdas.append(turn.EBITDA)

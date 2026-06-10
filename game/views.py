@@ -177,9 +177,7 @@ def game(request):
     else:
         current_loan_outstanding = False
 
-    rate_profile = player.difficulty.rate_profiles.first()
-    rolled_rate = pick_interest_rate(rate_profile) if rate_profile else 0.10
-
+    rolled_rate = player.next_offered_rate
     loan_offer = {
         "interest_rate": rolled_rate,
         "loan_length": 10,
@@ -302,7 +300,7 @@ def game(request):
                 turn = engine.process_turn(player, toy_production_choices, insurance_coverage_choices, ad_cost, capex_choices, cost_savings_coefficient, borrowed_amount)
                 return render(request, "game/dice_roll.html", {"turn": turn})
 
-    else:
+    elif request.method == "GET":
         #Alerts for new items
         last_turn = Turn.objects.filter(player=player).order_by("-turn_number").first()
 
@@ -325,6 +323,14 @@ def game(request):
         loan_form = LoanForm()
         ad_form = AdvertisementCampaignForm(difficulty=player.difficulty)
         equipment_form = EquipmentForm(equipment_bought=player.equipment_bought)
+
+        rate_profile = player.difficulty.rate_profiles.first()
+        # Only re-roll if this is a fresh turn (no rate stored yet, or coming from a new turn)
+        if not player.offered_interest_rate:
+            player.offered_interest_rate = pick_interest_rate(rate_profile) if rate_profile else 0.10
+            player.save()
+
+
     print(f'savings {player.cost_savings_coefficient}')
     form_and_toys = [
         (form, toy, toy.adjusted_cost(player.cost_savings_coefficient))

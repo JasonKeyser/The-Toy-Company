@@ -244,5 +244,12 @@ class GameEngine:
         #check here to see if the player won or lost
         check_player_status(player)
 
+        rate_profile = player.difficulty.rate_profiles.first()
+        if rate_profile:
+            from .distributions import pick_interest_rate
+            player.next_offered_rate = pick_interest_rate(rate_profile)
+        player.save()
+
+
         return turn
 

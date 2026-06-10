@@ -107,6 +107,8 @@ class Player(models.Model):
     equipment_name = models.CharField(max_length=100, default="None")
     depreciation_expense_ends_turn = models.IntegerField(default=0)
     depreciation_expense_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    offered_interest_rate = models.DecimalField(max_digits=6, decimal_places=4, default=0.10)
+    next_offered_rate = models.DecimalField(max_digits=6, decimal_places=4, default=0.10)
 
     def __str__(self):
         return self.name

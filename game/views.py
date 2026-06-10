@@ -153,16 +153,33 @@ def game(request):
     notifications = []
 
     #set loan parameters
-    last_turn = Turn.objects.filter(player=player).order_by("-turn_number").first()
-    if last_turn:
-        trailing_ebitda = last_turn.EBITDA
-    else:
-        trailing_ebitda = 0
+    # last_turn = Turn.objects.filter(player=player).order_by("-turn_number").first()
+
+    # if last_turn:
+    #     # trailing_ebitda = last_turn.EBITDA
+    #     trailing_ebitda = avg( Turn.objects.filter(player=player).order_by("-turn_number")[3]
+    # else:
+    #     trailing_ebitda = 0
+
+
     max_leverage_ratio = 10
 
     minimum_credit_available = player.difficulty.min_loan_amount
     min_years_of_financial_history = player.difficulty.min_years_of_financial_history
     min_yrs_met = player.turn_number > min_years_of_financial_history
+
+    if min_yrs_met:
+        last_three_turns = Turn.objects.filter(player=player).order_by("-turn_number")[:2]
+        ebitdas = []
+        for turn in last_three_turns:
+            ebitdas.append(turn.EBITDA)
+
+        trailing_ebitda = sum(ebitdas) / len(ebitdas)
+    else:
+        trailing_ebitda = 0
+
+
+
     active_loans = player.loans.filter(is_paid_off=False)
     if active_loans.count() > 0:
         current_loan_outstanding = True
@@ -173,6 +190,7 @@ def game(request):
         "interest_rate": 0.10,
         "loan_length": 10,
         "max_leverage_ratio": max_leverage_ratio,
+        "trailing_ebitda": trailing_ebitda,
         "max_credit": max( trailing_ebitda * max_leverage_ratio, minimum_credit_available ),
         "eligible": (min_yrs_met == True) and (current_loan_outstanding == False),
         "min_yrs_met": min_yrs_met,

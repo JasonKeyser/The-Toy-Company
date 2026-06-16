@@ -829,6 +829,9 @@
                     <td>
                       {% if loan_offer.eligible %}
                         {{ loan_form.borrowed_amount }}
+                        <div id="loan-credit-warning" style="display:none; color:#fa5252; font-size:11px; margin-top:4px;">
+                          ⚠ Exceeds max credit of <span id="loan-max-credit-display"></span>
+                        </div>
                       {% elif loan_offer.min_yrs_met == False %}
                         <div class="text-muted small mt-1">{{ player.difficulty.min_years_of_financial_history }} years of financial history required to take out a loan.</div>
                       {% elif loan_offer.current_loan_outstanding == True %}
@@ -939,6 +942,8 @@ document.addEventListener('DOMContentLoaded', function () {
   const total_cash_available   = {{ player.cash|unlocalize }};
   const costPerSpace           = {{ player.difficulty.factory_space_cost|unlocalize }};
   const rentCost               = {{ player.difficulty.rent_cost|unlocalize }};
+
+  const maxCreditAvailable = {{ loan_offer.max_credit|default:0 }};
 
   const adProfiles = JSON.parse(document.getElementById('ad-profiles-data').textContent);
 
@@ -1171,8 +1176,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
   /* ── event listeners: loan amount ── */
   const loanInput = document.querySelector('#id_borrowed_amount');
+  const loanWarning = document.getElementById('loan-credit-warning');
+  const loanMaxDisplay = document.getElementById('loan-max-credit-display');
+
   if (loanInput) {
     loanInput.addEventListener('input', function () {
+      const borrowed = parseFloat(loanInput.value) || 0;
+
+      if (loanWarning && maxCreditAvailable > 0) {
+        if (borrowed > maxCreditAvailable) {
+          loanWarning.style.display = 'block';
+          if (loanMaxDisplay) loanMaxDisplay.textContent = fmt(maxCreditAvailable);
+          loanInput.style.borderColor = '#fa5252';
+        } else {
+          loanWarning.style.display = 'none';
+          loanInput.style.borderColor = '';
+        }
+      }
+
       const s = getCurrentSpends();
       updateSpendCard(s.cogs, s.capex, s.ad, getInsurancePremiumCost());
     });

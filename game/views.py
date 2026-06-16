@@ -151,7 +151,8 @@ def game(request):
 
 
     equipment = Equipment.objects.all()
-    notifications = []
+    success_notifications = []
+    error_notifications = []
 
     max_leverage_ratio = 10
 
@@ -262,66 +263,73 @@ def game(request):
             else:
                 borrowed_amount = 0
 
-            rent = player.difficulty.rent_cost
-            cogs = toy_cost
-            opex = rent + ad_cost + premium_cost
-            capex = expansion_cost + equipment_cost
-
-            total_proposed_spend = cogs + opex + capex
-            if total_proposed_spend > (player.cash + borrowed_amount):
-                toyformset._non_form_errors = toyformset.error_class([
-                    f"Insufficent Funds! Total planned expenditure is ${round(total_proposed_spend, 0)}, but you only have ${round(player.cash + borrowed_amount,0)}."
-                ])
+            if borrowed_amount > 0 and loan_offer["eligible"] and borrowed_amount > loan_offer["max_credit"]:
+                error_notifications.append(
+                    f"Borrowed amount ${borrowed_amount} exceeds your maximum credit available of ${round(loan_offer['max_credit'], 0)}."
+                )
+                # fall through to return render() at the bottom
             else:
+                # ... proceed with existing spend check and game engine logic
+                rent = player.difficulty.rent_cost
+                cogs = toy_cost
+                opex = rent + ad_cost + premium_cost
+                capex = expansion_cost + equipment_cost
 
-                player.factory_space += extra_space
-                player.save()
+                total_proposed_spend = cogs + opex + capex
+                if total_proposed_spend > (player.cash + borrowed_amount):
+                    toyformset._non_form_errors = toyformset.error_class([
+                        f"Insufficent Funds! Total planned expenditure is ${round(total_proposed_spend, 0)}, but you only have ${round(player.cash + borrowed_amount,0)}."
+                    ])
+                else:
+
+                    player.factory_space += extra_space
+                    player.save()
 
 
-                if borrowed_amount > 0:
-                    loan = PlayerLoan(
-                        player=player,
-                        taken_on_turn=player.turn_number,
-                        annual_interest_rate= loan_offer["interest_rate"],
-                        loan_length= loan_offer["loan_length"],
-                        principal= borrowed_amount,
-                        outstanding_balance= borrowed_amount,
-                    )
-                    loan.annual_payment = loan.compute_annual_payment()
-                    loan.save()
+                    if borrowed_amount > 0:
+                        loan = PlayerLoan(
+                            player=player,
+                            taken_on_turn=player.turn_number,
+                            annual_interest_rate= loan_offer["interest_rate"],
+                            loan_length= loan_offer["loan_length"],
+                            principal= borrowed_amount,
+                            outstanding_balance= borrowed_amount,
+                        )
+                        loan.annual_payment = loan.compute_annual_payment()
+                        loan.save()
 
 
-                if selected_ad_profile and difficulty.ads_enabled:
-                    AdvertisingCampaign.objects.create(
-                        player=player,
-                        profile=selected_ad_profile,
-                        purchased_on_turn=player.turn_number
-                    )
+                    if selected_ad_profile and difficulty.ads_enabled:
+                        AdvertisingCampaign.objects.create(
+                            player=player,
+                            profile=selected_ad_profile,
+                            purchased_on_turn=player.turn_number
+                        )
 
-                capex_choices = {
-                    'expansion_cost': expansion_cost,
-                    'equipment_cost': equipment_cost,
-                }
+                    capex_choices = {
+                        'expansion_cost': expansion_cost,
+                        'equipment_cost': equipment_cost,
+                    }
 
-                engine = GameEngine()
-                turn = engine.process_turn(player, toy_production_choices, insurance_coverage_choices, ad_cost, capex_choices, cost_savings_coefficient, borrowed_amount)
-                return render(request, "game/dice_roll.html", {"turn": turn})
+                    engine = GameEngine()
+                    turn = engine.process_turn(player, toy_production_choices, insurance_coverage_choices, ad_cost, capex_choices, cost_savings_coefficient, borrowed_amount)
+                    return render(request, "game/dice_roll.html", {"turn": turn})
 
     elif request.method == "GET":
         #Alerts for new items
         last_turn = Turn.objects.filter(player=player).order_by("-turn_number").first()
 
         if last_turn and last_turn.expansion_cost > 0:
-            notifications.append(f"🏭 Factory Space increased to {player.factory_space}!")
+            success_notifications.append(f"🏭 Factory Space increased to {player.factory_space}!")
 
         if last_turn and last_turn.equipment_cost > 0:
             savings_pct = round((1 - float(player.cost_savings_coefficient)) * 100)
-            notifications.append(
+            success_notifications.append(
                 f"⚙️ {player.equipment_name} now installed! "
                 f"Cost per unit on all toys is reduced by {savings_pct}%."
             )
         if player.turn_number == min_years_of_financial_history + 1 and player.difficulty.financing_enabled:
-            notifications.append(
+            success_notifications.append(
                 f"💵 {player.company_name} now eligible for debt financing! "
             )
         toyformset = UnitsFormSet(factory_space=player.factory_space, prefix="toys")
@@ -372,8 +380,8 @@ def game(request):
             "ad_profiles_json": ad_profiles_json,
             "equipment_form": equipment_form,
             "equipment_json": equipment_json,
-            'notifications': notifications,
-
+            'success_notifications': success_notifications,
+            "error_notifications": error_notifications,
         })
 
 

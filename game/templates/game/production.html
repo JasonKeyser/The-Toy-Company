@@ -504,7 +504,7 @@
       </div>
     {% endif %}
 
-    {% for note in notifications %}
+    {% for note in success_notifications %}
       <div class="alert alert-success alert-dismissible fade show" role="alert">
         {{ note }}
         <button type="button" class="close" data-dismiss="alert">
@@ -512,6 +512,17 @@
         </button>
       </div>
     {% endfor %}
+
+
+    {% for note in error_notifications %}
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ note }}
+        <button type="button" class="close" data-dismiss="alert">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+
 
 
     <!-- ========== INVESTMENTS CARD ========== -->

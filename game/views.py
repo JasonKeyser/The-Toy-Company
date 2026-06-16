@@ -177,6 +177,13 @@ def game(request):
     else:
         current_loan_outstanding = False
 
+    eligable = (min_yrs_met == True) and (current_loan_outstanding == False)
+
+    if eligable:
+        max_credit = max( trailing_ebitda * max_leverage_ratio, minimum_credit_available )
+    else:
+        max_credit = "N/A"
+
     rolled_rate = player.next_offered_rate
     loan_offer = {
         "interest_rate": rolled_rate,
@@ -184,8 +191,8 @@ def game(request):
         "max_leverage_ratio": max_leverage_ratio,
         "trailing_ebitda": trailing_ebitda,
         "min_credit" : minimum_credit_available,
-        "max_credit": max( trailing_ebitda * max_leverage_ratio, minimum_credit_available ),
-        "eligible": (min_yrs_met == True) and (current_loan_outstanding == False),
+        "max_credit": max_credit,
+        "eligible": eligable,
         "min_yrs_met": min_yrs_met,
         "current_loan_outstanding": current_loan_outstanding,
     }

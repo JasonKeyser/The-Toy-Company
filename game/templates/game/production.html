@@ -820,8 +820,8 @@
                         {{ loan_form.borrowed_amount }}
                       {% elif loan_offer.min_yrs_met == False %}
                         <div class="text-muted small mt-1">{{ player.difficulty.min_years_of_financial_history }} years of financial history required to take out a loan.</div>
-                      {% elif loan_offer.current_loan_outstanding == False %}
-                        <div class="text-muted small mt-1">Current Loan Outstanding</div>
+                      {% elif loan_offer.current_loan_outstanding == True %}
+                        <div class="text-muted small mt-1">Must Repay Existing Loans Before Borrowing More</div>
                       {% endif %}
                       {% if loan_form.borrowed_amount.errors %}
                         <div class="text-danger small">{{ loan_form.borrowed_amount.errors }}</div>

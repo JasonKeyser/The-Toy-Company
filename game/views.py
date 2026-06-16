@@ -324,12 +324,6 @@ def game(request):
         ad_form = AdvertisementCampaignForm(difficulty=player.difficulty)
         equipment_form = EquipmentForm(equipment_bought=player.equipment_bought)
 
-        rate_profile = player.difficulty.rate_profiles.first()
-        # Only re-roll if this is a fresh turn (no rate stored yet, or coming from a new turn)
-        if not player.offered_interest_rate:
-            player.offered_interest_rate = pick_interest_rate(rate_profile) if rate_profile else 0.10
-            player.save()
-
 
     print(f'savings {player.cost_savings_coefficient}')
     form_and_toys = [

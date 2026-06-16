@@ -59,6 +59,8 @@ class EquipmentForm(forms.Form):
 
 
 class LoanForm(forms.Form):
+
+
     borrowed_amount = forms.IntegerField(
         min_value=0,
         required=False,
@@ -72,8 +74,13 @@ class LoanForm(forms.Form):
 
     def clean_borrowed_amount(self):
         borrowed = self.cleaned_data.get("borrowed_amount") or 0
-        return borrowed
+        max_credit_offering = self.cleaned_data.get("max_credit") or 0
+        if borrowed > max_credit_offering:
+            raise ValidationError(
+                f"Borrowed Amount {borrowed} exceeds your maximum credit offering {max_credit_offering}!"
+            )
 
+        return borrowed
 
 
 

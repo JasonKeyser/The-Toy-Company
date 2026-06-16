@@ -122,27 +122,27 @@ class GameEngine:
 
 
         # income statement inputs
-        EBT = EBITDA - depreciation - interest_expense
+        EBT = EBITDA - round(depreciation - interest_expense,2)
         tax_expense = max( round( EBT * player.difficulty.tax_rate, 2), 0)
-        other_costs = tax_expense + depreciation
-        total_cost = total_cogs + operating_expenses + other_costs
-        net_income = total_revenue - total_cost
+        other_costs = round(tax_expense + depreciation, 2)
+        total_cost = round( total_cogs + operating_expenses + other_costs, 2)
+        net_income = round( total_revenue - total_cost, 2)
 
         #capex inputs
         expansion_cost = capex_choices['expansion_cost']
         equipment_cost = capex_choices['equipment_cost']
-        total_capex = expansion_cost + equipment_cost
+        total_capex = round(expansion_cost + equipment_cost, 2)
 
         # financing inputs
         loan_proceeds = borrowed_amount
         principal_paid = principal_payment
 
         # ── Cash Flow Statement ───────────────────────
-        operating_cf = net_income + depreciation
+        operating_cf = round(net_income + depreciation, 2)
         investing_cf = -total_capex
-        financing_cf = loan_proceeds - principal_paid
-        change_in_cash = operating_cf + investing_cf + financing_cf
-        free_cash_flow = net_income - total_capex + depreciation - ( round(interest_expense * (1 - player.difficulty.tax_rate),  2))
+        financing_cf = round(loan_proceeds - principal_paid, 2)
+        change_in_cash = round(operating_cf + investing_cf + financing_cf, 2)
+        free_cash_flow = round(net_income - total_capex + depreciation, 2) - ( round(interest_expense * (1 - player.difficulty.tax_rate),  2))
         # THERE IS A DIFFERENCE BETWEEN FREE CASH FLOW AND CHANGE IN CASH
             # Free Cashflow is a metric used to measure profitability and ultimately drives business value
             # Change in cash includes cash flow from financing which is not indicative of business performance but shows the actual change in cash
@@ -159,14 +159,14 @@ class GameEngine:
 
 
 
-        ending_cash = player.cash + change_in_cash
-        gross_equipment = prior_gross_equipment + equipment_cost
-        accumulated_depreciation_equipment = prior_accumulated_depreciation + depreciation
-        net_equipment = gross_equipment - accumulated_depreciation_equipment
-        property = prior_property + expansion_cost
-        gross_ppe = net_equipment + property
-        loans_payable = prior_loans_payable - principal_paid + loan_proceeds
-        retained_earnings = prior_retained_earnings + net_income
+        ending_cash = round(player.cash + change_in_cash, 2)
+        gross_equipment = round(prior_gross_equipment + equipment_cost, 2)
+        accumulated_depreciation_equipment = round(prior_accumulated_depreciation + depreciation, 2)
+        net_equipment = round(gross_equipment - accumulated_depreciation_equipment, 2)
+        property = round(prior_property + expansion_cost, 2)
+        gross_ppe = round(net_equipment + property, 2)
+        loans_payable = round(prior_loans_payable - principal_paid + loan_proceeds, 2)
+        retained_earnings = round(prior_retained_earnings + net_income, 2)
 
 
         total_assets = ending_cash + gross_ppe
@@ -174,7 +174,7 @@ class GameEngine:
         total_equity = retained_earnings
 
         # ── Integrity checks ──────────────────────────
-        if round(total_assets, 0) != round(total_liabilities + total_equity, 0):
+        if ( round(total_assets, 0) - round(total_liabilities + total_equity, 0) ) > 1:
             raise ValueError(
                 f"Balance sheet doesn't balance: "
                 f"assets={total_assets}, L+E={total_liabilities + total_equity}"

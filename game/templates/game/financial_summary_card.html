@@ -106,6 +106,75 @@
 
   .fcf-positive { color: #2f9e44; }
   .fcf-negative { color: #c92a2a; }
+
+  /* ── Statement section headers (Income Statement / Cash Flow / Balance Sheet) ── */
+  .fin-section {
+    margin-top: 10px;
+  }
+
+  .fin-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    padding: 6px 8px;
+    background: #e9ecef;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: #495057;
+  }
+
+  .fin-section-header:hover {
+    background: #dee2e6;
+  }
+
+  .fin-section-body {
+    display: none;
+    padding: 4px 4px 0 4px;
+  }
+
+  .fin-section-body.open {
+    display: block;
+  }
+
+  /* ── Free Cashflow callout ── */
+  .fcff-card {
+    margin: 4px 0;
+    padding: 6px 8px;
+    background: #e7f5ff;
+    border: 1px solid #74c0fc;
+    border-radius: 6px;
+  }
+
+  .fcff-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .fcff-label {
+    font-weight: 600;
+    font-size: 12px;
+    color: #495057;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    width: 160px;
+  }
+
+  .fcff-value {
+    font-weight: 600;
+    font-size: 12px;
+    display: flex;
+    width: 64px;
+    justify-content: flex-end;
+  }
 </style>
 
 <script>
@@ -135,186 +204,231 @@ function toggle(id) {
   </div>
   {% endif %}
 
-  <!-- ========== INCOME STATEMENT ========== -->
+  <!-- ========== INCOME STATEMENT (open by default) ========== -->
 
-  <div class="fin-row">
-    <span class="fin-label muted">Revenue</span>
-    {% for t in turns %}<span class="fin-value">{{ t.revenue|accounting_round }}</span>{% endfor %}
+  <div class="fin-section">
+    <div class="fin-section-header" onclick="toggle('section-is')">
+      <span><span class="expand-icon open" id="icon-section-is">&#9658;</span> Income Statement</span>
+    </div>
+    <div class="fin-section-body open" id="children-section-is">
+
+      <div class="fin-row">
+        <span class="fin-label muted">Revenue</span>
+        {% for t in turns %}<span class="fin-value">{{ t.revenue|accounting_round }}</span>{% endfor %}
+      </div>
+
+      <div class="fin-row">
+        <span class="fin-label muted">Cost of goods sold</span>
+        {% for t in turns %}<span class="fin-value">{{ t.Cost_of_Goods_Sold|accounting_round_exp }}</span>{% endfor %}
+      </div>
+
+      <div class="fin-row subtotal">
+        <span class="fin-label">Gross profit</span>
+        {% for t in turns %}<span class="fin-value">{{ t.gross_profit|accounting_round }}</span>{% endfor %}
+      </div>
+
+      <div class="fin-row expandable" onclick="toggle('opex')">
+        <span class="fin-label muted"><span class="expand-icon" id="icon-opex">&#9658;</span> Operating expenses</span>
+        {% for t in turns %}<span class="fin-value">{{ t.operating_expenses|accounting_round_exp }}</span>{% endfor %}
+      </div>
+      <div class="fin-children" id="children-opex">
+        <div class="fin-child-row">
+          <span class="fin-child-label">Rent</span>
+          {% for t in turns %}<span class="fin-value">{{ t.player.difficulty.rent_cost|accounting_round_exp }}</span>{% endfor %}
+        </div>
+        <div class="fin-child-row">
+          <span class="fin-child-label">Disaster cost</span>
+          {% for t in turns %}<span class="fin-value">{{ t.disaster_cost|accounting_round_exp }}</span>{% endfor %}
+        </div>
+        <div class="fin-child-row">
+          <span class="fin-child-label">Premium cost</span>
+          {% for t in turns %}<span class="fin-value">{{ t.premium_cost|accounting_round_exp }}</span>{% endfor %}
+        </div>
+        <div class="fin-child-row">
+          <span class="fin-child-label">Advertising</span>
+          {% for t in turns %}<span class="fin-value">{{ t.ad_cost|accounting_round_exp }}</span>{% endfor %}
+        </div>
+      </div>
+
+      <div class="fin-row subtotal">
+        <span class="fin-label">EBITDA</span>
+        {% for t in turns %}<span class="fin-value">{{ t.EBITDA|accounting_round }}</span>{% endfor %}
+      </div>
+
+      <div class="fin-row expandable" onclick="toggle('otherexp')">
+        <span class="fin-label muted"><span class="expand-icon" id="icon-otherexp">&#9658;</span> Other costs</span>
+        {% for t in turns %}<span class="fin-value">{{ t.other_costs|accounting_round_exp }}</span>{% endfor %}
+      </div>
+      <div class="fin-children" id="children-otherexp">
+        <div class="fin-child-row">
+          <span class="fin-child-label">Depreciation</span>
+          {% for t in turns %}<span class="fin-value">{{ t.depreciation|accounting_round_exp }}</span>{% endfor %}
+        </div>
+        <div class="fin-child-row">
+          <span class="fin-child-label">Interest expense</span>
+          {% for t in turns %}<span class="fin-value">{{ t.interest_expense|accounting_round_exp }}</span>{% endfor %}
+        </div>
+        <div class="fin-child-row">
+          <span class="fin-child-label">Tax expense</span>
+          {% for t in turns %}<span class="fin-value">{{ t.taxes|accounting_round_exp }}</span>{% endfor %}
+        </div>
+      </div>
+
+      <div class="fin-row subtotal">
+        <span class="fin-label">Net income</span>
+        {% for t in turns %}<span class="fin-value">{{ t.net_income|accounting_round }}</span>{% endfor %}
+      </div>
+
+    </div>
   </div>
 
-  <div class="fin-row">
-    <span class="fin-label muted">Cost of goods sold</span>
-    {% for t in turns %}<span class="fin-value">{{ t.Cost_of_Goods_Sold|accounting_round_exp }}</span>{% endfor %}
-  </div>
+  <!-- ========== FREE CASHFLOW (highlighted, expandable) ========== -->
 
-  <div class="fin-row subtotal">
-    <span class="fin-label">Gross profit</span>
-    {% for t in turns %}<span class="fin-value">{{ t.gross_profit|accounting_round }}</span>{% endfor %}
-  </div>
-
-  <div class="fin-row expandable" onclick="toggle('opex')">
-    <span class="fin-label muted"><span class="expand-icon" id="icon-opex">&#9658;</span> Operating expenses</span>
-    {% for t in turns %}<span class="fin-value">{{ t.operating_expenses|accounting_round_exp }}</span>{% endfor %}
-  </div>
-  <div class="fin-children" id="children-opex">
-    <div class="fin-child-row">
-      <span class="fin-child-label">Rent</span>
-      {% for t in turns %}<span class="fin-value">{{ t.player.difficulty.rent_cost|accounting_round_exp }}</span>{% endfor %}
+  <div class="fcff-card">
+    <div class="fcff-row" onclick="toggle('fcff')">
+      <span class="fcff-label"><span class="expand-icon" id="icon-fcff">&#9658;</span> Free Cashflow</span>
+      {% for t in turns %}
+        <span class="fcff-value {% if t.free_cash_flow > 0 %}fcf-positive{% else %}fcf-negative{% endif %}">
+          {{ t.free_cash_flow|accounting_round }}
+        </span>
+      {% endfor %}
     </div>
-    <div class="fin-child-row">
-      <span class="fin-child-label">Disaster cost</span>
-      {% for t in turns %}<span class="fin-value">{{ t.disaster_cost|accounting_round_exp }}</span>{% endfor %}
+    <div class="fin-children" id="children-fcff" style="margin-top: 6px;">
+      <div class="fin-child-row">
+        <span class="fin-child-label">Net income</span>
+        {% for t in turns %}<span class="fin-value">{{ t.net_income|accounting_round }}</span>{% endfor %}
+      </div>
+      <div class="fin-child-row">
+        <span class="fin-child-label">+ Depreciation</span>
+        {% for t in turns %}<span class="fin-value">{{ t.depreciation|accounting_round }}</span>{% endfor %}
+      </div>
+      <div class="fin-child-row">
+        <span class="fin-child-label">- Capital expenditures</span>
+        {% for t in turns %}<span class="fin-value">{{ t.total_capex|accounting_round_exp }}</span>{% endfor %}
+      </div>
+      <div class="fin-child-row">
+        <span class="fin-child-label">+ Interest tax shield</span>
+        {% for t in turns %}<span class="fin-value">{{ t.interest_tax_shield|accounting_round }}</span>{% endfor %}
+      </div>
     </div>
-    <div class="fin-child-row">
-      <span class="fin-child-label">Premium cost</span>
-      {% for t in turns %}<span class="fin-value">{{ t.premium_cost|accounting_round_exp }}</span>{% endfor %}
-    </div>
-    <div class="fin-child-row">
-      <span class="fin-child-label">Advertising</span>
-      {% for t in turns %}<span class="fin-value">{{ t.ad_cost|accounting_round_exp }}</span>{% endfor %}
-    </div>
-  </div>
-
-  <div class="fin-row subtotal">
-    <span class="fin-label">EBITDA</span>
-    {% for t in turns %}<span class="fin-value">{{ t.EBITDA|accounting_round }}</span>{% endfor %}
-  </div>
-
-  <div class="fin-row expandable" onclick="toggle('otherexp')">
-    <span class="fin-label muted"><span class="expand-icon" id="icon-otherexp">&#9658;</span> Other costs</span>
-    {% for t in turns %}<span class="fin-value">{{ t.other_costs|accounting_round_exp }}</span>{% endfor %}
-  </div>
-  <div class="fin-children" id="children-otherexp">
-    <div class="fin-child-row">
-      <span class="fin-child-label">Depreciation</span>
-      {% for t in turns %}<span class="fin-value">{{ t.depreciation|accounting_round_exp }}</span>{% endfor %}
-    </div>
-    <div class="fin-child-row">
-      <span class="fin-child-label">Interest expense</span>
-      {% for t in turns %}<span class="fin-value">{{ t.interest_expense|accounting_round_exp }}</span>{% endfor %}
-    </div>
-    <div class="fin-child-row">
-      <span class="fin-child-label">Tax expense</span>
-      {% for t in turns %}<span class="fin-value">{{ t.taxes|accounting_round_exp }}</span>{% endfor %}
-    </div>
-  </div>
-
-  <div class="fin-row subtotal">
-    <span class="fin-label">Net income</span>
-    {% for t in turns %}<span class="fin-value">{{ t.net_income|accounting_round }}</span>{% endfor %}
   </div>
 
   <!-- ========== CASH FLOW STATEMENT (collapsed by default) ========== -->
 
-  <div class="fin-row expandable" onclick="toggle('section-cf')">
-    <span class="fin-label"><span class="expand-icon" id="icon-section-cf">&#9658;</span> Cash Flow Statement</span>
-    <span></span>
-  </div>
-  <div class="fin-children" id="children-section-cf">
-
-    <div class="fin-child-row">
-      <span class="fin-child-label">Operating cash flow</span>
-      {% for t in turns %}<span class="fin-value">{{ t.operating_cf|accounting_round }}</span>{% endfor %}
+  <div class="fin-section">
+    <div class="fin-section-header" onclick="toggle('section-cf')">
+      <span><span class="expand-icon" id="icon-section-cf">&#9658;</span> Cash Flow Statement</span>
     </div>
+    <div class="fin-section-body" id="children-section-cf">
 
-    <div class="fin-child-row expandable" onclick="toggle('capex')">
-      <span class="fin-child-label"><span class="expand-icon" id="icon-capex">&#9658;</span> Investing cash flow</span>
-      {% for t in turns %}<span class="fin-value">{{ t.investing_cf|accounting_round_exp }}</span>{% endfor %}
-    </div>
-    <div class="fin-children" id="children-capex">
-      <div class="fin-child-row">
-        <span class="fin-child-label">Factory expansion</span>
-        {% for t in turns %}<span class="fin-value">{{ t.expansion_cost|accounting_round_exp }}</span>{% endfor %}
+      <div class="fin-row expandable" onclick="toggle('opcf')">
+        <span class="fin-label muted"><span class="expand-icon" id="icon-opcf">&#9658;</span> Operating cash flow</span>
+        {% for t in turns %}<span class="fin-value">{{ t.operating_cf|accounting_round }}</span>{% endfor %}
       </div>
-      <div class="fin-child-row">
-        <span class="fin-child-label">Equipment purchase</span>
-        {% for t in turns %}<span class="fin-value">{{ t.equipment_cost|accounting_round_exp }}</span>{% endfor %}
+      <div class="fin-children" id="children-opcf">
+        <div class="fin-child-row">
+          <span class="fin-child-label">Net income</span>
+          {% for t in turns %}<span class="fin-value">{{ t.net_income|accounting_round }}</span>{% endfor %}
+        </div>
+        <div class="fin-child-row">
+          <span class="fin-child-label">+ Depreciation</span>
+          {% for t in turns %}<span class="fin-value">{{ t.depreciation|accounting_round }}</span>{% endfor %}
+        </div>
       </div>
-    </div>
 
-    <div class="fin-child-row expandable" onclick="toggle('financingcf')">
-      <span class="fin-child-label"><span class="expand-icon" id="icon-financingcf">&#9658;</span> Financing cash flow</span>
-      {% for t in turns %}<span class="fin-value">{{ t.financing_cf|accounting_round }}</span>{% endfor %}
-    </div>
-    <div class="fin-children" id="children-financingcf">
-      <div class="fin-child-row">
-        <span class="fin-child-label">Loan proceeds</span>
-        {% for t in turns %}<span class="fin-value">{{ t.loan_proceeds|accounting_round }}</span>{% endfor %}
+      <div class="fin-row expandable" onclick="toggle('capex')">
+        <span class="fin-label muted"><span class="expand-icon" id="icon-capex">&#9658;</span> Investing cash flow</span>
+        {% for t in turns %}<span class="fin-value">{{ t.investing_cf|accounting_round_exp }}</span>{% endfor %}
       </div>
-      <div class="fin-child-row">
-        <span class="fin-child-label">Principal repayment</span>
-        {% for t in turns %}<span class="fin-value">{{ t.principal_payment|accounting_round_exp }}</span>{% endfor %}
+      <div class="fin-children" id="children-capex">
+        <div class="fin-child-row">
+          <span class="fin-child-label">Factory expansion</span>
+          {% for t in turns %}<span class="fin-value">{{ t.expansion_cost|accounting_round_exp }}</span>{% endfor %}
+        </div>
+        <div class="fin-child-row">
+          <span class="fin-child-label">Equipment purchase</span>
+          {% for t in turns %}<span class="fin-value">{{ t.equipment_cost|accounting_round_exp }}</span>{% endfor %}
+        </div>
       </div>
-    </div>
 
-    <div class="fin-child-row" style="font-weight: 600; border-top: 1px solid #dee2e6; margin-top: 4px;">
-      <span class="fin-child-label">Change in cash</span>
-      {% for t in turns %}<span class="fin-value">{{ t.change_in_cash|accounting_round }}</span>{% endfor %}
-    </div>
+      <div class="fin-row expandable" onclick="toggle('financingcf')">
+        <span class="fin-label muted"><span class="expand-icon" id="icon-financingcf">&#9658;</span> Financing cash flow</span>
+        {% for t in turns %}<span class="fin-value">{{ t.financing_cf|accounting_round }}</span>{% endfor %}
+      </div>
+      <div class="fin-children" id="children-financingcf">
+        <div class="fin-child-row">
+          <span class="fin-child-label">Loan proceeds</span>
+          {% for t in turns %}<span class="fin-value">{{ t.loan_proceeds|accounting_round }}</span>{% endfor %}
+        </div>
+        <div class="fin-child-row">
+          <span class="fin-child-label">Principal repayment</span>
+          {% for t in turns %}<span class="fin-value">{{ t.principal_payment|accounting_round_exp }}</span>{% endfor %}
+        </div>
+      </div>
 
-    <div class="fin-child-row">
-      <span class="fin-child-label">Beginning cash</span>
-      {% for t in turns %}<span class="fin-value">{{ t.beginning_cash|accounting_round }}</span>{% endfor %}
-    </div>
-    <div class="fin-child-row">
-      <span class="fin-child-label">Ending cash</span>
-      {% for t in turns %}<span class="fin-value">{{ t.ending_cash|accounting_round }}</span>{% endfor %}
-    </div>
-  </div>
+      <div class="fin-row subtotal">
+        <span class="fin-label">Change in cash</span>
+        {% for t in turns %}<span class="fin-value">{{ t.change_in_cash|accounting_round }}</span>{% endfor %}
+      </div>
 
-  <div class="fin-row subtotal">
-    <span class="fin-label">Free Cashflow to the Firm</span>
-    {% for t in turns %}
-      <span class="fin-value {% if t.free_cash_flow > 0 %}fcf-positive{% else %}fcf-negative{% endif %}">
-        {{ t.free_cash_flow|accounting_round }}
-      </span>
-    {% endfor %}
+      <div class="fin-row">
+        <span class="fin-label muted">Beginning cash</span>
+        {% for t in turns %}<span class="fin-value">{{ t.beginning_cash|accounting_round }}</span>{% endfor %}
+      </div>
+      <div class="fin-row">
+        <span class="fin-label muted">Ending cash</span>
+        {% for t in turns %}<span class="fin-value">{{ t.ending_cash|accounting_round }}</span>{% endfor %}
+      </div>
+
+    </div>
   </div>
 
   <!-- ========== BALANCE SHEET (collapsed by default) ========== -->
 
-  <div class="fin-row expandable" onclick="toggle('section-bs')">
-    <span class="fin-label"><span class="expand-icon" id="icon-section-bs">&#9658;</span> Balance Sheet</span>
-    <span></span>
-  </div>
-  <div class="fin-children" id="children-section-bs">
+  <div class="fin-section">
+    <div class="fin-section-header" onclick="toggle('section-bs')">
+      <span><span class="expand-icon" id="icon-section-bs">&#9658;</span> Balance Sheet</span>
+    </div>
+    <div class="fin-section-body" id="children-section-bs">
 
-    <div class="fin-child-row" style="font-weight: 600;">Assets</div>
-    <div class="fin-child-row">
-      <span class="fin-child-label">Cash</span>
-      {% for t in turns %}<span class="fin-value">{{ t.ending_cash|accounting_round }}</span>{% endfor %}
-    </div>
-    <div class="fin-child-row">
-      <span class="fin-child-label">Gross equipment</span>
-      {% for t in turns %}<span class="fin-value">{{ t.gross_equipment|accounting_round }}</span>{% endfor %}
-    </div>
-    <div class="fin-child-row">
-      <span class="fin-child-label">Accumulated depreciation</span>
-      {% for t in turns %}<span class="fin-value">{{ t.accumulated_depreciation_equipment|accounting_round_exp }}</span>{% endfor %}
-    </div>
-    <div class="fin-child-row">
-      <span class="fin-child-label">Property</span>
-      {% for t in turns %}<span class="fin-value">{{ t.property|accounting_round }}</span>{% endfor %}
-    </div>
-    <div class="fin-child-row" style="font-weight: 600;">
-      <span class="fin-child-label">Total assets</span>
-      {% for t in turns %}<span class="fin-value">{{ t.total_assets|accounting_round }}</span>{% endfor %}
-    </div>
+      <div class="fin-child-row" style="font-weight: 600;">Assets</div>
+      <div class="fin-child-row">
+        <span class="fin-child-label">Cash</span>
+        {% for t in turns %}<span class="fin-value">{{ t.ending_cash|accounting_round }}</span>{% endfor %}
+      </div>
+      <div class="fin-child-row">
+        <span class="fin-child-label">Gross equipment</span>
+        {% for t in turns %}<span class="fin-value">{{ t.gross_equipment|accounting_round }}</span>{% endfor %}
+      </div>
+      <div class="fin-child-row">
+        <span class="fin-child-label">Accumulated depreciation</span>
+        {% for t in turns %}<span class="fin-value">{{ t.accumulated_depreciation_equipment|accounting_round_exp }}</span>{% endfor %}
+      </div>
+      <div class="fin-child-row">
+        <span class="fin-child-label">Property</span>
+        {% for t in turns %}<span class="fin-value">{{ t.property|accounting_round }}</span>{% endfor %}
+      </div>
+      <div class="fin-child-row" style="font-weight: 600;">
+        <span class="fin-child-label">Total assets</span>
+        {% for t in turns %}<span class="fin-value">{{ t.total_assets|accounting_round }}</span>{% endfor %}
+      </div>
 
-    <div class="fin-child-row" style="font-weight: 600; margin-top: 6px;">Liabilities</div>
-    <div class="fin-child-row" style="font-weight: 600;">
-      <span class="fin-child-label">Loans payable</span>
-      {% for t in turns %}<span class="fin-value">{{ t.loans_payable|accounting_round }}</span>{% endfor %}
-    </div>
+      <div class="fin-child-row" style="font-weight: 600; margin-top: 6px;">Liabilities</div>
+      <div class="fin-child-row" style="font-weight: 600;">
+        <span class="fin-child-label">Loans payable</span>
+        {% for t in turns %}<span class="fin-value">{{ t.loans_payable|accounting_round }}</span>{% endfor %}
+      </div>
 
-    <div class="fin-child-row" style="font-weight: 600; margin-top: 6px;">Equity</div>
-    <div class="fin-child-row">
-      <span class="fin-child-label">Retained earnings</span>
-      {% for t in turns %}<span class="fin-value">{{ t.retained_earnings|accounting_round }}</span>{% endfor %}
-    </div>
-    <div class="fin-child-row" style="font-weight: 600;">
-      <span class="fin-child-label">Total equity</span>
-      {% for t in turns %}<span class="fin-value">{{ t.total_equity|accounting_round }}</span>{% endfor %}
+      <div class="fin-child-row" style="font-weight: 600; margin-top: 6px;">Equity</div>
+      <div class="fin-child-row">
+        <span class="fin-child-label">Retained earnings</span>
+        {% for t in turns %}<span class="fin-value">{{ t.retained_earnings|accounting_round }}</span>{% endfor %}
+      </div>
+      <div class="fin-child-row" style="font-weight: 600;">
+        <span class="fin-child-label">Total equity</span>
+        {% for t in turns %}<span class="fin-value">{{ t.total_equity|accounting_round }}</span>{% endfor %}
+      </div>
+
     </div>
   </div>
 

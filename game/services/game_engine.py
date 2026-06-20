@@ -11,10 +11,10 @@ def check_player_status(player):
         player.status = "won"
     elif player.cash <= 0:
         player.status = "lost"
-        player.lost_reason = "Ran out of Money"
+        player.lost_reason = "went bankrupt"
     elif player.turn_number > player.difficulty.max_turns:
         player.status = "lost"
-        player.lost_reason = "Lost on Turns"
+        player.lost_reason = "lost on turns"
 
     else:
         player.status = "still_playing"
@@ -122,9 +122,9 @@ class GameEngine:
 
 
         # income statement inputs
-        EBT = EBITDA - round(depreciation - interest_expense,2)
+        EBT = EBITDA - round(depreciation + interest_expense,2)
         tax_expense = max( round( EBT * player.difficulty.tax_rate, 2), 0)
-        other_costs = round(tax_expense + depreciation, 2)
+        other_costs = round(tax_expense + depreciation + interest_expense, 2)
         total_cost = round( total_cogs + operating_expenses + other_costs, 2)
         net_income = round( total_revenue - total_cost, 2)
 
@@ -142,7 +142,8 @@ class GameEngine:
         investing_cf = -total_capex
         financing_cf = round(loan_proceeds - principal_paid, 2)
         change_in_cash = round(operating_cf + investing_cf + financing_cf, 2)
-        free_cash_flow = round(net_income - total_capex + depreciation, 2) + ( round(interest_expense * (1 - player.difficulty.tax_rate),  2))
+        interest_tax_shield = ( round(interest_expense * (1 - player.difficulty.tax_rate),  2))
+        free_cash_flow = round(net_income - total_capex + depreciation, 2) + interest_tax_shield
         # THERE IS A DIFFERENCE BETWEEN FREE CASH FLOW AND CHANGE IN CASH
             # Free Cashflow is a metric used to measure profitability and ultimately drives business value
             # Change in cash includes cash flow from financing which is not indicative of business performance but shows the actual change in cash
@@ -197,6 +198,7 @@ class GameEngine:
         turn.ad_cost = ad_cost
         turn.disaster_cost = total_disaster_cost_realized
         turn.premium_cost = total_premium_cost
+        turn.interest_tax_shield = interest_tax_shield
 
         turn.free_cash_flow = free_cash_flow
 

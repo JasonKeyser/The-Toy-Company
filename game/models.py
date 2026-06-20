@@ -170,6 +170,7 @@ class Turn(models.Model):
 
     # cash flow statement
     free_cash_flow = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    interest_tax_shield = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
     operating_cf = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 

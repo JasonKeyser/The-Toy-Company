@@ -3,7 +3,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 import datetime
 from django.contrib.auth.models import User
 from .models import Post, Toy, Player, Turn, ToyProductionOutcome, Difficulty, Game, AdvertisingProfile, \
-    AdvertisingCampaign, InsuranceEvent, Equipment, InsuranceEventOutcome, PlayerLoan, InterestRateProfile
+    AdvertisingCampaign, InsuranceEvent, Equipment, PlayerLoan, InterestRateProfile
 from .services.game_engine import GameEngine
 from django.views.generic import (
     ListView,
@@ -20,9 +20,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from .forms import UnitsManufacturedForm, BaseUnitsFormSet, FactoryExpansionForm, AdvertisementCampaignForm, \
     InsuranceCoverageTakenForm, BaseCoverageFormSet, EquipmentForm, LoanForm
 from django.forms import formset_factory
-from django.forms.utils import ErrorList
-from django.contrib import messages
-from .services.distributions import pick_interest_rate
 
 class PostListView(ListView):
     model = Post
@@ -341,7 +338,7 @@ def game(request):
 
         outstanding_loan_details = {}
         if last_turn and last_turn.loans_payable > 0:
-            outstanding_loan = player.loans.filter(is_paid_off=False).order_by("-taken_on_turn").first() #how do I ensure this is from the right game?
+            outstanding_loan = player.loans.filter(is_paid_off=False).order_by("-taken_on_turn").first()
 
             years_elapsed = player.turn_number - outstanding_loan.taken_on_turn
 
@@ -407,7 +404,6 @@ def turn_summary(request):
     player = game.player
     turn = Turn.objects.filter(player=player).order_by("-turn_number").first()
     production_outcomes = ToyProductionOutcome.objects.filter(turn=turn)
-    beginning_cash = turn.player.cash - turn.free_cash_flow
 
     if not turn:
         return redirect("game")
@@ -416,8 +412,8 @@ def turn_summary(request):
     if player.status == "still_playing":
         return render(request, "game/turn_summary.html", {
             "turn": turn,
+            "turns": [turn],
             "production_outcomes": production_outcomes,
-            "beginning_cash": beginning_cash,
         })
 
     else:

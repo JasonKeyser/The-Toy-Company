@@ -142,7 +142,7 @@ class GameEngine:
         investing_cf = -total_capex
         financing_cf = round(loan_proceeds - principal_paid, 2)
         change_in_cash = round(operating_cf + investing_cf + financing_cf, 2)
-        free_cash_flow = round(net_income - total_capex + depreciation, 2) - ( round(interest_expense * (1 - player.difficulty.tax_rate),  2))
+        free_cash_flow = round(net_income - total_capex + depreciation, 2) + ( round(interest_expense * (1 - player.difficulty.tax_rate),  2))
         # THERE IS A DIFFERENCE BETWEEN FREE CASH FLOW AND CHANGE IN CASH
             # Free Cashflow is a metric used to measure profitability and ultimately drives business value
             # Change in cash includes cash flow from financing which is not indicative of business performance but shows the actual change in cash

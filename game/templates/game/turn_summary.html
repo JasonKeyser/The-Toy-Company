@@ -31,46 +31,8 @@
 
 </div>
 
-<!-- Table + Financial Summary side by side -->
-<div class="d-flex align-items-start" style="gap: 24px;">
-
-    <!-- Turn Results Table -->
-  <div style="flex: 1; min-width: 0;">
-    <table class="table table-bordered table-striped text-center align-middle mb-0">
-      <thead class="table-dark">
-        <tr>
-          <th>Toy</th>
-          <th>Units Manufactured</th>
-          <th>Units Sold</th>
-          <th>Revenue</th>
-          <th>COGS</th>
-          <th>Gross Profit</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for outcome in production_outcomes %}
-        <tr>
-          <td>{{ outcome.toy.name }}</td>
-          <td>{{ outcome.units_manufactured }}</td>
-          <td>{{ outcome.units_sold }}</td>
-          <td>{{ outcome.revenue|accounting }}</td>
-          <td>{{ outcome.cogs|accounting }}</td>
-          <td>{{ outcome.profit|accounting }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-      <tfoot class="table-light font-weight-bold">
-        <tr>
-          <td>Grand Total</td>
-          <td>{{ production_outcomes|sum_attr:"units_manufactured" }}</td>
-          <td>{{ production_outcomes|sum_attr:"units_sold" }}</td>
-          <td>{{ production_outcomes|sum_attr:"revenue"|accounting }}</td>
-          <td>{{ production_outcomes|sum_attr:"cogs"|accounting }}</td>
-          <td>{{ production_outcomes|sum_attr:"profit"|accounting }}</td>
-        </tr>
-      </tfoot>
-    </table>
-  </div>
+    <!-- Gross Profit Overview -->
+  {% include "game/gross_profit_overview.html" with production_outcomes=production_outcomes show_history_link=True %}
 
 
   {% include "game/financial_summary_card.html" with turns=turns show_history_link=True %}

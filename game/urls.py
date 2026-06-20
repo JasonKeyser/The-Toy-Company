@@ -23,5 +23,6 @@ urlpatterns = [
     path('insurance/', views.insurance_distribution_view, name='insurance_distribution'),
     path('turn_summary/', views.turn_summary, name='turn-summary'),
     path('financial_history/', views.financial_history, name='financial-history'),
-    path('interest-rate-distribution/', views.interest_rate_distribution_view, name='interest_rate_distribution')
+    path('interest-rate-distribution/', views.interest_rate_distribution_view, name='interest_rate_distribution'),
+    path('gross-profit-analysis/', views.gross_profit_analysis, name='gross_profit_analysis')
 ]

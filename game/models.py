@@ -140,6 +140,15 @@ class ToyProductionOutcome(models.Model):
     cogs = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     profit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     demand_boost_applied = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    def baseline_units_sold(self):
+        """Units that would have sold with no ad boost applied this turn."""
+        if self.demand_boost_applied and self.demand_boost_applied > 0:
+            return round(self.units_sold / (1 + float(self.demand_boost_applied)))
+        return self.units_sold
+
+    def boosted_units_sold(self):
+        """Portion of units_sold attributable to an active ad boost."""
+        return self.units_sold - self.baseline_units_sold()
 
     def __str__(self):
         return self.name

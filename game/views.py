@@ -20,6 +20,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from .forms import UnitsManufacturedForm, BaseUnitsFormSet, FactoryExpansionForm, AdvertisementCampaignForm, \
     InsuranceCoverageTakenForm, BaseCoverageFormSet, EquipmentForm, LoanForm
 from django.forms import formset_factory
+import json
 
 class PostListView(ListView):
     model = Post
@@ -419,6 +420,49 @@ def turn_summary(request):
 
     else:
         return render(request, "game/game_over.html", {"player" : player})
+
+
+def gross_profit_analysis(request):
+    game = Game.objects.last()
+    player = game.player
+    turns = Turn.objects.filter(player=player).order_by("turn_number")
+    toys = Toy.objects.all()
+
+    chart_data = {}
+    for toy in toys:
+        outcomes_by_turn = {
+            o.turn.turn_number: o
+            for o in ToyProductionOutcome.objects.filter(turn__in=turns, toy=toy)
+        }
+
+        units_manufactured, units_sold, revenue, cogs, profit, boost = [], [], [], [], [], []
+        for t in turns:
+            outcome = outcomes_by_turn.get(t.turn_number)
+            units_manufactured.append(outcome.units_manufactured if outcome else 0)
+            units_sold.append(outcome.units_sold if outcome else 0)
+            revenue.append(float(outcome.revenue) if outcome else 0)
+            cogs.append(float(outcome.cogs) if outcome else 0)
+            profit.append(float(outcome.profit) if outcome else 0)
+            boost.append(float(outcome.demand_boost_applied) if outcome else 0)
+
+        chart_data[toy.name] = {
+            "units_manufactured": units_manufactured,
+            "units_sold": units_sold,
+            "revenue": revenue,
+            "cogs": cogs,
+            "profit": profit,
+            "boost": boost,
+        }
+
+    context = {
+        "turn": turns.last(),
+        "turn_numbers_json": json.dumps([t.turn_number for t in turns]),
+        "chart_data_json": json.dumps(chart_data),
+    }
+    return render(request, "game/gross_profit_analysis.html", context)
+
+
+
 
 
 def financial_history(request):

@@ -1,0 +1,521 @@
+{% extends "game/base.html" %}
+{% block content %}
+
+<h2 class="mb-3">Historical Gross Profit Analysis 📊</h2>
+
+<style>
+  .chart-wrap {
+    position: relative;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    padding: 16px;
+    background: #f8f9fa;
+    max-width: 640px;
+  }
+
+  .controls-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .controls-row2 {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+  }
+
+  .overlay-toggle, .boost-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #495057;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .overlay-toggle input, .boost-toggle input { cursor: pointer; }
+
+  .boost-toggle { color: #f76707; }
+
+  .metric-select {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid #ced4da;
+    background: #fff;
+    color: #495057;
+  }
+
+  .tabs { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+  .tab {
+    padding: 5px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid #dee2e6;
+    background: #fff;
+    color: #495057;
+  }
+  .tab.active { background: #228be6; color: #fff; border-color: #228be6; }
+  .tabs.disabled .tab { opacity: 0.4; cursor: not-allowed; }
+
+  .legend { display: flex; gap: 14px; font-size: 11px; margin-bottom: 6px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-swatch { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .legend-swatch.dash { border-radius: 0; height: 2px; width: 14px; margin-top: 4px; }
+
+  svg { display: block; overflow: visible; }
+  .axis-line { stroke: #ced4da; stroke-width: 1; }
+  .axis-text { font-size: 9px; fill: #adb5bd; }
+  .data-point { stroke: #fff; stroke-width: 1.5; cursor: pointer; }
+
+  .boost-band { fill: #fff3bf; opacity: 0.6; }
+  .boost-badge-bg { fill: #f76707; }
+  .boost-badge-text { font-size: 8px; fill: #fff; font-weight: 700; text-anchor: middle; }
+
+  .summary-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid #dee2e6;
+  }
+  .summary-stat { text-align: center; }
+  .summary-label { font-size: 10px; color: #6c757d; text-transform: uppercase; letter-spacing: .03em; }
+  .summary-value { font-size: 14px; font-weight: 700; color: #212529; margin-top: 2px; }
+  .pos { color: #2f9e44; }
+  .neg { color: #c92a2a; }
+
+  .boost-note {
+    font-size: 11px;
+    color: #f76707;
+    margin-top: 8px;
+    display: none;
+  }
+
+  .chart-tooltip {
+    position: absolute;
+    background: #212529;
+    color: #fff;
+    font-size: 11px;
+    line-height: 1.5;
+    padding: 6px 9px;
+    border-radius: 6px;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, -100%);
+    transition: opacity 0.12s ease;
+    white-space: nowrap;
+    z-index: 10;
+  }
+  .chart-tooltip.visible { opacity: 1; }
+  .chart-tooltip .tt-title { font-weight: 700; margin-bottom: 2px; }
+  .chart-tooltip .tt-boost { color: #ffd43b; }
+</style>
+
+<div class="chart-wrap">
+
+  <div class="chart-tooltip" id="chartTooltip"></div>
+
+  <div class="controls-row">
+    <label class="overlay-toggle">
+      <input type="checkbox" id="overlayToggle">
+      Overlay all toys
+    </label>
+
+    <select class="metric-select" id="metricSelect">
+      <option value="profit">Gross Profit by Turn</option>
+      <option value="margin">Gross Profit Margin by Turn</option>
+      <option value="pctSold">% of Toys Sold by Turn</option>
+    </select>
+  </div>
+
+  <div class="controls-row2">
+    <label class="boost-toggle">
+      <input type="checkbox" id="boostToggle" checked>
+      📣 Include Impact of Ad Boosts
+    </label>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+
+  <div class="legend" id="legend" style="display:none;"></div>
+
+  <svg id="chart" viewBox="0 0 600 190" width="100%" height="190"></svg>
+
+  <div class="boost-note" id="boostNote">
+    🟡 Highlighted turns had an active ad campaign — badges show the boost applied.
+  </div>
+
+  <div class="summary-row" id="summaryRow"></div>
+
+</div>
+
+<a class="d-block mt-3" href="{% url 'turn-summary' %}">Back to Turn Summary</a>
+
+<script>
+const turnNumbers = {{ turn_numbers_json|safe }};
+const turns = turnNumbers.map(n => "T" + n);
+
+const palette = ["#228be6", "#fa5252", "#2f9e44", "#f59f00", "#7950f2", "#15aabf", "#e64980", "#82c91e"];
+const rawData = {{ chart_data_json|safe }};
+
+const data = {};
+Object.keys(rawData).forEach((name, idx) => {
+  data[name] = Object.assign({ color: palette[idx % palette.length] }, rawData[name]);
+});
+
+const toyKeys = Object.keys(data);
+let selectedToy   = toyKeys[0];
+let overlayAll    = false;
+let metric        = "profit";
+let includeBoost  = true;
+let animFrame     = null;
+
+function noBoostSeries(toyKey) {
+  const t = data[toyKey];
+  const priceMultiplier = t.revenue.map((r,i) => t.units_sold[i] === 0 ? 0 : r / t.units_sold[i]);
+  const costMultiplier  = t.units_manufactured.map((m,i) => m === 0 ? 0 : t.cogs[i] / m);
+
+  const noBoostSold = t.units_sold.map((s,i) => Math.round(s / (1 + t.boost[i])));
+  const noBoostRevenue = noBoostSold.map((s,i) => s * priceMultiplier[i]);
+  const noBoostCogs = t.units_manufactured.map((m,i) => m * costMultiplier[i]);
+  const noBoostProfit = noBoostRevenue.map((r,i) => r - noBoostCogs[i]);
+
+  return { units_sold: noBoostSold, revenue: noBoostRevenue, cogs: noBoostCogs, profit: noBoostProfit, units_manufactured: t.units_manufactured };
+}
+
+function seriesFor(toyKey, m, useActual) {
+  const t = useActual ? data[toyKey] : noBoostSeries(toyKey);
+  if (m === "profit")  return t.profit;
+  if (m === "margin")  return t.revenue.map((r,i)=> r === 0 ? 0 : t.profit[i]/r);
+  if (m === "pctSold") return t.units_sold.map((s,i)=> t.units_manufactured[i] === 0 ? 0 : s / t.units_manufactured[i]);
+}
+
+const padL = 36, padR = 10, padT = 24, padB = 24;
+const chartW = 600 - padL - padR;
+const chartH = 190 - padT - padB;
+
+function xFor(i) { return turns.length <= 1 ? padL : padL + (i / (turns.length - 1)) * chartW; }
+
+function getYScale() {
+  const toysToShow = overlayAll ? toyKeys : [selectedToy];
+  let allVals = [];
+  toysToShow.forEach(k => {
+    allVals = allVals.concat(seriesFor(k, metric, true));
+    allVals = allVals.concat(seriesFor(k, metric, false));
+  });
+  const maxV = Math.max(...allVals, 0);
+  const minV = Math.min(...allVals, 0);
+  const range = (maxV - minV) || 1;
+  return { minV, range };
+}
+
+function yForVal(v, scale) {
+  return padT + chartH - ((v - scale.minV) / scale.range) * chartH;
+}
+
+let currentY = {};
+
+function staticChrome(svg, scale) {
+  const zeroY = yForVal(0, scale);
+  const zeroLine = document.createElementNS('http://www.w3.org/2000/svg','line');
+  zeroLine.setAttribute('x1', padL); zeroLine.setAttribute('x2', 600 - padR);
+  zeroLine.setAttribute('y1', zeroY); zeroLine.setAttribute('y2', zeroY);
+  zeroLine.setAttribute('class', 'axis-line');
+  svg.appendChild(zeroLine);
+
+  const zeroLabel = document.createElementNS('http://www.w3.org/2000/svg','text');
+  zeroLabel.setAttribute('x', 2); zeroLabel.setAttribute('y', zeroY + 3);
+  zeroLabel.setAttribute('class', 'axis-text');
+  zeroLabel.textContent = metric === "profit" ? "$0" : "0%";
+  svg.appendChild(zeroLabel);
+
+  turns.forEach((t, i) => {
+    const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+    txt.setAttribute('x', xFor(i) - 6);
+    txt.setAttribute('y', 190 - 6);
+    txt.setAttribute('class', 'axis-text');
+    txt.textContent = t;
+    svg.appendChild(txt);
+  });
+
+  if (!overlayAll && includeBoost) {
+    const boostArr = data[selectedToy].boost;
+    boostArr.forEach((b, i) => {
+      if (b > 0) {
+        const bandW = chartW / turns.length;
+        const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+        rect.setAttribute('x', xFor(i) - bandW/2.2);
+        rect.setAttribute('y', padT - 14);
+        rect.setAttribute('width', bandW / 1.1);
+        rect.setAttribute('height', chartH + 14);
+        rect.setAttribute('class', 'boost-band');
+        svg.appendChild(rect);
+      }
+    });
+  }
+}
+
+function fmtValue(v, m) {
+  if (m === "profit") {
+    return v < 0 ? "($" + Math.abs(Math.round(v)).toLocaleString() + ")" : "$" + Math.round(v).toLocaleString();
+  }
+  return (v*100).toFixed(0) + "%";
+}
+
+const tooltipEl = document.getElementById("chartTooltip");
+
+function showTooltip(ev, toyKey, i, value, boostPct) {
+  const metricLabel = metric === "profit" ? "Gross profit" : metric === "margin" ? "Gross margin" : "% sold";
+  let html = `<div class="tt-title">${toyKey} · ${turns[i]}</div>${metricLabel}: ${fmtValue(value, metric)}`;
+  if (includeBoost && boostPct > 0) {
+    html += `<div class="tt-boost">📣 Ad boost: +${Math.round(boostPct*100)}%</div>`;
+  }
+  tooltipEl.innerHTML = html;
+  tooltipEl.classList.add('visible');
+  moveTooltip(ev);
+}
+
+function moveTooltip(ev) {
+  const wrap = document.querySelector('.chart-wrap');
+  const wrapRect = wrap.getBoundingClientRect();
+  tooltipEl.style.left = (ev.clientX - wrapRect.left) + 'px';
+  tooltipEl.style.top = (ev.clientY - wrapRect.top - 10) + 'px';
+}
+
+function hideTooltip() {
+  tooltipEl.classList.remove('visible');
+}
+
+function renderFrame(yByToy) {
+  const svg = document.getElementById("chart");
+  svg.innerHTML = "";
+  const scale = getYScale();
+  staticChrome(svg, scale);
+
+  const toysToShow = overlayAll ? toyKeys : [selectedToy];
+
+  toysToShow.forEach(toyKey => {
+    const color = data[toyKey].color;
+    const ys = yByToy[toyKey];
+
+    const poly = document.createElementNS('http://www.w3.org/2000/svg','polyline');
+    poly.setAttribute('points', ys.map((y,i)=>`${xFor(i)},${y}`).join(" "));
+    poly.setAttribute('fill', 'none');
+    poly.setAttribute('stroke', color);
+    poly.setAttribute('stroke-width', '2.5');
+    svg.appendChild(poly);
+
+    const actualValsForTip  = seriesFor(toyKey, metric, true);
+    const noBoostValsForTip = seriesFor(toyKey, metric, false);
+
+    ys.forEach((y,i) => {
+      const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      c.setAttribute('cx', xFor(i)); c.setAttribute('cy', y);
+      c.setAttribute('r', 3); c.setAttribute('fill', color);
+      c.setAttribute('class', 'data-point');
+
+      const boostPct = data[toyKey].boost[i];
+      const shownVal = includeBoost ? actualValsForTip[i] : noBoostValsForTip[i];
+
+      c.addEventListener('mouseenter', (ev) => showTooltip(ev, toyKey, i, shownVal, boostPct));
+      c.addEventListener('mousemove', (ev) => moveTooltip(ev));
+      c.addEventListener('mouseleave', hideTooltip);
+
+      svg.appendChild(c);
+    });
+
+    if (includeBoost) {
+      const refSeries = seriesFor(toyKey, metric, false);
+      const refYs = refSeries.map(v => yForVal(v, scale));
+      const dashed = document.createElementNS('http://www.w3.org/2000/svg','polyline');
+      dashed.setAttribute('points', refYs.map((y,i)=>`${xFor(i)},${y}`).join(" "));
+      dashed.setAttribute('fill', 'none');
+      dashed.setAttribute('stroke', color);
+      dashed.setAttribute('stroke-width', '1.5');
+      dashed.setAttribute('stroke-dasharray', '4,3');
+      dashed.setAttribute('opacity', '0.45');
+      svg.appendChild(dashed);
+    }
+
+    if (includeBoost && !overlayAll) {
+      const actualVals = seriesFor(toyKey, metric, true);
+      data[toyKey].boost.forEach((b, i) => {
+        if (b > 0) {
+          const x = xFor(i), y = yForVal(actualVals[i], scale);
+          const bg = document.createElementNS('http://www.w3.org/2000/svg','rect');
+          bg.setAttribute('x', x - 16); bg.setAttribute('y', y - 22);
+          bg.setAttribute('width', 32); bg.setAttribute('height', 12);
+          bg.setAttribute('rx', 6);
+          bg.setAttribute('class', 'boost-badge-bg');
+          svg.appendChild(bg);
+
+          const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+          txt.setAttribute('x', x); txt.setAttribute('y', y - 13.5);
+          txt.setAttribute('class', 'boost-badge-text');
+          txt.textContent = `+${Math.round(b*100)}%`;
+          svg.appendChild(txt);
+        }
+      });
+    }
+  });
+}
+
+function targetYByToy() {
+  const scale = getYScale();
+  const toysToShow = overlayAll ? toyKeys : [selectedToy];
+  const result = {};
+  toysToShow.forEach(toyKey => {
+    const series = seriesFor(toyKey, metric, includeBoost);
+    result[toyKey] = series.map(v => yForVal(v, scale));
+  });
+  return result;
+}
+
+function animateTo(targets, duration) {
+  if (animFrame) cancelAnimationFrame(animFrame);
+
+  const starts = {};
+  Object.keys(targets).forEach(k => {
+    starts[k] = currentY[k] && currentY[k].length === targets[k].length
+      ? currentY[k].slice()
+      : targets[k].slice();
+  });
+
+  const t0 = performance.now();
+
+  function step(now) {
+    const prog = Math.min((now - t0) / duration, 1);
+    const eased = 1 - Math.pow(1 - prog, 3);
+
+    const frameY = {};
+    Object.keys(targets).forEach(k => {
+      frameY[k] = targets[k].map((tv, i) => starts[k][i] + (tv - starts[k][i]) * eased);
+    });
+
+    renderFrame(frameY);
+
+    if (prog < 1) {
+      animFrame = requestAnimationFrame(step);
+    } else {
+      currentY = targets;
+    }
+  }
+  animFrame = requestAnimationFrame(step);
+}
+
+function drawLegend() {
+  const legend = document.getElementById("legend");
+  if (!overlayAll) { legend.style.display = "none"; return; }
+  legend.style.display = "flex";
+  let html = toyKeys.map(k => {
+    return `<div class="legend-item"><span class="legend-swatch" style="background:${data[k].color};"></span>${k}</div>`;
+  }).join("");
+  if (includeBoost) {
+    html += `<div class="legend-item"><span class="legend-swatch dash" style="background:#868e96;"></span>No-boost reference</div>`;
+  }
+  legend.innerHTML = html;
+}
+
+function drawSummary() {
+  const row = document.getElementById("summaryRow");
+  const toysToSum = overlayAll ? toyKeys : [selectedToy];
+
+  let totalRevenue = 0, totalCogs = 0, totalProfit = 0, totalSold = 0, totalManufactured = 0;
+  toysToSum.forEach(k => {
+    const t = includeBoost ? data[k] : noBoostSeries(k);
+    totalRevenue      += t.revenue.reduce((a,b)=>a+b,0);
+    totalCogs         += t.cogs.reduce((a,b)=>a+b,0);
+    totalProfit       += t.profit.reduce((a,b)=>a+b,0);
+    totalSold         += t.units_sold.reduce((a,b)=>a+b,0);
+    totalManufactured += t.units_manufactured.reduce((a,b)=>a+b,0);
+  });
+
+  const totalMargin = totalRevenue === 0 ? 0 : totalProfit / totalRevenue;
+  const pctSold     = totalManufactured === 0 ? 0 : totalSold / totalManufactured;
+  const roi         = totalCogs === 0 ? 0 : totalProfit / totalCogs;
+
+  const profitClass = totalProfit >= 0 ? "pos" : "neg";
+  const profitDisplay = totalProfit < 0
+    ? "($" + Math.abs(Math.round(totalProfit)).toLocaleString() + ")"
+    : "$" + Math.round(totalProfit).toLocaleString();
+
+  row.innerHTML = `
+    <div class="summary-stat">
+      <div class="summary-label">Total Profit</div>
+      <div class="summary-value ${profitClass}">${profitDisplay}</div>
+    </div>
+    <div class="summary-stat">
+      <div class="summary-label">Profit Margin</div>
+      <div class="summary-value">${(totalMargin*100).toFixed(0)}%</div>
+    </div>
+    <div class="summary-stat">
+      <div class="summary-label">% Toys Sold</div>
+      <div class="summary-value">${(pctSold*100).toFixed(0)}%</div>
+    </div>
+    <div class="summary-stat">
+      <div class="summary-label">ROI (Profit/COGS)</div>
+      <div class="summary-value">${(roi*100).toFixed(0)}%</div>
+    </div>
+  `;
+}
+
+function redraw(animated) {
+  const targets = targetYByToy();
+  if (animated) {
+    animateTo(targets, 500);
+  } else {
+    currentY = targets;
+    renderFrame(targets);
+  }
+  drawLegend();
+  drawSummary();
+  document.getElementById("boostNote").style.display = includeBoost ? "block" : "none";
+}
+
+document.getElementById("overlayToggle").addEventListener("change", function(e) {
+  overlayAll = e.target.checked;
+  document.getElementById("tabs").classList.toggle("disabled", overlayAll);
+  redraw(false);
+});
+
+document.getElementById("metricSelect").addEventListener("change", function(e) {
+  metric = e.target.value;
+  redraw(false);
+});
+
+document.getElementById("boostToggle").addEventListener("change", function(e) {
+  includeBoost = e.target.checked;
+  redraw(true);
+});
+
+const tabsContainer = document.getElementById("tabs");
+toyKeys.forEach((key, i) => {
+  const tab = document.createElement("div");
+  tab.className = "tab" + (i === 0 ? " active" : "");
+  tab.dataset.toy = key;
+  tab.textContent = key;
+  tab.addEventListener("click", function() {
+    if (overlayAll) return;
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    selectedToy = key;
+    redraw(false);
+  });
+  tabsContainer.appendChild(tab);
+});
+
+redraw(false);
+</script>
+
+{% endblock content %}

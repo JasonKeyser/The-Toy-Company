@@ -339,6 +339,19 @@ def game(request):
         ad_form = AdvertisementCampaignForm(difficulty=player.difficulty)
         equipment_form = EquipmentForm(equipment_bought=player.equipment_bought)
 
+        outstanding_loan_details = {}
+        if last_turn and last_turn.loans_payable > 0:
+            outstanding_loan = player.loans.filter(is_paid_off=False).order_by("-taken_on_turn").first()
+
+            outstanding_loan_details = {
+                "interest_due": outstanding_loan.interest_due(),
+                "principal_due": outstanding_loan.principal_due(),
+                "total_payment_due": outstanding_loan.compute_annual_payment(),
+                "years_remaining": player.turn_number - outstanding_loan.taken_on_turn,
+            }
+        else:
+            outstanding_loan = None
+
 
     print(f'savings {player.cost_savings_coefficient}')
     form_and_toys = [
@@ -373,6 +386,8 @@ def game(request):
             "inv_expansion_form": inv_expansion_form,
             "loan_offer": loan_offer,
             "loan_form": loan_form,
+            "oustanding_loan": outstanding_loan,
+            "outstanding_loan_details": outstanding_loan_details,
             "ad_form": ad_form,
             "available_ad_profiles": available_ad_profiles,
             "current_boost": round(current_boost * 100),

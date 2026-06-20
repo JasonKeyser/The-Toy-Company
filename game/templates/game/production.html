@@ -797,6 +797,7 @@
                 </div>
               </div>
             </div>
+            {% if loan_offer.current_loan_outstanding == False %}
             <div class="card-body">
               <table class="table table-bordered table-sm mb-0">
                 <thead class="table-secondary">
@@ -834,9 +835,9 @@
                         </div>
                       {% elif loan_offer.min_yrs_met == False %}
                         <div class="text-muted small mt-1">{{ player.difficulty.min_years_of_financial_history }} years of financial history required to take out a loan.</div>
-                      {% elif loan_offer.current_loan_outstanding == True %}
-                        <div class="text-muted small mt-1">Must Repay Existing Loans Before Borrowing More</div>
-                      {% endif %}
+<!--                      {% elif loan_offer.current_loan_outstanding == True %}-->
+<!--                        <div class="text-muted small mt-1">Must Repay Existing Loans Before Borrowing More</div>-->
+<!--                      {% endif %}-->
                       {% if loan_form.borrowed_amount.errors %}
                         <div class="text-danger small">{{ loan_form.borrowed_amount.errors }}</div>
                       {% endif %}
@@ -845,8 +846,38 @@
                 </tbody>
               </table>
             </div>
+            {% else %}
+            <div class="card-body">
+              <table class="table table-bordered table-sm mb-0">
+                <thead class="table-secondary">
+                  <tr>
+                    <th>Original Loan Amount</th>
+                    <th>Principal Outstanding</th>
+                    <th>Interest Rate</th>
+                    <th>Principal Due</th>
+                    <th>Interest Due</th>
+                    <th>Total Payment Due</th>
+                    <th>Loan Tenure</th>
+                    <th>Years Remaining</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>{{ outstanding_loan.principal|accounting }}</td>
+                    <td>{{ outstanding_loan.outstanding_balance|accounting }} years</td>
+                    <td>{{ outstanding_loan.annual_interest_rate|percentage }}</td>
+                    <td>{{ outstanding_loan_details.principal_due }}</td>
+                    <td>{{ outstanding_loan_details.interest_due }}</td>
+                    <td>{{ outstanding_loan_details.total_payment_due }}</td>
+                    <td>{{ outstanding_loan.loan_length }}</td>
+                    <td>{{ outstanding_loan.years_remaining }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            {% endif %}
           </div>
-          {% endif %}
+
 
         </div>
       </div>

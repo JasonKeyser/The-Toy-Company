@@ -486,7 +486,7 @@
 
   </div>
 
-  <form method="POST">
+  <form method="POST" id="production-form">
     {% csrf_token %}
     {{ toyformset.management_form }}
     {{ coverageformset.management_form }}
@@ -943,7 +943,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const costPerSpace           = {{ player.difficulty.factory_space_cost|unlocalize }};
   const rentCost               = {{ player.difficulty.rent_cost|unlocalize }};
 
-  const maxCreditAvailable = {{ loan_offer.max_credit|default:0 }};
+  const maxCreditAvailable = parseFloat("{{ loan_offer.max_credit|default:0 }}") || 0;
 
   const adProfiles = JSON.parse(document.getElementById('ad-profiles-data').textContent);
 
@@ -1215,6 +1215,61 @@ document.addEventListener('DOMContentLoaded', function () {
   grandTotalCostDisplay.dataset.value = 0;
   expansionTotalDisplay.dataset.value = 0;
   if (adCostDisplay) adCostDisplay.dataset.value = 0;
+
+/* ── persist form inputs across navigation (turn-scoped) ── */
+  const STORAGE_KEY = 'production_draft_turn_' + {{ player.turn_number }};
+
+  function getDraft() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    } catch {
+      return {};
+    }
+  }
+
+  function saveDraftField(name, value) {
+    const draft = getDraft();
+    draft[name] = value;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+  }
+
+  function restoreDraftFields() {
+    const draft = getDraft();
+    document.querySelectorAll('form input, form select').forEach(function (el) {
+      if (!el.name || !(el.name in draft)) return;
+      if (el.type === 'checkbox' || el.type === 'radio') {
+        el.checked = draft[el.name];
+      } else {
+        el.value = draft[el.name];
+      }
+    });
+  }
+
+  function wireDraftPersistence() {
+    document.querySelectorAll('form input, form select').forEach(function (el) {
+      if (!el.name) return;
+      const eventType = (el.tagName === 'SELECT' || el.type === 'checkbox' || el.type === 'radio')
+        ? 'change' : 'input';
+      el.addEventListener(eventType, function () {
+        const value = (el.type === 'checkbox' || el.type === 'radio') ? el.checked : el.value;
+        saveDraftField(el.name, value);
+      });
+    });
+  }
+
+  function clearDraft() {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+
+
+  restoreDraftFields();
+  wireDraftPersistence();
+
+  document.getElementById('production-form').addEventListener('submit', function () {
+    clearDraft();
+  });
+
+
 
   updateCalculations();
   updateExpansionCost();

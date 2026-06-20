@@ -221,6 +221,7 @@ class GameEngine:
         #assets
         turn.beginning_cash = player.cash
         turn.ending_cash = player.cash + change_in_cash
+        turn.change_in_cash = change_in_cash
         turn.gross_equipment = gross_equipment
         turn.accumulated_depreciation_equipment = accumulated_depreciation_equipment
         turn.property = property

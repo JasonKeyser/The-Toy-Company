@@ -303,13 +303,14 @@ document.addEventListener("DOMContentLoaded", function () {
     function finalize() {
       face.style.transform = "translateY(0) scaleY(1)";
       numSpan.textContent  = finalVal;
+      const demandPct = parseFloat(demandPercent) || 0;
 
       face.classList.remove('roll-high', 'roll-mid', 'roll-low');
-      if      (finalVal > 13) face.classList.add('roll-high');
-      else if (finalVal > 6)  face.classList.add('roll-mid');
-      else                    face.classList.add('roll-low');
+      if (demandPct >= 66) face.classList.add('roll-high');
+      else if (demandPct >= 33) face.classList.add('roll-mid');
+      else face.classList.add('roll-low');
 
-      const strokeColor = finalVal > 13 ? '#2f9e44' : finalVal > 6 ? '#e67700' : '#c92a2a';
+      const strokeColor = demandPct >= 66 ? '#2f9e44' : demandPct >= 33 ? '#e67700' : '#c92a2a';
       addOutline(face, strokeColor);
 
       const infoDiv = wrap.closest('.dice-box').querySelector('.dice-info');

@@ -178,7 +178,7 @@ def game(request):
     eligable = (min_yrs_met == True) and (current_loan_outstanding == False)
 
     if eligable:
-        max_credit = max( trailing_ebitda * max_leverage_ratio, minimum_credit_available )
+        max_credit = round( max( trailing_ebitda * max_leverage_ratio, minimum_credit_available ), 0)
     else:
         max_credit = "N/A"
 
@@ -336,20 +336,21 @@ def game(request):
         ad_form = AdvertisementCampaignForm(difficulty=player.difficulty)
         equipment_form = EquipmentForm(equipment_bought=player.equipment_bought)
 
-        outstanding_loan_details = {}
-        if last_turn and last_turn.loans_payable > 0:
-            outstanding_loan = player.loans.filter(is_paid_off=False).order_by("-taken_on_turn").first()
+    last_turn = Turn.objects.filter(player=player).order_by("-turn_number").first()
+    outstanding_loan_details = {}
+    if last_turn and last_turn.loans_payable > 0:
+        outstanding_loan = player.loans.filter(is_paid_off=False).order_by("-taken_on_turn").first()
 
-            years_elapsed = player.turn_number - outstanding_loan.taken_on_turn
+        years_elapsed = player.turn_number - outstanding_loan.taken_on_turn
 
-            outstanding_loan_details = {
-                "interest_due": outstanding_loan.interest_due(),
-                "principal_due": outstanding_loan.principal_due(),
-                "total_payment_due": outstanding_loan.compute_annual_payment(),
-                "years_remaining": outstanding_loan.loan_length - years_elapsed,
-            }
-        else:
-            outstanding_loan = 0
+        outstanding_loan_details = {
+            "interest_due": outstanding_loan.interest_due(),
+            "principal_due": outstanding_loan.principal_due(),
+            "total_payment_due": outstanding_loan.compute_annual_payment(),
+            "years_remaining": outstanding_loan.loan_length - years_elapsed,
+        }
+    else:
+        outstanding_loan = 0
 
 
     print(f'savings {player.cost_savings_coefficient}')

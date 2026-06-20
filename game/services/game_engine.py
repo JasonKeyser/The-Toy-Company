@@ -7,14 +7,14 @@ from game.models import Turn, ToyProductionOutcome, Player, InsuranceEventOutcom
 
 
 def check_player_status(player):
-    if player.cash >= player.difficulty.winning_networth:
+    if player.total_equity >= player.difficulty.winning_networth:
         player.status = "won"
     elif player.cash <= 0:
         player.status = "lost"
-        player.lost_reason = "ran_out_of_money"
+        player.lost_reason = "Ran out of Money"
     elif player.turn_number > player.difficulty.max_turns:
         player.status = "lost"
-        player.lost_reason = "lost_on_turns"
+        player.lost_reason = "Lost on Turns"
 
     else:
         player.status = "still_playing"

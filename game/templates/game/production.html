@@ -833,11 +833,9 @@
                         <div id="loan-credit-warning" style="display:none; color:#fa5252; font-size:11px; margin-top:4px;">
                           ⚠ Exceeds max credit of <span id="loan-max-credit-display"></span>
                         </div>
-                      {% elif loan_offer.min_yrs_met == False %}
+                      {% else %}
                         <div class="text-muted small mt-1">{{ player.difficulty.min_years_of_financial_history }} years of financial history required to take out a loan.</div>
-<!--                      {% elif loan_offer.current_loan_outstanding == True %}-->
-<!--                        <div class="text-muted small mt-1">Must Repay Existing Loans Before Borrowing More</div>-->
-<!--                      {% endif %}-->
+                      {% endif %}
                       {% if loan_form.borrowed_amount.errors %}
                         <div class="text-danger small">{{ loan_form.borrowed_amount.errors }}</div>
                       {% endif %}
@@ -864,20 +862,20 @@
                 <tbody>
                   <tr>
                     <td>{{ outstanding_loan.principal|accounting }}</td>
-                    <td>{{ outstanding_loan.outstanding_balance|accounting }} years</td>
+                    <td>{{ outstanding_loan.outstanding_balance|accounting }}</td>
                     <td>{{ outstanding_loan.annual_interest_rate|percentage }}</td>
-                    <td>{{ outstanding_loan_details.principal_due }}</td>
-                    <td>{{ outstanding_loan_details.interest_due }}</td>
-                    <td>{{ outstanding_loan_details.total_payment_due }}</td>
+                    <td>{{ outstanding_loan_details.principal_due|accounting }}</td>
+                    <td>{{ outstanding_loan_details.interest_due|accounting }}</td>
+                    <td>{{ outstanding_loan_details.total_payment_due|accounting }}</td>
                     <td>{{ outstanding_loan.loan_length }}</td>
-                    <td>{{ outstanding_loan.years_remaining }}</td>
+                    <td>{{ outstanding_loan_details.years_remaining }}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
             {% endif %}
           </div>
-
+          {% endif %}
 
         </div>
       </div>

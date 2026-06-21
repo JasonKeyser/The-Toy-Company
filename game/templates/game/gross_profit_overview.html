@@ -1,9 +1,10 @@
 {% load accounting_tags %}
 {% load math_tags %}
 <!--
-  Reusable Gross Profit Overview card.
+  Gross Profit Overview.
   Renders one Option-A-style toy card per item in `production_outcomes`,
-  stacked vertically to match the height of _financial_summary_card.html.
+  stacked vertically. Each card stands alone (grey background, own border)
+  rather than being grouped inside a single outer container.
   Set `show_history_link` to True to show a link to the historical gross
   profit analysis page.
 -->
@@ -28,9 +29,9 @@
 
   .toy-card {
     border: 1px solid #dee2e6;
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 12px 14px;
-    background: #fff;
+    background: #f8f9fa;
   }
   .toy-card .toy-name { font-weight: 700; font-size: 13px; margin-bottom: 6px; }
 
@@ -47,10 +48,11 @@
     display: flex;
     overflow: hidden;
   }
-  .sell-segment.base  { background: linear-gradient(90deg, #4dabf7, #228be6); }
   .sell-segment.boost { background: #fd7e14; }
 
   .sell-bar-label { font-size: 10px; color: #6c757d; margin-bottom: 8px; }
+  .sell-bar-boost-note { color: #fd7e14; }
+
   .toy-stats { display: flex; justify-content: space-between; font-size: 11px; color: #6c757d; padding: 2px 0; }
   .toy-stats .val { font-weight: 600; color: #212529; }
   .toy-profit {
@@ -67,7 +69,7 @@
 
   .gpo-totals {
     margin-top: 4px;
-    padding-top: 10px;
+    padding: 10px 14px 0 14px;
     border-top: 1px solid #dee2e6;
     display: flex;
     justify-content: space-between;
@@ -76,48 +78,46 @@
   }
 </style>
 
-<div class="fin-card flex-grow-1">
-  <div class="gpo-title">
-    Gross Profit Overview
-    {% if show_history_link %}
-      <a href="{% url 'gross-profit-analysis' %}" class="small">Historical Gross Profit Analysis</a>
-    {% endif %}
-  </div>
+<div class="gpo-title">
+  Gross Profit Overview
+  {% if show_history_link %}
+    <a href="{% url 'gross-profit-analysis' %}" class="small">Historical Gross Profit Analysis</a>
+  {% endif %}
+</div>
 
-  <div class="gpo-card-wrap">
-    {% for outcome in production_outcomes %}
-    <div class="toy-card">
-      <div class="toy-name">{{ outcome.toy.name }}</div>
+<div class="gpo-card-wrap">
+  {% for outcome in production_outcomes %}
+  <div class="toy-card">
+    <div class="toy-name">{{ outcome.toy.name|toy_icon }} {{ outcome.toy.name }}</div>
 
-      <div class="sell-bar-track">
-        <div class="sell-bar-fill" style="width: {{ outcome.units_sold|div:outcome.units_manufactured|percentage }};">
-          <div class="sell-segment base" style="flex: {{ outcome.baseline_units_sold }} 0 auto;"></div>
-          {% if outcome.boosted_units_sold > 0 %}
-          <div class="sell-segment boost" style="flex: {{ outcome.boosted_units_sold }} 0 auto;"></div>
-          {% endif %}
-        </div>
-      </div>
-      <div class="sell-bar-label">
-        {{ outcome.units_sold }} / {{ outcome.units_manufactured }} sold
+    <div class="sell-bar-track">
+      <div class="sell-bar-fill" style="width: {{ outcome.units_sold|div:outcome.units_manufactured|percentage }};">
+        <div class="sell-segment base" style="flex: {{ outcome.baseline_units_sold }} 0 auto; background: linear-gradient(to right, {{ outcome.toy.name|toy_color }}, color-mix(in srgb, {{ outcome.toy.name|toy_color }} 55%, black));"></div>
         {% if outcome.boosted_units_sold > 0 %}
-          &nbsp;·&nbsp;<span style="color:#fd7e14;">{{ outcome.boosted_units_sold }} from ad boost</span>
+        <div class="sell-segment boost" style="flex: {{ outcome.boosted_units_sold }} 0 auto;"></div>
         {% endif %}
       </div>
-
-      <div class="toy-stats"><span>Revenue</span><span class="val">{{ outcome.revenue|accounting }}</span></div>
-      <div class="toy-stats"><span>COGS</span><span class="val">{{ outcome.cogs|accounting }}</span></div>
-      <div class="toy-profit">
-        <span>Gross profit</span>
-        <span class="{% if outcome.profit >= 0 %}profit-pos{% else %}profit-neg{% endif %}">{{ outcome.profit|accounting }}</span>
-      </div>
     </div>
-    {% endfor %}
-  </div>
+    <div class="sell-bar-label">
+      {{ outcome.units_sold }} / {{ outcome.units_manufactured }} sold ({{ outcome.units_sold|div:outcome.units_manufactured|percentage }})
+      {% if outcome.boosted_units_sold > 0 %}
+        &nbsp;·&nbsp;<span class="sell-bar-boost-note">{{ outcome.boosted_units_sold }} from ad boost</span>
+      {% endif %}
+    </div>
 
-  <div class="gpo-totals">
-    <span>Grand Total</span>
-    <span class="{% if production_outcomes|sum_attr:'profit' >= 0 %}profit-pos{% else %}profit-neg{% endif %}">
-      {{ production_outcomes|sum_attr:"profit"|accounting }}
-    </span>
+    <div class="toy-stats"><span>Revenue</span><span class="val">{{ outcome.revenue|accounting }}</span></div>
+    <div class="toy-stats"><span>COGS</span><span class="val">{{ outcome.cogs|accounting }}</span></div>
+    <div class="toy-profit">
+      <span>Gross profit</span>
+      <span class="{% if outcome.profit >= 0 %}profit-pos{% else %}profit-neg{% endif %}">{{ outcome.profit|accounting }}</span>
+    </div>
   </div>
+  {% endfor %}
+</div>
+
+<div class="gpo-totals">
+  <span>Total Gross Profit</span>
+  <span class="{% if production_outcomes|sum_attr:'profit' >= 0 %}profit-pos{% else %}profit-neg{% endif %}">
+    {{ production_outcomes|sum_attr:"profit"|accounting }}
+  </span>
 </div>

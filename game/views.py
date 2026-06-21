@@ -21,6 +21,7 @@ from .forms import UnitsManufacturedForm, BaseUnitsFormSet, FactoryExpansionForm
     InsuranceCoverageTakenForm, BaseCoverageFormSet, EquipmentForm, LoanForm
 from django.forms import formset_factory
 import json
+from .icons import get_toy_color
 
 class PostListView(ListView):
     model = Post
@@ -416,6 +417,7 @@ def turn_summary(request):
             "turn": turn,
             "turns": [turn],
             "production_outcomes": production_outcomes,
+            "show_history_link": (turn.turn_number > 1),
         })
 
     else:
@@ -428,7 +430,9 @@ def gross_profit_analysis(request):
     turns = Turn.objects.filter(player=player).order_by("turn_number")
     toys = Toy.objects.all()
 
+
     chart_data = {}
+    toy_colors = {toy.name: get_toy_color(toy.name) for toy in toys}
     for toy in toys:
         outcomes_by_turn = {
             o.turn.turn_number: o
@@ -458,6 +462,7 @@ def gross_profit_analysis(request):
         "turn": turns.last(),
         "turn_numbers_json": json.dumps([t.turn_number for t in turns]),
         "chart_data_json": json.dumps(chart_data),
+        "toy_colors_json": json.dumps(toy_colors),
     }
     return render(request, "game/gross_profit_analysis.html", context)
 

@@ -1,6 +1,7 @@
 from django import template
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.utils.safestring import mark_safe
+from game.icons import ICONS, TOY_ICONS, DEFAULT_TOY_ICON, TOY_COLORS, DEFAULT_TOY_COLOR
 
 register = template.Library()
 
@@ -85,3 +86,36 @@ def percentage(value):
         return f"({formatted_val})"
 
     return formatted_val
+
+
+@register.filter
+def toy_icon(toy_name):
+    name = (toy_name or "").lower()
+    for keyword, emoji in TOY_ICONS.items():
+        if keyword in name:
+            return emoji
+    return DEFAULT_TOY_ICON
+
+TOY_COLORS = {
+    "kite": "#228be6",
+    "yo-yo": "#fa5252",
+    "yoyo": "#fa5252",
+    "bike": "#2f9e44",
+    "bicycle": "#2f9e44",
+}
+
+DEFAULT_TOY_COLOR = "#868e96"
+
+
+@register.filter
+def toy_color(toy_name):
+    name = (toy_name or "").lower()
+    for keyword, color in TOY_COLORS.items():
+        if keyword in name:
+            return color
+    return DEFAULT_TOY_COLOR
+
+
+@register.simple_tag
+def icon(key):
+    return ICONS.get(key, "")

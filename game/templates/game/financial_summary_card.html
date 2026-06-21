@@ -22,6 +22,9 @@
     letter-spacing: .05em;
     color: #6c757d;
     margin-bottom: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
   }
 
   .fin-row {
@@ -228,7 +231,7 @@ function toggle(id) {
   <div class="fin-title">
     Financial Summary
     {% if show_history_link %}
-      <a href="{% url 'financial-history' %}" class="small">History</a>
+      <a href="{% url 'financial-history' %}" class="small">Financial History</a>
     {% endif %}
   </div>
 

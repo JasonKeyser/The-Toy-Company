@@ -31,11 +31,20 @@
 
 </div>
 
-    <!-- Gross Profit Overview -->
-  {% include "game/gross_profit_overview.html" with production_outcomes=production_outcomes show_history_link=True %}
+<!-- Gross Profit Overview + Financial Summary, split evenly down the middle -->
+<div class="d-flex align-items-start" style="gap: 24px;">
 
+  <div style="flex: 0 0 50%; max-width: 50%; display: flex; justify-content: flex-start;">
+    <div style="width: 100%; max-width: 460px;">
+      {% include "game/gross_profit_overview.html" with production_outcomes=production_outcomes show_history_link=show_history_link %}
+    </div>
+  </div>
 
-  {% include "game/financial_summary_card.html" with turns=turns show_history_link=True %}
+  <div style="flex: 0 0 50%; max-width: 50%; display: flex; justify-content: flex-start;">
+    <div style="width: 100%; max-width: 460px;">
+      {% include "game/financial_summary_card.html" with turns=turns show_history_link=show_history_link %}
+    </div>
+  </div>
 </div>
 
 

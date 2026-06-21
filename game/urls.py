@@ -24,5 +24,5 @@ urlpatterns = [
     path('turn_summary/', views.turn_summary, name='turn-summary'),
     path('financial_history/', views.financial_history, name='financial-history'),
     path('interest-rate-distribution/', views.interest_rate_distribution_view, name='interest_rate_distribution'),
-    path('gross-profit-analysis/', views.gross_profit_analysis, name='gross_profit_analysis')
+    path('gross_profit_analysis/', views.gross_profit_analysis, name='gross-profit-analysis')
 ]

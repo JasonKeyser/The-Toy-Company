@@ -1,7 +1,8 @@
 {% extends "game/base.html" %}
+{% load accounting_tags %}
 {% block content %}
 
-<h2 class="mb-3">Historical Gross Profit Analysis 📊</h2>
+<h2 class="mb-3">Historical Gross Profit Analysis {% icon 'gross_profit_analysis' %}</h2>
 
 <style>
   .chart-wrap {
@@ -141,8 +142,8 @@
 
   <div class="controls-row2">
     <label class="boost-toggle">
-      <input type="checkbox" id="boostToggle" checked>
-      📣 Include Impact of Ad Boosts
+      <input type="checkbox" id="boostToggle">
+      {% icon 'ad_campaign_note' %} Include Impact of Ad Boosts
     </label>
   </div>
 
@@ -153,7 +154,7 @@
   <svg id="chart" viewBox="0 0 600 190" width="100%" height="190"></svg>
 
   <div class="boost-note" id="boostNote">
-    🟡 Highlighted turns had an active ad campaign — badges show the boost applied.
+    {% icon 'boost_highlight' %} Highlighted turns had an active ad campaign — badges show the boost applied.
   </div>
 
   <div class="summary-row" id="summaryRow"></div>
@@ -168,18 +169,26 @@ const turns = turnNumbers.map(n => "T" + n);
 
 const palette = ["#228be6", "#fa5252", "#2f9e44", "#f59f00", "#7950f2", "#15aabf", "#e64980", "#82c91e"];
 const rawData = {{ chart_data_json|safe }};
+const toyColors = {{ toy_colors_json|safe }};
 
 const data = {};
 Object.keys(rawData).forEach((name, idx) => {
-  data[name] = Object.assign({ color: palette[idx % palette.length] }, rawData[name]);
+  data[name] = Object.assign({ color: toyColors[name] || palette[idx % palette.length] }, rawData[name]);
 });
 
 const toyKeys = Object.keys(data);
+const hasEverBoosted = toyKeys.some(k => data[k].boost.some(b => b > 0));
+
 let selectedToy   = toyKeys[0];
 let overlayAll    = false;
 let metric        = "profit";
-let includeBoost  = true;
+let includeBoost  = hasEverBoosted;
 let animFrame     = null;
+
+document.getElementById("boostToggle").checked = hasEverBoosted;
+if (!hasEverBoosted) {
+  document.querySelector(".controls-row2").style.display = "none";
+}
 
 function noBoostSeries(toyKey) {
   const t = data[toyKey];
@@ -226,19 +235,38 @@ function yForVal(v, scale) {
 
 let currentY = {};
 
-function staticChrome(svg, scale) {
-  const zeroY = yForVal(0, scale);
-  const zeroLine = document.createElementNS('http://www.w3.org/2000/svg','line');
-  zeroLine.setAttribute('x1', padL); zeroLine.setAttribute('x2', 600 - padR);
-  zeroLine.setAttribute('y1', zeroY); zeroLine.setAttribute('y2', zeroY);
-  zeroLine.setAttribute('class', 'axis-line');
-  svg.appendChild(zeroLine);
+function yAxisLabel(v) {
+  if (metric === "profit") {
+    return v < 0 ? "($" + Math.abs(Math.round(v)).toLocaleString() + ")" : "$" + Math.round(v).toLocaleString();
+  }
+  return Math.round(v * 100) + "%";
+}
 
-  const zeroLabel = document.createElementNS('http://www.w3.org/2000/svg','text');
-  zeroLabel.setAttribute('x', 2); zeroLabel.setAttribute('y', zeroY + 3);
-  zeroLabel.setAttribute('class', 'axis-text');
-  zeroLabel.textContent = metric === "profit" ? "$0" : "0%";
-  svg.appendChild(zeroLabel);
+function staticChrome(svg, scale) {
+  const axisLine = document.createElementNS('http://www.w3.org/2000/svg','line');
+  axisLine.setAttribute('x1', padL); axisLine.setAttribute('x2', padL);
+  axisLine.setAttribute('y1', padT); axisLine.setAttribute('y2', padT + chartH);
+  axisLine.setAttribute('class', 'axis-line');
+  svg.appendChild(axisLine);
+
+  const tickCount = 4;
+  for (let i = 0; i <= tickCount; i++) {
+    const v = scale.minV + (scale.range * i / tickCount);
+    const y = yForVal(v, scale);
+
+    const gridLine = document.createElementNS('http://www.w3.org/2000/svg','line');
+    gridLine.setAttribute('x1', padL); gridLine.setAttribute('x2', 600 - padR);
+    gridLine.setAttribute('y1', y); gridLine.setAttribute('y2', y);
+    gridLine.setAttribute('class', 'axis-line');
+    gridLine.setAttribute('opacity', Math.abs(v) < 1e-9 ? '1' : '0.35');
+    svg.appendChild(gridLine);
+
+    const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+    label.setAttribute('x', 2); label.setAttribute('y', y + 3);
+    label.setAttribute('class', 'axis-text');
+    label.textContent = yAxisLabel(v);
+    svg.appendChild(label);
+  }
 
   turns.forEach((t, i) => {
     const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
@@ -279,7 +307,7 @@ function showTooltip(ev, toyKey, i, value, boostPct) {
   const metricLabel = metric === "profit" ? "Gross profit" : metric === "margin" ? "Gross margin" : "% sold";
   let html = `<div class="tt-title">${toyKey} · ${turns[i]}</div>${metricLabel}: ${fmtValue(value, metric)}`;
   if (includeBoost && boostPct > 0) {
-    html += `<div class="tt-boost">📣 Ad boost: +${Math.round(boostPct*100)}%</div>`;
+    html += `<div class="tt-boost">{% icon 'ad_campaign_note' %} Ad boost: +${Math.round(boostPct*100)}%</div>`;
   }
   tooltipEl.innerHTML = html;
   tooltipEl.classList.add('visible');

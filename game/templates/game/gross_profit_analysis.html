@@ -194,7 +194,7 @@ function noBoostSeries(toyKey) {
   const priceMultiplier = t.revenue.map((r,i) => t.units_sold[i] === 0 ? 0 : r / t.units_sold[i]);
   const costMultiplier  = t.units_manufactured.map((m,i) => m === 0 ? 0 : t.cogs[i] / m);
 
-  const noBoostSold = t.units_sold.map((s,i) => Math.round(s / (1 + t.boost[i])));
+    const noBoostSold = t.units_sold.map((s,i) => Math.min(s, Math.round(t.units_manufactured[i] * (t.demand_percent[i] / 100))));
   const noBoostRevenue = noBoostSold.map((s,i) => s * priceMultiplier[i]);
   const noBoostCogs = t.units_manufactured.map((m,i) => m * costMultiplier[i]);
   const noBoostProfit = noBoostRevenue.map((r,i) => r - noBoostCogs[i]);

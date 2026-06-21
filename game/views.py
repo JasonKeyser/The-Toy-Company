@@ -460,7 +460,7 @@ def gross_profit_analysis(request):
             for o in ToyProductionOutcome.objects.filter(turn__in=turns, toy=toy)
         }
 
-        units_manufactured, units_sold, revenue, cogs, profit, boost = [], [], [], [], [], []
+        units_manufactured, units_sold, revenue, cogs, profit, boost, demand_percent = [], [], [], [], [], [], []
         for t in turns:
             outcome = outcomes_by_turn.get(t.turn_number)
             units_manufactured.append(outcome.units_manufactured if outcome else 0)
@@ -469,6 +469,7 @@ def gross_profit_analysis(request):
             cogs.append(float(outcome.cogs) if outcome else 0)
             profit.append(float(outcome.profit) if outcome else 0)
             boost.append(float(outcome.demand_boost_applied) if outcome else 0)
+            demand_percent.append(outcome.demand_percent if outcome else 0)
 
         chart_data[toy.name] = {
             "units_manufactured": units_manufactured,
@@ -477,6 +478,7 @@ def gross_profit_analysis(request):
             "cogs": cogs,
             "profit": profit,
             "boost": boost,
+            "demand_percent": demand_percent
         }
 
     context = {

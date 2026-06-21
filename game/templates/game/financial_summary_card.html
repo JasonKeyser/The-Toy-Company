@@ -107,9 +107,6 @@
     color: #212529;
   }
 
-  .fcf-positive { color: #2f9e44; }
-  .fcf-negative { color: #c92a2a; }
-
   /* ── Statement section headers (Income Statement / Cash Flow / Balance Sheet) ── */
   .fin-section {
     margin-top: 10px;
@@ -144,39 +141,19 @@
     display: block;
   }
 
-  /* ── Free Cashflow callout ── */
-  .fcff-card {
+  /* ── Highlighted row (Change in cash) ── */
+  .fin-row.highlighted {
     margin: 4px 0;
     padding: 6px 8px;
     background: #e7f5ff;
     border: 1px solid #74c0fc;
     border-radius: 6px;
+    color: #1c7ed6;
   }
 
-  .fcff-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    cursor: pointer;
-    user-select: none;
-  }
-
-  .fcff-label {
-    font-weight: 600;
-    font-size: 12px;
-    color: #495057;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    width: 160px;
-  }
-
-  .fcff-value {
-    font-weight: 600;
-    font-size: 12px;
-    display: flex;
-    width: 64px;
-    justify-content: flex-end;
+  .fin-row.highlighted .fin-label,
+  .fin-row.highlighted .fin-value {
+    color: #1c7ed6;
   }
 
   /* ── Balance sheet section headings + totals ── */
@@ -231,7 +208,7 @@ function toggle(id) {
   <div class="fin-title">
     Financial Summary
     {% if show_history_link %}
-      <a href="{% url 'financial-history' %}" class="small">Financial History</a>
+      <a href="{% url 'financial-history' %}" class="small">History</a>
     {% endif %}
   </div>
 
@@ -330,44 +307,13 @@ function toggle(id) {
     </div>
   </div>
 
-  <!-- ========== FREE CASHFLOW (highlighted, expandable) ========== -->
+  <!-- ========== CASH FLOW STATEMENT (highlighted, open by default) ========== -->
 
-  <div class="fcff-card">
-    <div class="fcff-row" onclick="toggle('fcff')">
-      <span class="fcff-label"><span class="expand-icon" id="icon-fcff">&#9658;</span> Free Cashflow</span>
-      {% for t in turns %}
-        <span class="fcff-value {% if t.free_cash_flow > 0 %}fcf-positive{% else %}fcf-negative{% endif %}">
-          {{ t.free_cash_flow|accounting_round }}
-        </span>
-      {% endfor %}
-    </div>
-    <div class="fin-children" id="children-fcff" style="margin-top: 6px;">
-      <div class="fin-child-row">
-        <span class="fin-child-label">Net income</span>
-        {% for t in turns %}<span class="fin-value">{{ t.net_income|accounting_round }}</span>{% endfor %}
-      </div>
-      <div class="fin-child-row">
-        <span class="fin-child-label">+ Depreciation</span>
-        {% for t in turns %}<span class="fin-value">{{ t.depreciation|accounting_round }}</span>{% endfor %}
-      </div>
-      <div class="fin-child-row">
-        <span class="fin-child-label">- Capital expenditures</span>
-        {% for t in turns %}<span class="fin-value">{{ t.total_capex|accounting_round_exp }}</span>{% endfor %}
-      </div>
-      <div class="fin-child-row">
-        <span class="fin-child-label">+ Interest tax shield</span>
-        {% for t in turns %}<span class="fin-value">{{ t.interest_tax_shield|accounting_round }}</span>{% endfor %}
-      </div>
-    </div>
-  </div>
-
-  <!-- ========== CASH FLOW STATEMENT (collapsed by default) ========== -->
-
-  <div class="fin-section">
+  <div class="fin-section highlighted">
     <div class="fin-section-header" onclick="toggle('section-cf')">
-      <span><span class="expand-icon" id="icon-section-cf">&#9658;</span> Cash Flow Statement</span>
+      <span><span class="expand-icon open" id="icon-section-cf">&#9658;</span> Cash Flow Statement</span>
     </div>
-    <div class="fin-section-body" id="children-section-cf">
+    <div class="fin-section-body open" id="children-section-cf">
 
       <div class="fin-row expandable" onclick="toggle('opcf')">
         <span class="fin-label muted"><span class="expand-icon" id="icon-opcf">&#9658;</span> Operating cash flow</span>
@@ -414,7 +360,7 @@ function toggle(id) {
         </div>
       </div>
 
-      <div class="fin-row subtotal">
+      <div class="fin-row subtotal highlighted">
         <span class="fin-label">Change in cash</span>
         {% for t in turns %}<span class="fin-value">{{ t.change_in_cash|accounting_round }}</span>{% endfor %}
       </div>

@@ -177,9 +177,9 @@ def game(request):
     else:
         current_loan_outstanding = False
 
-    eligable = (min_yrs_met == True) and (current_loan_outstanding == False)
+    eligible = (min_yrs_met == True) and (current_loan_outstanding == False)
 
-    if eligable:
+    if eligible:
         max_credit = round( max( trailing_ebitda * max_leverage_ratio, minimum_credit_available ), 0)
     else:
         max_credit = "N/A"
@@ -187,12 +187,12 @@ def game(request):
     rolled_rate = player.next_offered_rate
     loan_offer = {
         "interest_rate": rolled_rate,
-        "loan_length": 10,
+        "loan_length": 2,
         "max_leverage_ratio": max_leverage_ratio,
         "trailing_ebitda": trailing_ebitda,
         "min_credit" : minimum_credit_available,
         "max_credit": max_credit,
-        "eligible": eligable,
+        "eligible": eligible,
         "min_yrs_met": min_yrs_met,
         "current_loan_outstanding": current_loan_outstanding,
     }
@@ -327,10 +327,14 @@ def game(request):
                 f"⚙️ {player.equipment_name} now installed! "
                 f"Cost per unit on all toys is reduced by {savings_pct}%."
             )
-        if player.turn_number == min_years_of_financial_history + 1 and player.difficulty.financing_enabled:
+        first_eligible_turn = (player.turn_number == min_years_of_financial_history + 1) and player.difficulty.financing_enabled
+        just_paid_off_loan = player.difficulty.financing_enabled and eligible and last_turn.loans_payable > 0
+
+        if first_eligible_turn or just_paid_off_loan:
             success_notifications.append(
-                f"💵 {player.company_name} now eligible for debt financing! "
+                f"💵 {player.company_name} is now eligible for debt financing! "
             )
+
         toyformset = UnitsFormSet(factory_space=player.factory_space, prefix="toys")
         coverageformset = CoverageFormSet(prefix="coverage")
         inv_expansion_form = FactoryExpansionForm()
@@ -340,7 +344,7 @@ def game(request):
 
     last_turn = Turn.objects.filter(player=player).order_by("-turn_number").first()
     outstanding_loan_details = {}
-    if last_turn and last_turn.loans_payable > 0:
+    if last_turn and current_loan_outstanding:
         outstanding_loan = player.loans.filter(is_paid_off=False).order_by("-taken_on_turn").first()
 
         years_elapsed = player.turn_number - outstanding_loan.taken_on_turn

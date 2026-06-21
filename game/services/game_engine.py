@@ -115,8 +115,8 @@ class GameEngine:
         for loan in active_loans:
             interest_expense += loan.interest_due()
             principal_payment += loan.principal_due()
-            loan.outstanding_balance -= loan.principal_due()
-            if loan.outstanding_balance == 0:
+            loan.outstanding_balance = round(loan.outstanding_balance - loan.principal_due(), 2)
+            if abs(loan.outstanding_balance) < 1:
                 loan.is_paid_off = True
             loan.save()
 

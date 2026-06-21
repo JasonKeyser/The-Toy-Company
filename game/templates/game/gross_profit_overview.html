@@ -106,7 +106,7 @@
     </div>
 
     <div class="toy-stats"><span>Revenue</span><span class="val">{{ outcome.revenue|accounting }}</span></div>
-    <div class="toy-stats"><span>COGS</span><span class="val">{{ outcome.cogs|accounting }}</span></div>
+    <div class="toy-stats"><span>Cost of Goods Sold</span><span class="val">{{ outcome.cogs|accounting }}</span></div>
     <div class="toy-profit">
       <span>Gross profit</span>
       <span class="{% if outcome.profit >= 0 %}profit-pos{% else %}profit-neg{% endif %}">{{ outcome.profit|accounting }}</span>

@@ -3,6 +3,26 @@
 {% load math_tags %}
 {% block content %}
 
+<style>
+  /* Entrance animation: cards bounce in one at a time (top-left to bottom-left,
+     then the financial summary card), then the highlighted "Change in cash"
+     row gets a soft glow pulse once everything has settled. */
+  .toy-card, .fin-card {
+    opacity: 0;
+  }
+
+  @keyframes scaleBounceIn {
+    0%   { opacity: 0; transform: scale(0.4); }
+    60%  { opacity: 1; transform: scale(1.08); }
+    80%  { transform: scale(0.96); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  .anim-scaleBounceIn {
+    animation: scaleBounceIn 0.5s cubic-bezier(.34,1.56,.64,1) both;
+  }
+</style>
+
 <!-- Header Row -->
 <div class="d-flex align-items-center justify-content-between flex-wrap mb-4">
 
@@ -14,7 +34,7 @@
          width="50"
          height="50">
     <div>
-      <h2 class="mb-0">Turn Summary 📊</h2>
+      <h2 class="mb-0">Turn Summary {% icon 'turn_summary' %}</h2>
       <span class="badge badge-secondary" style="font-size: 1em; vertical-align: middle;">{{ turn.player.company_name }}</span>
       <small class="text-muted d-block">{{ turn.player.name }}</small>
     </div>
@@ -51,5 +71,27 @@
 <a href="{% url 'game-production' %}" class="btn btn-primary mt-3">
   Start Next Turn
 </a>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var cards = document.querySelectorAll('.toy-card, .fin-card');
+  var stagger = 140;
+
+  cards.forEach(function (card, i) {
+    setTimeout(function () {
+      card.classList.add('anim-scaleBounceIn');
+    }, i * stagger);
+  });
+
+  var allCardsDoneAt = (cards.length - 1) * stagger + 500;
+  setTimeout(function () {
+    var changeRow = document.getElementById('changeInCashRow');
+    if (changeRow) {
+      var glowClass = changeRow.dataset.sign === 'negative' ? 'anim-glow-negative' : 'anim-glow-positive';
+      changeRow.classList.add(glowClass);
+    }
+  }, allCardsDoneAt + 150);
+});
+</script>
 
 {% endblock content %}

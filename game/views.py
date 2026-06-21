@@ -197,6 +197,19 @@ def game(request):
         "current_loan_outstanding": current_loan_outstanding,
     }
 
+
+    # Edge case: the player cannot afford rent even with zero production/capex/ads/
+    # insurance and the maximum possible loan, so no submittable form exists. Treat
+    # this as bankruptcy now instead of leaving them stuck on an unsubmittable page.
+    max_possible_borrowing = max_credit if (eligible and current_loan_outstanding == False) else 0
+    if player.cash + max_possible_borrowing < player.difficulty.rent_cost:
+        player.status = "lost"
+        player.lost_reason = "went bankrupt"
+        player.save()
+        return render(request, "game/game_over.html", {"player": player})
+
+
+
     if request.method == "POST":
         toyformset = UnitsFormSet(request.POST, factory_space=player.factory_space, prefix="toys")
         coverageformset = CoverageFormSet(request.POST, prefix="coverage")
@@ -327,8 +340,12 @@ def game(request):
                 f"⚙️ {player.equipment_name} now installed! "
                 f"Cost per unit on all toys is reduced by {savings_pct}%."
             )
+        two_turns_ago = Turn.objects.filter(player=player, turn_number=current_turn - 2).first()
         first_eligible_turn = (player.turn_number == min_years_of_financial_history + 1) and player.difficulty.financing_enabled
-        just_paid_off_loan = player.difficulty.financing_enabled and eligible and last_turn.loans_payable > 0
+        if two_turns_ago:
+            just_paid_off_loan = player.difficulty.financing_enabled and eligible and two_turns_ago.loans_payable > 0
+        else:
+            just_paid_off_loan = False
 
         if first_eligible_turn or just_paid_off_loan:
             success_notifications.append(

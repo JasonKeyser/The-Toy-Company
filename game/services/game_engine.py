@@ -48,7 +48,7 @@ class GameEngine:
 
             boost = get_total_boost(player, player.turn_number)
             roll, fraction = pick_from_distribution(toy)
-            boosted_fraction = min(1.0, fraction * (1 + boost))
+            boosted_fraction = min(1.0, fraction + boost)
 
             units_sold = int( round( units_manufactured * boosted_fraction, 0) )
 

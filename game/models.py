@@ -298,20 +298,6 @@ class InterestRateProfile(models.Model):
         return self.name
 
 
-# class Factory_Cost_Profile(models.Model):
-#     difficulty = models.ForeignKey(Difficulty, on_delete=models.CASCADE, related_name='rate_profiles')
-#     name = models.CharField(max_length=100, default="Standard Rate")
-#     rate_distribution_json = models.JSONField(
-#         default=list,
-#         help_text="List of [rate, weight] pairs. e.g. [[0.07, 20], [0.10, 50], [0.13, 30]]"
-#     )
-#
-#     def __str__(self):
-#         return self.name
-
-
-
-
 
 
 class Post(models.Model):

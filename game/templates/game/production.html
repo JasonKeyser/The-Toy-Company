@@ -608,7 +608,16 @@
                 <thead class="table-secondary">
                   <tr>
                     <th>Additional Factory Space</th>
-                    <th>Cost per Space</th>
+                    <th>
+                      Cost per Space
+                      <div class="ad-tooltip-wrap">
+                          <span class="qmark">?</span>
+                          <div class="tooltip-box">
+                            Cost per Space scales with # of spaces owned at a rate of y= mx + b
+                            where m = {{ player.difficulty.factory_space_cost_coefficient|percentage }}, x=spaces owned and b = 5
+                          </div>
+                      </div>
+                    </th>
                     <th>Total Cost</th>
                   </tr>
                 </thead>
@@ -1011,7 +1020,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   const total_available_spaces = {{ player.factory_space }};
   const total_cash_available   = {{ player.cash|unlocalize }};
-  const costPerSpace           = {{ player.difficulty.factory_space_cost|unlocalize }};
+  const costPerSpace           = {{ factory_space_cost|unlocalize }};
   const rentCost               = {{ player.difficulty.rent_cost|unlocalize }};
 
   const maxCreditAvailable = parseFloat("{{ loan_offer.max_credit|default:0 }}") || 0;

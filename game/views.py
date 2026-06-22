@@ -209,7 +209,7 @@ def game(request):
         return render(request, "game/game_over.html", {"player": player})
 
     # y = mx + b
-    factory_space_cost = (player.difficulty.factory_space_cost_coefficient * player.factory_space) + 9
+    factory_space_cost = (player.difficulty.factory_space_cost_coefficient * player.factory_space) + 5
 
 
     if request.method == "POST":
@@ -571,15 +571,3 @@ def interest_rate_distribution_view(request):
         "rate_profiles": rate_profiles,
     }
     return render(request, "game/interest_rate_distribution.html", context)
-
-
-# @login_required
-# def factory_space_cost_view(request):
-#     game = Game.objects.last()
-#     player = game.player
-#     rate_profiles = InterestRateProfile.objects.filter(difficulty=player.difficulty)
-#
-#     context = {
-#         "rate_profiles": rate_profiles,
-#     }
-#     return render(request, "game/interest_rate_distribution.html", context)

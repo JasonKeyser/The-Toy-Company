@@ -60,7 +60,7 @@ class Difficulty(models.Model):
     starting_cash = models.DecimalField(max_digits=12, decimal_places=2)
     max_turns = models.IntegerField(default=20)
     starting_factory_space = models.IntegerField(default=150)
-    factory_space_cost = models.DecimalField(max_digits=12, decimal_places=2, null=True)
+    factory_space_cost_coefficient = models.DecimalField(max_digits=12, decimal_places=2, null=True)
     winning_networth = models.DecimalField(max_digits=12, decimal_places=2)
     rent_cost = models.DecimalField(max_digits=12, decimal_places=2)
     tax_rate = models.DecimalField(max_digits=12, decimal_places=2)
@@ -142,10 +142,8 @@ class ToyProductionOutcome(models.Model):
     demand_boost_applied = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     def baseline_units_sold(self):
         """Units that would have sold with no ad boost applied this turn."""
-
-        if self.demand_boost_applied and self.demand_boost_applied > 0:
-            baseline = round(self.units_manufactured * (self.demand_percent / 100))
-            return min(baseline, self.units_sold)
+        baseline = round(self.units_manufactured * (self.demand_percent / 100))
+        return min(baseline, self.units_sold)
 
     def boosted_units_sold(self):
         """Portion of units_sold attributable to an active ad boost."""
@@ -298,6 +296,22 @@ class InterestRateProfile(models.Model):
 
     def __str__(self):
         return self.name
+
+
+# class Factory_Cost_Profile(models.Model):
+#     difficulty = models.ForeignKey(Difficulty, on_delete=models.CASCADE, related_name='rate_profiles')
+#     name = models.CharField(max_length=100, default="Standard Rate")
+#     rate_distribution_json = models.JSONField(
+#         default=list,
+#         help_text="List of [rate, weight] pairs. e.g. [[0.07, 20], [0.10, 50], [0.13, 30]]"
+#     )
+#
+#     def __str__(self):
+#         return self.name
+
+
+
+
 
 
 class Post(models.Model):

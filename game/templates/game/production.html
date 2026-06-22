@@ -620,7 +620,7 @@
                         <div class="text-danger small">{{ inv_expansion_form.extra_space.errors }}</div>
                       {% endif %}
                     </td>
-                    <td>{{ player.difficulty.factory_space_cost|accounting }}</td>
+                    <td>{{ factory_space_cost|accounting }}</td>
                     <td id="expansion-total-cost">-</td>
                   </tr>
                 </tbody>
@@ -846,7 +846,7 @@
                   <tr>
                     <th>Interest Rate</th>
                     <th>Loan Tenure</th>
-                    <th>Trailing 3 yrs EBITDA</th>
+                    <th>Avg. Trailing 3 yrs EBITDA</th>
                     <th>Max Leverage Ratio</th>
                     <th>Min Credit Offering</th>
                     <th>

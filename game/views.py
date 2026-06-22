@@ -153,7 +153,7 @@ def game(request):
     success_notifications = []
     error_notifications = []
 
-    max_leverage_ratio = 10
+    max_leverage_ratio = 5
 
     minimum_credit_available = player.difficulty.min_loan_amount
     min_years_of_financial_history = player.difficulty.min_years_of_financial_history
@@ -187,7 +187,7 @@ def game(request):
     rolled_rate = player.next_offered_rate
     loan_offer = {
         "interest_rate": rolled_rate,
-        "loan_length": 2,
+        "loan_length": 7,
         "max_leverage_ratio": max_leverage_ratio,
         "trailing_ebitda": trailing_ebitda,
         "min_credit" : minimum_credit_available,
@@ -208,6 +208,8 @@ def game(request):
         player.save()
         return render(request, "game/game_over.html", {"player": player})
 
+    # y = mx + b
+    factory_space_cost = (player.difficulty.factory_space_cost_coefficient * player.factory_space) + 9
 
 
     if request.method == "POST":
@@ -267,7 +269,8 @@ def game(request):
                     insurance_coverage_choices[insurance_event] = coverage_taken
 
             extra_space = inv_expansion_form.cleaned_data.get("extra_space", 0)
-            expansion_cost = extra_space * player.difficulty.factory_space_cost
+
+            expansion_cost = extra_space * factory_space_cost
 
 
             if difficulty.financing_enabled:
@@ -399,8 +402,10 @@ def game(request):
         for e in equipment
     }
 
+
     return render(request, "game/production.html", {
             "player": player,
+            "factory_space_cost": factory_space_cost,
             "current_boost":current_boost,
             "toyformset": toyformset,
             "form_and_toys": form_and_toys,
@@ -566,3 +571,15 @@ def interest_rate_distribution_view(request):
         "rate_profiles": rate_profiles,
     }
     return render(request, "game/interest_rate_distribution.html", context)
+
+
+# @login_required
+# def factory_space_cost_view(request):
+#     game = Game.objects.last()
+#     player = game.player
+#     rate_profiles = InterestRateProfile.objects.filter(difficulty=player.difficulty)
+#
+#     context = {
+#         "rate_profiles": rate_profiles,
+#     }
+#     return render(request, "game/interest_rate_distribution.html", context)

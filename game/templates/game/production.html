@@ -1195,8 +1195,8 @@ document.addEventListener('DOMContentLoaded', function () {
       if (adScheduleDisplay) {
         adScheduleDisplay.innerHTML = schedule.map(function(v, i) {
           const pct = Math.round(v * 100);
-          const bg  = pct >= 20 ? '#d3f9d8' : pct >= 10 ? '#fff3bf' : pct > 0 ? '#ffe3e3': '#d3d3d3';
-          const col = pct >= 20 ? '#2f9e44' : pct >= 10 ? '#e67700' : pct > 0 ? '#c92a2a': '#48494B';
+          const bg  = pct >= 10 ? '#d3f9d8' : pct >= 5 ? '#fff3bf' : pct > 0 ? '#ffe3e3': '#d3d3d3';
+          const col = pct >= 10 ? '#2f9e44' : pct >= 5 ? '#e67700' : pct > 0 ? '#c92a2a': '#48494B';
           return '<span style="display:inline-block;background:' + bg + ';color:' + col + ';border-radius:4px;' +
                  'padding:1px 7px;font-size:11px;font-weight:600;margin:1px 2px;white-space:nowrap;">' +
                  '+' + pct + '% T' + (i + 1) +

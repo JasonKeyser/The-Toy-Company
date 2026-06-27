@@ -4,97 +4,23 @@
 {% block content %}
 
 <style>
-  /* ── Financial Summary card ── */
-  .fin-card {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 14px 16px;
-    font-size: 12px;
-    min-width: 220px;
+  /* Entrance animation: cards bounce in one at a time (top-left to bottom-left,
+     then the financial summary card), then the highlighted "Change in cash"
+     row gets a soft glow pulse once everything has settled. */
+  .toy-card, .fin-card {
+    opacity: 0;
   }
 
-  .fin-title {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .05em;
-    color: #6c757d;
-    margin-bottom: 14px;
+  @keyframes scaleBounceIn {
+    0%   { opacity: 0; transform: scale(0.4); }
+    60%  { opacity: 1; transform: scale(1.08); }
+    80%  { transform: scale(0.96); }
+    100% { opacity: 1; transform: scale(1); }
   }
 
-  .fin-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding: 6px 0;
-    color: #212529;
+  .anim-scaleBounceIn {
+    animation: scaleBounceIn 0.5s cubic-bezier(.34,1.56,.64,1) both;
   }
-
-  .fin-row.subtotal {
-    border-top: 1px solid #adb5bd;
-    font-weight: 600;
-  }
-
-  .fin-row.expandable {
-    cursor: pointer;
-    user-select: none;
-  }
-
-  .fin-row.expandable:hover .fin-label {
-    color: #212529;
-  }
-
-  .fin-label {
-    color: #212529;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-
-  .fin-label.muted {
-    color: #6c757d;
-    font-weight: 400;
-  }
-
-  .expand-icon {
-    font-size: 9px;
-    color: #adb5bd;
-    transition: transform 0.2s ease;
-    display: inline-block;
-    line-height: 1;
-  }
-
-  .expand-icon.open {
-    transform: rotate(90deg);
-  }
-
-  .fin-children {
-    display: none;
-    padding-left: 12px;
-    border-left: 2px solid #dee2e6;
-    margin-left: 2px;
-  }
-
-  .fin-children.open {
-    display: block;
-  }
-
-  .fin-child-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding: 3px 0;
-    font-size: 11px;
-    color: #6c757d;
-  }
-
-  .fin-value {
-    font-weight: 600;
-  }
-
-  .fcf-positive { color: #2f9e44; }
-  .fcf-negative { color: #c92a2a; }
 </style>
 
 <!-- Header Row -->
@@ -108,7 +34,7 @@
          width="50"
          height="50">
     <div>
-      <h2 class="mb-0">Turn Summary 📊</h2>
+      <h2 class="mb-0">Turn Summary {% icon 'turn_summary' %}</h2>
       <span class="badge badge-secondary" style="font-size: 1em; vertical-align: middle;">{{ turn.player.company_name }}</span>
       <small class="text-muted d-block">{{ turn.player.name }}</small>
     </div>
@@ -119,212 +45,27 @@
     <div>
       <strong>Turn Completed:</strong> {{ turn.turn_number }}/{{ turn.player.difficulty.max_turns }}<br>
       <strong>Ending Cash:</strong> {{ turn.player.cash|accounting_round }}<br>
-      <strong>Cash Goal:</strong> {{ turn.player.difficulty.winning_cash|accounting_round }}
+      <strong>Networth:</strong> {{ turn.total_equity|accounting_round }} <strong> / Goal:</strong> {{ turn.player.difficulty.winning_networth|accounting_round }}
     </div>
   </div>
 
 </div>
 
-<!-- Table + Financial Summary side by side -->
+<!-- Gross Profit Overview + Financial Summary, split evenly down the middle -->
 <div class="d-flex align-items-start" style="gap: 24px;">
 
-    <!-- Turn Results Table -->
-  <div style="flex: 1; min-width: 0;">
-    <table class="table table-bordered table-striped text-center align-middle mb-0">
-      <thead class="table-dark">
-        <tr>
-          <th>Toy</th>
-          <th>Units Manufactured</th>
-          <th>Units Sold</th>
-          <th>Revenue</th>
-          <th>COGS</th>
-          <th>Gross Profit</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for outcome in production_outcomes %}
-        <tr>
-          <td>{{ outcome.toy.name }}</td>
-          <td>{{ outcome.units_manufactured }}</td>
-          <td>{{ outcome.units_sold }}</td>
-          <td>{{ outcome.revenue|accounting }}</td>
-          <td>{{ outcome.cogs|accounting }}</td>
-          <td>{{ outcome.profit|accounting }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-      <tfoot class="table-light font-weight-bold">
-        <tr>
-          <td>Grand Total</td>
-          <td>{{ production_outcomes|sum_attr:"units_manufactured" }}</td>
-          <td>{{ production_outcomes|sum_attr:"units_sold" }}</td>
-          <td>{{ production_outcomes|sum_attr:"revenue"|accounting }}</td>
-          <td>{{ production_outcomes|sum_attr:"cogs"|accounting }}</td>
-          <td>{{ production_outcomes|sum_attr:"profit"|accounting }}</td>
-        </tr>
-      </tfoot>
-    </table>
+  <div style="flex: 0 0 50%; max-width: 50%; display: flex; justify-content: flex-start;">
+    <div style="width: 100%; max-width: 460px;">
+      {% include "game/gross_profit_overview.html" with production_outcomes=production_outcomes show_history_link=show_history_link %}
+    </div>
   </div>
 
-
-
-  <!-- Financial Summary Card -->
-  <div class="fin-card flex-shrink-0">
-    <div class="fin-title">
-      Financial Summary
-      <a href="{% url 'financial-history' %}" class="small">History</a>
+  <div style="flex: 0 0 50%; max-width: 50%; display: flex; justify-content: flex-start;">
+    <div style="width: 100%; max-width: 460px;">
+      {% include "game/financial_summary_card.html" with turns=turns show_history_link=show_history_link %}
     </div>
-
-    <div class="fin-row">
-      <span class="fin-label muted">Revenue</span>
-      <span class="fin-value">{{ turn.revenue|accounting_round}}</span>
-    </div>
-
-    <div class="fin-row">
-      <span class="fin-label muted">Cost of goods sold</span>
-      <span class="fin-value">{{ turn.Cost_of_Goods_Sold|accounting_round_exp}}</span>
-    </div>
-
-    <div class="fin-row subtotal">
-      <span class="fin-label">Gross profit</span>
-      <span class="fin-value">{{ turn.gross_profit|accounting_round}}</span>
-    </div>
-
-    <div class="fin-row expandable" onclick="toggle('opex')">
-      <span class="fin-label muted">
-        <span class="expand-icon" id="icon-opex">&#9658;</span>
-        Operating expenses
-      </span>
-      <span class="fin-value">{{ turn.operating_expenses|accounting_round_exp}}</span>
-    </div>
-    <div class="fin-children" id="children-opex">
-      <div class="fin-child-row">
-        <span>Rent</span>
-        <span>{{ turn.player.difficulty.rent_cost|accounting_round_exp}}</span>
-      </div>
-      {% for outcome in turn.insurance_decisions.all %}
-        {% if outcome.coverage_active %}
-        <div class="fin-child-row">
-          <span>{{ outcome.insurance_event.name }} premium</span>
-          <span>{{ outcome.premium_cost|accounting_round_exp}}</span>
-        </div>
-        {% endif %}
-        {% if outcome.disaster_cost_realized %}
-        <div class="fin-child-row">
-          <span>{{ outcome.insurance_event.name }} disaster</span>
-          <span>{{ outcome.disaster_cost_realized|accounting_round_exp}}</span>
-        </div>
-        {% endif %}
-      {% endfor %}
-      <div class="fin-child-row">
-        <span>Advertising</span>
-        <span>
-          {{ turn.ad_cost|accounting_round_exp}}
-        </span>
-      </div>
-    </div>
-
-    <div class="fin-row subtotal">
-      <span class="fin-label">EBITDA</span>
-      <span class="fin-value">{{ turn.EBITDA|accounting_round}}</span>
-    </div>
-
-    <div class="fin-row expandable" onclick="toggle('otherexp')">
-      <span class="fin-label muted">
-        <span class="expand-icon" id="icon-otherexp">&#9658;</span>
-        Other Costs
-      </span>
-      <span class="fin-value">
-          {{ turn.other_costs|accounting_round_exp}}
-      </span>
-    </div>
-    <div class="fin-children" id="children-otherexp">
-      <div class="fin-child-row">
-        <span>Depreciation</span>
-        <span>
-            {{ turn.depreciation|accounting_round_exp}}
-        </span>
-      </div>
-      <div class="fin-child-row">
-        <span>Tax Expense</span>
-        <span>
-            {{ turn.taxes|accounting_round_exp}}
-        </span>
-      </div>
-    </div>
-
-
-    <div class="fin-row subtotal">
-      <span class="fin-label">Net income</span>
-      <span class="fin-value">{{ turn.net_income|accounting_round}}</span>
-    </div>
-
-    <div class="fin-row expandable" onclick="toggle('capex')">
-      <span class="fin-label muted">
-        <span class="expand-icon" id="icon-capex">&#9658;</span>
-        Capital expenditures
-      </span>
-      <span class="fin-value">
-          {{ turn.total_capex|accounting_round_exp}}
-      </span>
-    </div>
-    <div class="fin-children" id="children-capex">
-      <div class="fin-child-row">
-        <span>Factory Expansion</span>
-        <span>
-            {{ turn.expansion_cost|accounting_round_exp}}
-        </span>
-      </div>
-      <div class="fin-child-row">
-        <span>Equipment Purchase</span>
-        <span>
-            {{ turn.equipment_cost|accounting_round_exp}}
-        </span>
-      </div>
-    </div>
-
-    <div class="fin-row expandable" onclick="toggle('noncash')">
-      <span class="fin-label muted">
-        <span class="expand-icon" id="icon-noncash">&#9658;</span>
-        Non-Cash expenses
-      </span>
-      <span class="fin-value">
-          {{ turn.depreciation|accounting_round}}
-      </span>
-    </div>
-    <div class="fin-children" id="children-noncash">
-      <div class="fin-child-row">
-        <span>Depreciation</span>
-        <span>
-            {{ turn.depreciation|accounting_round}}
-        </span>
-      </div>
-    </div>
-
-
-    <div class="fin-row subtotal">
-      <span class="fin-label">Free cash flow</span>
-      <span class="fin-value {% if turn.free_cash_flow > 0 %}fcf-positive{% else %}fcf-negative{% endif %}">
-        {{ turn.free_cash_flow|accounting_round}}
-      </span>
-    </div>
-
-    <hr style="margin: 8px 0; border-color: #dee2e6;">
-
-    <div class="fin-row">
-      <span class="fin-label muted">Beginning cash</span>
-      <span class="fin-value">{{ turn.beginning_cash|accounting_round}}</span>
-    </div>
-
-    <div class="fin-row">
-      <span class="fin-label muted">Ending cash</span>
-      <span class="fin-value">{{ turn.ending_cash|accounting_round}}</span>
-    </div>
-
-
   </div>
-
-</div><!-- /.d-flex -->
+</div>
 
 
 <a href="{% url 'game-production' %}" class="btn btn-primary mt-3">
@@ -332,13 +73,25 @@
 </a>
 
 <script>
-function toggle(id) {
-  var icon     = document.getElementById('icon-' + id);
-  var children = document.getElementById('children-' + id);
-  var isOpen   = children.classList.contains('open');
-  children.classList.toggle('open', !isOpen);
-  icon.classList.toggle('open', !isOpen);
-}
+document.addEventListener('DOMContentLoaded', function () {
+  var cards = document.querySelectorAll('.toy-card, .fin-card');
+  var stagger = 140;
+
+  cards.forEach(function (card, i) {
+    setTimeout(function () {
+      card.classList.add('anim-scaleBounceIn');
+    }, i * stagger);
+  });
+
+  var allCardsDoneAt = (cards.length - 1) * stagger + 500;
+  setTimeout(function () {
+    var changeRow = document.getElementById('changeInCashRow');
+    if (changeRow) {
+      var glowClass = changeRow.dataset.sign === 'negative' ? 'anim-glow-negative' : 'anim-glow-positive';
+      changeRow.classList.add(glowClass);
+    }
+  }, allCardsDoneAt + 150);
+});
 </script>
 
 {% endblock content %}

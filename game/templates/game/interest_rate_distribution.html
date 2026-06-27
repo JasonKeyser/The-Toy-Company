@@ -1,0 +1,42 @@
+{% extends "game/base.html" %}
+{% load accounting_tags %}
+{% block content %}
+
+<div class="container mt-4">
+  <h2>Interest Rate Distribution</h2>
+  <p class="text-muted">The interest rate on any loan is determined by a dice roll at the start of each turn.</p>
+
+  {% for profile in rate_profiles %}
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header">
+      <strong>{{ profile.name }}</strong>
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-bordered table-sm mb-0">
+        <thead class="table-secondary">
+          <tr>
+            <th>Interest Rate</th>
+            <th>Probability Weight</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for pair in profile.rate_distribution_json %}
+          <tr>
+            <td>{{ pair.0|percentage }}</td>
+            <td>{{ pair.1|floatformat:0 }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="2" class="text-muted text-center">No distribution configured.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endfor %}
+
+  <a href="{% url 'game-production' %}" class="btn btn-outline-secondary btn-sm">← Back to Production</a>
+</div>
+
+{% endblock content %}

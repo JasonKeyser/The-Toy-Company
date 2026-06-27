@@ -60,10 +60,14 @@ class Difficulty(models.Model):
     starting_cash = models.DecimalField(max_digits=12, decimal_places=2)
     max_turns = models.IntegerField(default=20)
     starting_factory_space = models.IntegerField(default=150)
-    factory_space_cost = models.DecimalField(max_digits=12, decimal_places=2, null=True)
-    winning_cash = models.DecimalField(max_digits=12, decimal_places=2)
+    factory_space_cost_coefficient = models.DecimalField(max_digits=12, decimal_places=2, null=True)
+    winning_networth = models.DecimalField(max_digits=12, decimal_places=2)
     rent_cost = models.DecimalField(max_digits=12, decimal_places=2)
     tax_rate = models.DecimalField(max_digits=12, decimal_places=2)
+
+    #financing related
+    min_loan_amount = models.DecimalField(max_digits=12, decimal_places=2, default=100)
+    min_years_of_financial_history = models.IntegerField(default=3)
 
     insurance_enabled = models.BooleanField(default=True)
     financing_enabled = models.BooleanField(default=True)
@@ -90,7 +94,8 @@ class Player(models.Model):
     age = models.IntegerField(default=20)
     turn_number = models.IntegerField(default=1)
 
-    cash = models.DecimalField(max_digits=12, decimal_places=0)
+    cash = models.DecimalField(max_digits=12, decimal_places=0, default=0)
+    total_equity = models.DecimalField(max_digits=12, decimal_places=0, default=0)
     factory_space = models.IntegerField(default=150)
 
     status = models.CharField(default="still_playing", null=True,blank=True)
@@ -102,6 +107,7 @@ class Player(models.Model):
     equipment_name = models.CharField(max_length=100, default="None")
     depreciation_expense_ends_turn = models.IntegerField(default=0)
     depreciation_expense_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    next_offered_rate = models.DecimalField(max_digits=6, decimal_places=4, default=0.10)
 
     def __str__(self):
         return self.name
@@ -134,6 +140,14 @@ class ToyProductionOutcome(models.Model):
     cogs = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     profit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     demand_boost_applied = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    def baseline_units_sold(self):
+        """Units that would have sold with no ad boost applied this turn."""
+        baseline = round(self.units_manufactured * (self.demand_percent / 100))
+        return min(baseline, self.units_sold)
+
+    def boosted_units_sold(self):
+        """Portion of units_sold attributable to an active ad boost."""
+        return self.units_sold - self.baseline_units_sold()
 
     def __str__(self):
         return self.name
@@ -144,6 +158,7 @@ class Turn(models.Model):
     player = models.ForeignKey(Player, on_delete=models.CASCADE)
     turn_number = models.IntegerField()
 
+    # income_statement
     revenue = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     Cost_of_Goods_Sold = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     gross_profit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
@@ -152,19 +167,57 @@ class Turn(models.Model):
     total_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     taxes = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     depreciation = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    interest_expense = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     EBT = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     other_costs = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     net_income = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     ad_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     disaster_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     premium_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+
+    # cash flow statement
+    free_cash_flow = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    interest_tax_shield = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    operating_cf = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+
+    #CFI
     expansion_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     equipment_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     total_capex = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    free_cash_flow = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    investing_cf = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    # CFF
+    principal_payment = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    loan_proceeds = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    financing_cf = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    change_in_cash = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
     beginning_cash = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     ending_cash = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+
+    # balance sheet
+    #assets
+    cash = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    # eventually - add inventory
+    gross_equipment = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    accumulated_depreciation_equipment = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    property = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    gross_ppe = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    total_assets = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    #liabilities
+    loans_payable = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    #shareholders equity
+    retained_earnings = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    # eventually will add in equity investors
+    total_equity = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -205,28 +258,45 @@ class AdvertisingCampaign(models.Model):
         return f"Campaign for {self.player} (turn {self.purchased_on_turn})"
 
 
-class Loan(models.Model):
-    player = models.ForeignKey(Player, on_delete=models.CASCADE) #add a related name?
+class PlayerLoan(models.Model):
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='loans')
+    taken_on_turn = models.IntegerField()
 
-    #term sheet
-    interest_rate = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    loan_length = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    max_leverage_ratio = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    max_amount_available_to_borrow = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    minimum_available_credit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    # Locked-in terms
+    principal = models.DecimalField(max_digits=12, decimal_places=2)
+    annual_interest_rate = models.DecimalField(max_digits=6, decimal_places=4)
+    loan_length = models.IntegerField()  # in turns
+    annual_payment = models.DecimalField(max_digits=12, decimal_places=2)
 
-    #what happened this turn
-    player_able_to_borrow = models.BooleanField(default=False)
-    money_borrowed_this_turn = models.BooleanField(default=False)
-    money_borrowed_on_turn = models.IntegerField(default=0)
-    amount_borrowed = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    # Running balance
+    outstanding_balance = models.DecimalField(max_digits=12, decimal_places=2)
+    is_paid_off = models.BooleanField(default=False)
 
-    #amortization schedule
-    balance_begin_turn = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    balance_end_turn = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    loan_year = models.IntegerField(default=0)
-    principal_payment_due = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    interest_payment_due = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    def compute_annual_payment(self):
+        r = self.annual_interest_rate
+        n = self.loan_length
+        P = self.principal
+        return P * r * (1 + r) ** n / ((1 + r) ** n - 1)
+
+    def interest_due(self):
+        return self.outstanding_balance * self.annual_interest_rate
+
+    def principal_due(self):
+        return self.annual_payment - self.interest_due()
+
+
+
+class InterestRateProfile(models.Model):
+    difficulty = models.ForeignKey(Difficulty, on_delete=models.CASCADE, related_name='rate_profiles')
+    name = models.CharField(max_length=100, default="Standard Rate")
+    rate_distribution_json = models.JSONField(
+        default=list,
+        help_text="List of [rate, weight] pairs. e.g. [[0.07, 20], [0.10, 50], [0.13, 30]]"
+    )
+
+    def __str__(self):
+        return self.name
+
 
 
 

@@ -39,3 +39,10 @@ def pick_from_disaster_distribution(insurance_event):
     disaster_cost = weights[roll_index]
 
     return roll_index + 1, disaster_cost
+
+
+def pick_interest_rate(rate_profile):
+    distribution = rate_profile.rate_distribution_json
+    rates  = [item[0] for item in distribution]
+    weights = [item[1] for item in distribution]
+    return random.choices(rates, weights=weights, k=1)[0]

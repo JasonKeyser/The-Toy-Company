@@ -8,7 +8,7 @@
   {% if player.status == "won" %}
     <div class="alert alert-success text-center py-4 w-100">
       <h1 class="display-4">{{ player.company_name }} won on {{ player.difficulty.name }} mode!</h1>
-      <p class="lead">Congratulations! 🎉</p>
+      <p class="lead">Congratulations! {% icon 'celebration' %}</p>
     </div>
 
     <button
@@ -18,7 +18,7 @@
       data-target="#beachHouseReveal"
       aria-expanded="false"
       aria-controls="beachHouseReveal">
-      🏖️ Click to See Your Beach Property
+      {% icon 'beach' %} Click to See Your Beach Property
     </button>
 
     <div class="collapse" id="beachHouseReveal">

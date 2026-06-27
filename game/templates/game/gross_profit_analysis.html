@@ -161,7 +161,6 @@
 </div>
 <br>
 <a class="btn btn-outline-secondary btn-sm" href="{% url 'turn-summary' %}">Back to Turn Summary</a>
-
 <script>
 const turnNumbers = {{ turn_numbers_json|safe }};
 const turns = turnNumbers.map(n => "T" + n);

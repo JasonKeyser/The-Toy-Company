@@ -30,7 +30,7 @@ def get_total_boost(player, current_turn):
 
 class GameEngine:
     @transaction.atomic
-    def process_turn(self, player, toy_production_choices, insurance_choices, ad_cost, capex_choices, cost_savings_coefficient, borrowed_amount):
+    def process_turn(self, player, toy_production_choices, insurance_choices, ad_cost, rnd_spend, capex_choices, cost_savings_coefficient, borrowed_amount):
 
         total_revenue = Decimal("0.00")
         total_cogs = Decimal("0.00")
@@ -101,7 +101,7 @@ class GameEngine:
 
 
         total_gross_profit = total_revenue - total_cogs
-        operating_expenses = player.difficulty.rent_cost + ad_cost + total_disaster_cost_realized + total_premium_cost
+        operating_expenses = player.difficulty.rent_cost + ad_cost + total_disaster_cost_realized + total_premium_cost + rnd_spend
         EBITDA = total_gross_profit - operating_expenses
 
         if player.turn_number < player.depreciation_expense_ends_turn:
@@ -124,7 +124,7 @@ class GameEngine:
         # income statement inputs
         EBT = EBITDA - round(depreciation + interest_expense,2)
         tax_expense = max( round( EBT * player.difficulty.tax_rate, 2), 0)
-        other_costs = round(tax_expense + depreciation + interest_expense, 2)
+        other_costs = round( tax_expense + depreciation + interest_expense, 2)
         total_cost = round( total_cogs + operating_expenses + other_costs, 2)
         net_income = round( total_revenue - total_cost, 2)
 
@@ -198,6 +198,7 @@ class GameEngine:
         turn.ad_cost = ad_cost
         turn.disaster_cost = total_disaster_cost_realized
         turn.premium_cost = total_premium_cost
+        turn.rnd_cost = rnd_spend
         turn.interest_tax_shield = interest_tax_shield
 
         turn.free_cash_flow = free_cash_flow

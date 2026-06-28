@@ -65,6 +65,9 @@ class Difficulty(models.Model):
     rent_cost = models.DecimalField(max_digits=12, decimal_places=2)
     tax_rate = models.DecimalField(max_digits=12, decimal_places=2)
 
+    new_product_success_cost_coefficient = models.DecimalField(max_digits=12, decimal_places=6, null=True)
+    new_product_success_b = models.DecimalField(max_digits=12, decimal_places=2, null=True)
+
     #financing related
     min_loan_amount = models.DecimalField(max_digits=12, decimal_places=2, default=100)
     min_years_of_financial_history = models.IntegerField(default=3)
@@ -73,6 +76,7 @@ class Difficulty(models.Model):
     financing_enabled = models.BooleanField(default=True)
     ads_enabled = models.BooleanField(default=True)
     equipment_enabled = models.BooleanField(default=True)
+    rnd_enabled = models.BooleanField(default=True)
 
 
     def __str__(self):
@@ -107,7 +111,10 @@ class Player(models.Model):
     equipment_name = models.CharField(max_length=100, default="None")
     depreciation_expense_ends_turn = models.IntegerField(default=0)
     depreciation_expense_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
     next_offered_rate = models.DecimalField(max_digits=6, decimal_places=4, default=0.10)
+
+    cumulative_rnd_spend = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
     def __str__(self):
         return self.name
@@ -174,6 +181,7 @@ class Turn(models.Model):
     ad_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     disaster_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     premium_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    rnd_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
 
     # cash flow statement
@@ -296,8 +304,6 @@ class InterestRateProfile(models.Model):
 
     def __str__(self):
         return self.name
-
-
 
 
 class Post(models.Model):

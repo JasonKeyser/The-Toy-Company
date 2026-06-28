@@ -720,6 +720,55 @@
           </div>
           {% endif %}
 
+          <!-- Research and Development -->
+          {% if player.difficulty.rnd_enabled %}
+          <div class="card mb-3">
+            <div class="card-header d-flex align-items-center">
+              Research and Development
+              <div class="ad-tooltip-wrap">
+                <span class="qmark">?</span>
+                <div class="tooltip-box">
+                  Research and Development guidance
+                </div>
+              </div>
+            </div>
+
+
+
+            <div class="card-body">
+              <div class="px-3 pt-2 pb-1">
+                <a href="{% url 'new-product-success-distribution' %}" class="small">R&D Distributions</a>
+              </div>
+              <table class="table table-bordered table-sm mb-0">
+                <thead class="table-secondary">
+                  <tr>
+                    <th>Prior R&D Spend</th>
+                    <th>Spend This Turn</th>
+                    <th>Cumulative Spend</th>
+                    <th>Completion Success Meter</th>
+                    <th>Toy Type Success Meter</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td> {{ player.cumulative_rnd_spend|accounting }} </td>
+                    <td>
+                      {{ rnd_form.rnd_spend }}
+                      {% if rnd_form.rnd_spend.errors %}
+                        <div class="text-danger small">{{ rnd_form.rnd_spend.errors }}</div>
+                      {% endif %}
+                    </td>
+                    <td> id="cum-rnd-spend" </td>
+                    <td> Meter 1 </td>
+                    <td> Meter 2 </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          {% endif %}
+
+
         </div>
       </div>
     </div>
@@ -1059,10 +1108,16 @@ document.addEventListener('DOMContentLoaded', function () {
     return parseFloat(loanInput?.value) || 0;
   }
 
+  /* ── Current R&D Spend ── */
+  function getRnDCost() {
+    const rndInput = document.querySelector('#id_rnd_spend');
+    return parseFloat(rndInput?.value) || 0;
+  }
+
   function updateSpendCard(cogs, capex, adCost, premiumCost) {
     premiumCost = premiumCost || 0;
     const loanProceeds  = getLoanProceeds();
-    const opex          = rentCost + adCost + premiumCost;
+    const opex          = rentCost + adCost + premiumCost + getRnDCost();
     const total         = cogs + opex + capex;
     const effectiveCash = total_cash_available + loanProceeds;
     const maxBar        = Math.max(cogs, opex, capex, 1);

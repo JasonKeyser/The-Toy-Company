@@ -289,6 +289,10 @@ function toggle(id) {
           <span class="fin-child-label">Advertising</span>
           {% for t in turns %}<span class="fin-value">{{ t.ad_cost|accounting_round_exp }}</span>{% endfor %}
         </div>
+        <div class="fin-child-row">
+          <span class="fin-child-label">R&D</span>
+          {% for t in turns %}<span class="fin-value">{{ t.rnd_cost|accounting_round_exp }}</span>{% endfor %}
+        </div>
       </div>
 
       <div class="fin-row subtotal">

@@ -1282,6 +1282,16 @@ document.addEventListener('DOMContentLoaded', function () {
   const adSelect = document.querySelector('#id_ad_campaign');
   if (adSelect) adSelect.addEventListener('change', updateAdCost);
 
+  /* ── event listeners: rnd Spend ── */
+  const rndInput = document.querySelector('#id_rnd_spend');
+  if (rndInput) {
+  rndInput.addEventListener('input', function () {
+    const rndspent = parseFloat(rndInput.value) || 0;
+   }
+    const s = getCurrentSpends();
+    updateSpendCard(s.cogs, s.capex, s.ad, getInsurancePremiumCost())
+   });
+
   /* ── event listeners: insurance coverage selects ── */
   document.querySelectorAll('select[id*="coverage_taken"]').forEach(function(sel) {
     sel.addEventListener('change', function() {

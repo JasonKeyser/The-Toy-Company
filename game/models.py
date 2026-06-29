@@ -230,6 +230,8 @@ class Turn(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     new_product_produced = models.BooleanField(default=False)
+    new_product_roll = models.IntegerField(null=True, blank=True)
+    new_product_threshold = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return f"Turn {self.turn_number} - {self.player.name}"

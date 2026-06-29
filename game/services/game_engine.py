@@ -102,8 +102,11 @@ class GameEngine:
         if player.cumulative_rnd_spend > 0:
             prob = calculate_probability_of_new_product_success(player.cumulative_rnd_spend, player.difficulty.new_product_success_cost_coefficient, player.difficulty.new_product_success_b)
             roll = pick_from_new_product_distribution()
+            threshold = round(prob * 100, 0)
+            turn.new_product_roll = roll
+            turn.new_product_threshold = threshold
 
-            if round(prob * 100, 0) > roll:
+            if threshold > roll:
                 # if roll succeeds - unlock a new toy; reset cumulative spend to $0
                 player.cumulative_rnd_spend = 0
                 turn.new_product_produced = True

@@ -76,6 +76,15 @@
   #insurance-section.visible {
     opacity: 1;
   }
+
+  /* R&D section fade-in */
+  #rnd-section {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  #rnd-section.visible {
+    opacity: 1;
+  }
 </style>
 
 <!-- ── Toy demand dice ── -->
@@ -151,6 +160,34 @@
 </div>
 {% endif %}
 
+<!-- ── New Product R&D dice ── -->
+{% if turn.new_product_roll != None %}
+<div id="rnd-section" class="mt-4">
+
+  <h5 class="text-center mb-3">🧪 New Product Roll</h5>
+
+  <div class="d-flex flex-wrap justify-content-center gap-3">
+    <div class="col-auto text-center">
+      <div class="dice-box bg-light border rounded py-2 fs-5 p-2">
+
+        <div class="mb-1">R&D</div>
+
+        <div class="rnd-dice-wrap"
+             style="height:90px; display:flex; align-items:center; justify-content:center;"
+             data-roll="{{ turn.new_product_roll }}"
+             data-success="{{ turn.new_product_produced|yesno:'1,0' }}">
+          <div class="d20-face">
+            <span class="d20-num">1</span>
+          </div>
+        </div>
+        <div class="dice-info rnd-info"></div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <button class="btn btn-primary w-100 mt-3"
         id="continue-btn"
         style="display:none;"
@@ -164,6 +201,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const toyWraps    = document.querySelectorAll(".dice-roll-wrap");
   const insWraps    = document.querySelectorAll(".ins-dice-wrap");
   const insSection  = document.getElementById("insurance-section");
+  const rndSection  = document.getElementById("rnd-section");
+  const rndWrap     = document.querySelector(".rnd-dice-wrap");
   const continueBtn = document.getElementById("continue-btn");
 
   let toyAnimsRemaining = toyWraps.length;
@@ -235,7 +274,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (index === insWraps.length - 1) {
-          setTimeout(function () { continueBtn.style.display = 'block'; }, 400);
+          setTimeout(runRnDDice, 400);
         }
       }
 
@@ -243,8 +282,67 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     if (insWraps.length === 0) {
+      setTimeout(runRnDDice, 400);
+    }
+  }
+
+  /* ── Called once insurance dice have settled ── */
+  function runRnDDice() {
+    if (!rndWrap) {
+      continueBtn.style.display = 'block';
+      return;
+    }
+
+    if (rndSection) rndSection.classList.add("visible");
+
+    const finalVal  = parseInt(rndWrap.dataset.roll) || 1;
+    const isSuccess = rndWrap.dataset.success === '1';
+    const face      = rndWrap.querySelector('.d20-face');
+    const numSpan   = face.querySelector('.d20-num');
+
+    let step = 0;
+    const totalSteps = 12 + Math.floor(Math.random() * 8);
+    let currentDelay = 25;
+
+    function animate() {
+      numSpan.textContent = (Math.floor(Math.random() * 100) + 1) + '%';
+
+      const maxHeight   = 35;
+      const currentJump = Math.max(0, maxHeight - (step * 2.5));
+      const yOffset     = step % 2 === 0 ? -currentJump : 0;
+      const squash      = (step % 2 !== 0 && step > totalSteps - 4) ? 0.85 : 1;
+
+      face.style.transform  = `translateY(${yOffset}px) scaleY(${squash})`;
+      face.style.transition = `transform ${currentDelay}ms ease-out`;
+
+      step++;
+      if (step < totalSteps) {
+        currentDelay += 15;
+        setTimeout(animate, currentDelay);
+      } else {
+        finalize();
+      }
+    }
+
+    function finalize() {
+      face.style.transform = "translateY(0) scaleY(1)";
+      numSpan.textContent  = finalVal + '%';
+
+      face.classList.remove('roll-high', 'roll-mid', 'roll-low');
+      face.classList.add(isSuccess ? 'ins-safe' : 'ins-disaster');
+
+      const strokeColor = isSuccess ? '#2f9e44' : '#c92a2a';
+      addOutline(face, strokeColor);
+
+      const infoDiv = rndWrap.closest('.dice-box').querySelector('.rnd-info');
+      infoDiv.innerHTML = isSuccess
+        ? `<small class="text-success fw-semibold">🎉 New product unlocked!</small>`
+        : `<small class="text-muted">No breakthrough this turn</small>`;
+
       setTimeout(function () { continueBtn.style.display = 'block'; }, 400);
     }
+
+    setTimeout(animate, 0);
   }
 
   /* ── Toy dice ── */

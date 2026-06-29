@@ -46,3 +46,12 @@ def pick_interest_rate(rate_profile):
     rates  = [item[0] for item in distribution]
     weights = [item[1] for item in distribution]
     return random.choices(rates, weights=weights, k=1)[0]
+
+def calculate_probability_of_new_product_success(cumulative_spend, m, b):
+    # y = mx + b
+    prob = (m * cumulative_spend) + b
+    return prob
+
+def pick_from_new_product_distribution():
+    pick = random.randint(1, 100)
+    return pick

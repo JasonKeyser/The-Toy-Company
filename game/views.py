@@ -351,6 +351,8 @@ def game(request):
                 f"⚙️ {player.equipment_name} now installed! "
                 f"Cost per unit on all toys is reduced by {savings_pct}%."
             )
+        if last_turn and last_turn.new_product_produced:
+            success_notifications.append(f"New Toy Produced!")
         two_turns_ago = Turn.objects.filter(player=player, turn_number=current_turn - 2).first()
         first_eligible_turn = (player.turn_number == min_years_of_financial_history + 1) and player.difficulty.financing_enabled
         if two_turns_ago:

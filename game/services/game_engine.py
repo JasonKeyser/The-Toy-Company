@@ -2,7 +2,7 @@ from decimal import Decimal
 from django.db import transaction
 from django.utils.text import normalize_newlines
 
-from .distributions import pick_from_distribution, pick_from_disaster_distribution
+from .distributions import pick_from_distribution, pick_from_disaster_distribution, calculate_probability_of_new_product_success, pick_from_new_product_distribution
 from game.models import Turn, ToyProductionOutcome, Player, InsuranceEventOutcome
 
 
@@ -97,6 +97,16 @@ class GameEngine:
                 coverage_active = coverage_taken,
                 premium_cost = premium_cost
             )
+
+        # if cumulative spend on R&D is > 0 and the player has not already unlocked a new toy; roll the dice
+        if player.cumulative_rnd_spend > 0:
+            prob = calculate_probability_of_new_product_success(player.cumulative_rnd_spend, player.difficulty.new_product_success_cost_coefficient, player.difficulty.new_product_success_b)
+            roll = pick_from_new_product_distribution()
+
+            if round(prob * 100, 0) > roll:
+                # if roll succeeds - unlock a new toy; reset cumulative spend to $0
+                player.cumulative_rnd_spend = 0
+                turn.new_product_produced = True
 
 
 

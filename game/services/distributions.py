@@ -55,3 +55,30 @@ def calculate_probability_of_new_product_success(cumulative_spend, m, b):
 def pick_from_new_product_distribution():
     pick = random.randint(1, 100)
     return pick
+
+
+def calculate_product_chances(cumulative_spend, slope_racecar, racecar_intercept, slope_doll, doll_peak, doll_intercept):
+    # y = mx + b
+    probabilities = {}
+
+    racecar_prob = max( (float(slope_racecar) * cumulative_spend) + float( racecar_intercept), 0)
+
+    if cumulative_spend <= doll_peak:
+        doll_prob = max( float(slope_doll) * cumulative_spend, 0 )
+    else:
+        doll_prob = max( (-1 * float(slope_doll) * cumulative_spend) + float( doll_intercept ), 0)
+
+    teddy_bear_prob = 1 - (racecar_prob + doll_prob)
+
+    probabilities['racecar'] = racecar_prob
+    probabilities['doll'] = doll_prob
+    probabilities['teddy_bear'] = teddy_bear_prob
+
+    return probabilities
+
+
+def pick_unlocked_toy(toy_probabilities):
+    toys = list( toy_probabilities.keys() )
+    weights = list( toy_probabilities.values() )
+    selection = random.choices(toys, weights=weights, k=1)[0]
+    return selection

@@ -68,6 +68,15 @@ class Difficulty(models.Model):
     new_product_success_cost_coefficient = models.DecimalField(max_digits=12, decimal_places=6, null=True)
     new_product_success_b = models.DecimalField(max_digits=12, decimal_places=2, null=True)
 
+
+    # new toy unlocking inputs
+    slope_racecar = models.DecimalField(max_digits=12, decimal_places=6, null=True)
+    intercept_racecar = models.DecimalField(max_digits=12, decimal_places=6, null=True)
+    slope_doll = models.DecimalField(max_digits=12, decimal_places=6, null=True)
+    intercept_doll = models.DecimalField(max_digits=12, decimal_places=6, null=True)
+    peak_doll = models.DecimalField(max_digits=12, decimal_places=6, null=True)
+
+
     #financing related
     min_loan_amount = models.DecimalField(max_digits=12, decimal_places=2, default=100)
     min_years_of_financial_history = models.IntegerField(default=3)
@@ -115,6 +124,10 @@ class Player(models.Model):
     next_offered_rate = models.DecimalField(max_digits=6, decimal_places=4, default=0.10)
 
     cumulative_rnd_spend = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    toy_unlocked = models.BooleanField(default=False)
+    unlocked_toy_name = models.CharField(max_length=100, default="None")
+
 
     def __str__(self):
         return self.name
@@ -229,9 +242,12 @@ class Turn(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # new product success inputs
     new_product_produced = models.BooleanField(default=False)
     new_product_roll = models.IntegerField(null=True, blank=True)
     new_product_threshold = models.IntegerField(null=True, blank=True)
+
+
 
     def __str__(self):
         return f"Turn {self.turn_number} - {self.player.name}"

@@ -1,0 +1,30 @@
+{% load accounting_tags %}
+{% load math_tags %}
+
+
+<h2>New Product Unlock Distribution</h2>
+
+<table class="table table-bordered text-center">
+    <thead class="table-dark">
+        <tr>
+            <th>Toy</th>
+            {% for spend, dict in product_probabilities.items %}
+                <th style="font-size: 2rem; line-height: 1;">{{ spend }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for toy in toy_names %}
+        <tr>
+          <td>{{ toy }}</td>
+          {% for spend, dict in product_probabilities.items %}
+            {% for toy_name, prob in dict.items %}
+              {% if toy_name == toy %}
+                <td>{{ prob|percentage }}</td>
+              {% endif %}
+            {% endfor %}
+          {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

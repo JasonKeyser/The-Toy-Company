@@ -59,9 +59,10 @@ def pick_from_new_product_distribution():
 
 def calculate_product_chances(cumulative_spend, slope_racecar, racecar_intercept, slope_doll, doll_peak, doll_intercept):
     # y = mx + b
+    cumulative_spend = float(cumulative_spend)
     probabilities = {}
 
-    racecar_prob = max( (float(slope_racecar) * cumulative_spend) + float( racecar_intercept), 0)
+    racecar_prob = max( (float(-1 * slope_racecar) * cumulative_spend) + float( racecar_intercept), 0)
 
     if cumulative_spend <= doll_peak:
         doll_prob = max( float(slope_doll) * cumulative_spend, 0 )
@@ -72,7 +73,9 @@ def calculate_product_chances(cumulative_spend, slope_racecar, racecar_intercept
 
     probabilities['racecar'] = racecar_prob
     probabilities['doll'] = doll_prob
-    probabilities['teddy_bear'] = teddy_bear_prob
+    probabilities['teddybear'] = teddy_bear_prob
+
+
 
     return probabilities
 
@@ -80,5 +83,5 @@ def calculate_product_chances(cumulative_spend, slope_racecar, racecar_intercept
 def pick_unlocked_toy(toy_probabilities):
     toys = list( toy_probabilities.keys() )
     weights = list( toy_probabilities.values() )
-    selection = random.choices(toys, weights=weights, k=1)[0]
+    selection = random.choices(toys, weights=weights, k=1)
     return selection

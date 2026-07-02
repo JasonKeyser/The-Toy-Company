@@ -107,17 +107,16 @@ class GameEngine:
             turn.new_product_threshold = threshold
 
             if threshold > roll:
-                # if roll succeeds - unlock a new toy; reset cumulative spend to $0
-                player.cumulative_rnd_spend = 0
                 turn.new_product_produced = True
 
                 # if roll succeeds - roll to see what kind of toy is unlocked
                 toy_unlocked_probabilities = calculate_product_chances(player.cumulative_rnd_spend, player.difficulty.slope_racecar, player.difficulty.intercept_racecar,
                                                                        player.difficulty.slope_doll, player.difficulty.peak_doll, player.difficulty.intercept_doll)
-
                 unlocked_toy = pick_unlocked_toy(toy_unlocked_probabilities)
                 player.toy_unlocked = True
-                player.unlocked_toy_name = unlocked_toy
+                player.unlocked_toy_name = unlocked_toy[0]
+                # if roll succeeds - unlock a new toy; reset cumulative spend to $0
+                player.cumulative_rnd_spend = 0
 
         total_gross_profit = total_revenue - total_cogs
         operating_expenses = player.difficulty.rent_cost + ad_cost + total_disaster_cost_realized + total_premium_cost + rnd_spend

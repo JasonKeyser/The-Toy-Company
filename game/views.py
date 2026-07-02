@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from .models import Post, Toy, Player, Turn, ToyProductionOutcome, Difficulty, Game, AdvertisingProfile, \
     AdvertisingCampaign, InsuranceEvent, Equipment, PlayerLoan, InterestRateProfile
 from .services.game_engine import GameEngine
+from .services.distributions import calculate_product_chances
 from django.views.generic import (
     ListView,
     DetailView,
@@ -592,13 +593,22 @@ def rnd_new_product_success_distribution_view(request):
     m = player.difficulty.new_product_success_cost_coefficient
     b = player.difficulty.new_product_success_b
 
+    product_probabilities = {}
     new_product_profile = {}
     for x in range(1, 251):
         if x % 25 == 0:
             y = m*x + b
             new_product_profile[str(x)] = y
+            probabilities = calculate_product_chances(x, player.difficulty.slope_racecar, player.difficulty.intercept_racecar, player.difficulty.slope_doll, player.difficulty.peak_doll, player.difficulty.intercept_doll)
+            product_probabilities[str(x)] = probabilities
+
+    toy_names = []
+    for toy in product_probabilities['25']:
+        toy_names.append(toy)
 
     context = {
         "new_product_profile": new_product_profile,
+        "product_probabilities": product_probabilities,
+        "toy_names": toy_names
     }
     return render(request, "game/new_product_success_distribution.html", context)

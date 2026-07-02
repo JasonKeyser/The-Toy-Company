@@ -14,8 +14,15 @@
       <table class="table table-bordered table-sm mb-0">
         <thead class="table-secondary">
           <tr>
+            <th colspan="2" class="text-center">Probability of Unlock on any given turn</th> <!-- Merged for 2 columns -->
+            <th colspan="3" class="text-center">Probability of Toy given successful Unlock</th> <!-- Merged for 2 columns -->
+          </tr>
+          <tr>
             <th>Cumulative R&D Investment</th>
-            <th>Probability of Success on a given Turn</th>
+            <th>New Product Unlock</th>
+            <th>Racecar</th>
+            <th>Doll</th>
+            <th>Teddy Bear</th>
           </tr>
         </thead>
         <tbody>
@@ -23,6 +30,17 @@
           <tr>
             <td>{{ spend|accounting }}</td>
             <td>{{ prob|percentage }}</td>
+            {% for toy in toy_names %}
+              {% for p_spend, dict in product_probabilities.items %}
+                {% for toy_name, p_prob in dict.items %}
+                  {% if toy_name == toy %}
+                    {% if spend == p_spend %}
+                      <td>{{ p_prob|percentage }}</td>
+                    {% endif %}
+                  {% endif %}
+                {% endfor %}
+              {% endfor%}
+            {% endfor %}
           </tr>
           {% endfor %}
         </tbody>

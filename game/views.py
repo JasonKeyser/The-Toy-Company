@@ -3,7 +3,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 import datetime
 from django.contrib.auth.models import User
 from .models import Post, Toy, Player, Turn, ToyProductionOutcome, Difficulty, Game, AdvertisingProfile, \
-    AdvertisingCampaign, InsuranceEvent, Equipment, PlayerLoan, InterestRateProfile
+    AdvertisingCampaign, InsuranceEvent, Equipment, PlayerLoan, InterestRateProfile, Toy_Basket
 from .services.game_engine import GameEngine
 from .services.distributions import calculate_product_chances
 from django.views.generic import (
@@ -106,8 +106,17 @@ def game_begin(request):
             company_name = company_name
         )
 
+
+        toy_basket = Toy_Basket.objects.create()
+        toys = Toy.objects.all()
+
+        for toy in toys:
+            toy.toy_basket= toy_basket
+            toy.save()
+
         game = Game.objects.create(
-            player=player
+            player=player,
+            toy_basket=toy_basket
         )
 
         return redirect("game-production")
@@ -120,7 +129,10 @@ def game(request):
     game = Game.objects.last()
     player = game.player
 
-    toys = Toy.objects.all()
+    toy_basket = Toy_Basket.objects.filter(game=game).first()
+    toys = toy_basket.toys.all()
+    # toys = Toy.objects.all()
+
 
     UnitsFormSet = formset_factory(
         UnitsManufacturedForm,

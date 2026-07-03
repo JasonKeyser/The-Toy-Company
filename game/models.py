@@ -3,6 +3,13 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 
 
+class Toy_Basket(models.Model):
+    name = models.CharField(max_length=100, default="basket")
+
+    def __str__(self):
+        return self.name
+
+
 class Toy(models.Model):
     name = models.CharField(max_length=50)
     price_per_unit = models.DecimalField(max_digits=10, decimal_places=2)
@@ -11,6 +18,8 @@ class Toy(models.Model):
         default=list,  # e.g., [0.05, 0.10, 0.15, ..., 0.05] 20 values
         help_text="Discrete probability distribution for demand (6 steps)"
     )
+    toy_basket = models.ForeignKey(Toy_Basket, on_delete=models.CASCADE, null=True, blank=True, related_name="toys")
+    enabled = models.BooleanField(null=True)
 
     def adjusted_cost(self, coefficient):
         return self.cost_per_unit * coefficient
@@ -255,7 +264,7 @@ class Turn(models.Model):
 
 class Game(models.Model):
     player = models.ForeignKey(Player, on_delete=models.CASCADE)
-
+    toy_basket = models.ForeignKey(Toy_Basket, on_delete=models.CASCADE, null=True, blank=True)
 
 class AdvertisingProfile(models.Model):
     difficulty = models.ForeignKey(Difficulty, on_delete=models.CASCADE, related_name='advertising_profiles')

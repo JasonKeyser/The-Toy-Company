@@ -71,9 +71,9 @@ def calculate_product_chances(cumulative_spend, slope_racecar, racecar_intercept
 
     teddy_bear_prob = 1 - (racecar_prob + doll_prob)
 
-    probabilities['racecar'] = racecar_prob
-    probabilities['doll'] = doll_prob
-    probabilities['teddybear'] = teddy_bear_prob
+    probabilities['Racecar'] = racecar_prob
+    probabilities['Doll'] = doll_prob
+    probabilities['TeddyBear'] = teddy_bear_prob
 
 
 

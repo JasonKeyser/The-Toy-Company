@@ -30,7 +30,7 @@ def get_total_boost(player, current_turn):
 
 class GameEngine:
     @transaction.atomic
-    def process_turn(self, player, toy_production_choices, insurance_choices, ad_cost, rnd_spend, capex_choices, cost_savings_coefficient, borrowed_amount):
+    def process_turn(self, player, toy_production_choices, toy_basket, insurance_choices, ad_cost, rnd_spend, capex_choices, cost_savings_coefficient, borrowed_amount):
 
         total_revenue = Decimal("0.00")
         total_cogs = Decimal("0.00")
@@ -115,6 +115,9 @@ class GameEngine:
                 unlocked_toy = pick_unlocked_toy(toy_unlocked_probabilities)
                 player.toy_unlocked = True
                 player.unlocked_toy_name = unlocked_toy[0]
+                unlocked_toy = toy_basket.toys.filter(name=unlocked_toy[0]).first()
+                unlocked_toy.enabled = True
+                unlocked_toy.save(update_fields=['enabled'])
                 # if roll succeeds - unlock a new toy; reset cumulative spend to $0
                 player.cumulative_rnd_spend = 0
 

@@ -110,8 +110,13 @@ def game_begin(request):
         toy_basket = Toy_Basket.objects.create()
         toys = Toy.objects.all()
 
+        default_toys = ['Kites', 'Yo-Yo', 'Bike']
         for toy in toys:
             toy.toy_basket= toy_basket
+            if toy.name in default_toys:
+                toy.enabled = True
+            else:
+                toy.enabled = False
             toy.save()
 
         game = Game.objects.create(
@@ -130,8 +135,7 @@ def game(request):
     player = game.player
 
     toy_basket = Toy_Basket.objects.filter(game=game).first()
-    toys = toy_basket.toys.all()
-    # toys = Toy.objects.all()
+    toys = toy_basket.toys.filter(enabled=True)
 
 
     UnitsFormSet = formset_factory(
@@ -348,7 +352,7 @@ def game(request):
                     }
 
                     engine = GameEngine()
-                    turn = engine.process_turn(player, toy_production_choices, insurance_coverage_choices, ad_cost, rnd_spend, capex_choices, cost_savings_coefficient, borrowed_amount)
+                    turn = engine.process_turn(player, toy_production_choices, toy_basket, insurance_coverage_choices, ad_cost, rnd_spend, capex_choices, cost_savings_coefficient, borrowed_amount)
                     return render(request, "game/dice_roll.html", {"turn": turn})
 
     elif request.method == "GET":

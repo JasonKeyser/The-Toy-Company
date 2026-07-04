@@ -19,7 +19,7 @@ class Toy(models.Model):
         help_text="Discrete probability distribution for demand (6 steps)"
     )
     toy_basket = models.ForeignKey(Toy_Basket, on_delete=models.CASCADE, null=True, blank=True, related_name="toys")
-    enabled = models.BooleanField(null=True)
+    enabled = models.BooleanField(default=False, null=True)
 
     def adjusted_cost(self, coefficient):
         return self.cost_per_unit * coefficient

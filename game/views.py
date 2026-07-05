@@ -608,6 +608,8 @@ def rnd_new_product_success_distribution_view(request):
     player = game.player
     m = player.difficulty.new_product_success_cost_coefficient
     b = player.difficulty.new_product_success_b
+    toy_basket = Toy_Basket.objects.filter(game=game).first()
+    toys = toy_basket.toys.all()
 
     product_probabilities = {}
     new_product_profile = {}
@@ -622,9 +624,12 @@ def rnd_new_product_success_distribution_view(request):
     for toy in product_probabilities['25']:
         toy_names.append(toy)
 
+
+
     context = {
         "new_product_profile": new_product_profile,
         "product_probabilities": product_probabilities,
-        "toy_names": toy_names
+        "toy_names": toy_names,
+        "toys": toys,
     }
     return render(request, "game/new_product_success_distribution.html", context)

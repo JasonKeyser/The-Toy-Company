@@ -135,7 +135,6 @@ class Player(models.Model):
 
     cumulative_rnd_spend = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
-    toy_unlocked = models.BooleanField(default=False)
     unlocked_toy_name = models.CharField(max_length=100, default="None")
 
 

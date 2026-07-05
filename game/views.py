@@ -136,6 +136,12 @@ def game(request):
     player = game.player
 
     toy_basket = Toy_Basket.objects.filter(game=game).first()
+
+    all_enabled = True
+    for toy in toy_basket.toys.all():
+        if not toy.enabled:
+            all_enabled = False
+
     toys = toy_basket.toys.filter(enabled=True)
 
 
@@ -438,6 +444,7 @@ def game(request):
             "current_boost":current_boost,
             "toyformset": toyformset,
             "form_and_toys": form_and_toys,
+            "all_enabled" : all_enabled,
             "coverageformset": coverageformset,
             "insurance_events": insurance_events,
             "inv_expansion_form": inv_expansion_form,

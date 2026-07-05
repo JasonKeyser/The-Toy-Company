@@ -756,12 +756,16 @@
                 <tbody>
                   <tr>
                     <td> {{ player.cumulative_rnd_spend|accounting }} </td>
-                    <td>
-                      {{ rnd_form.rnd_spend }}
-                      {% if rnd_form.rnd_spend.errors %}
-                        <div class="text-danger small">{{ rnd_form.rnd_spend.errors }}</div>
-                      {% endif %}
-                    </td>
+                    {% if all_enabled %}
+                      <td>All toys already unlocked.</td>
+                    {% else %}
+                      <td>
+                        {{ rnd_form.rnd_spend }}
+                        {% if rnd_form.rnd_spend.errors %}
+                          <div class="text-danger small">{{ rnd_form.rnd_spend.errors }}</div>
+                        {% endif %}
+                      </td>
+                    {% endif %}
                     <td id="cum-rnd-spend">-</td>
                   </tr>
                 </tbody>

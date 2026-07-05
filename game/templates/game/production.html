@@ -720,6 +720,61 @@
           </div>
           {% endif %}
 
+          <!-- Research and Development -->
+          {% if player.difficulty.rnd_enabled %}
+          <div class="card mb-3">
+            <div class="card-header d-flex align-items-center">
+              Research and Development
+              <div class="ad-tooltip-wrap">
+                <span class="qmark">?</span>
+                <div class="tooltip-box">
+                  Invest more money in R&D to increase your chances of having a breakthrough and unlocking a new product.
+                </div>
+              </div>
+            </div>
+
+
+
+            <div class="card-body">
+              <a href="{% url 'new-product-success-distribution' %}" class="small">R&D Distributions</a>
+              <table class="table table-bordered table-sm mb-0">
+                <thead class="table-secondary">
+                  <tr>
+                    <th>Prior R&D Spend</th>
+                    <th>Spend This Turn</th>
+                    <th>
+                      Cumulative Spend
+                      <div class="ad-tooltip-wrap">
+                        <span class="qmark">?</span>
+                        <div class="tooltip-box">
+                          Cumulative spend resets upon new product completion
+                        </div>
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td> {{ player.cumulative_rnd_spend|accounting }} </td>
+                    {% if all_enabled %}
+                      <td>All toys already unlocked.</td>
+                    {% else %}
+                      <td>
+                        {{ rnd_form.rnd_spend }}
+                        {% if rnd_form.rnd_spend.errors %}
+                          <div class="text-danger small">{{ rnd_form.rnd_spend.errors }}</div>
+                        {% endif %}
+                      </td>
+                    {% endif %}
+                    <td id="cum-rnd-spend">-</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          {% endif %}
+
+
         </div>
       </div>
     </div>
@@ -1015,6 +1070,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const totalUnitsDisplay     = document.getElementById('total-units');
   const grandTotalCostDisplay = document.getElementById('grand-total-cost');
   const expansionTotalDisplay = document.getElementById('expansion-total-cost');
+  const cumulativeRNDDisplay =  document.getElementById('cum-rnd-spend');
   const adCostDisplay         = document.getElementById('ad-campaign-cost');
   const adScheduleDisplay     = document.getElementById('ad-campaign-schedule');
 
@@ -1022,6 +1078,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const total_cash_available   = {{ player.cash|unlocalize }};
   const costPerSpace           = {{ factory_space_cost|unlocalize }};
   const rentCost               = {{ player.difficulty.rent_cost|unlocalize }};
+  const historical_rnd_spend   = {{ player.cumulative_rnd_spend|unlocalize }};
 
   const maxCreditAvailable = parseFloat("{{ loan_offer.max_credit|default:0 }}") || 0;
 
@@ -1059,10 +1116,16 @@ document.addEventListener('DOMContentLoaded', function () {
     return parseFloat(loanInput?.value) || 0;
   }
 
+  /* ── Current R&D Spend ── */
+  function getRnDCost() {
+    const rndInput = document.querySelector('#id_rnd_spend');
+    return parseFloat(rndInput?.value) || 0;
+  }
+
   function updateSpendCard(cogs, capex, adCost, premiumCost) {
     premiumCost = premiumCost || 0;
     const loanProceeds  = getLoanProceeds();
-    const opex          = rentCost + adCost + premiumCost;
+    const opex          = rentCost + adCost + premiumCost + getRnDCost();
     const total         = cogs + opex + capex;
     const effectiveCash = total_cash_available + loanProceeds;
     const maxBar        = Math.max(cogs, opex, capex, 1);
@@ -1157,6 +1220,19 @@ document.addEventListener('DOMContentLoaded', function () {
     updateSpendCard(s.cogs, s.capex, s.ad, getInsurancePremiumCost());
   }
 
+    function updateRnDCumCost() {
+    const rndInput = document.querySelector('#id_rnd_spend');
+    const rnd_current_spend = parseFloat(rndInput?.value) || 0;
+    const total  = rnd_current_spend + historical_rnd_spend;
+
+    cumulativeRNDDisplay.textContent = fmt(total);
+    cumulativeRNDDisplay.dataset.value = total;
+
+    const s = getCurrentSpends();
+    updateSpendCard(s.cogs, s.capex, s.ad, getInsurancePremiumCost());
+  }
+
+
   /* ── equipment JSON from Django ── */
   const equipmentProfiles = JSON.parse(document.getElementById('equipment-data').textContent);
 
@@ -1227,6 +1303,10 @@ document.addEventListener('DOMContentLoaded', function () {
   const adSelect = document.querySelector('#id_ad_campaign');
   if (adSelect) adSelect.addEventListener('change', updateAdCost);
 
+  /* ── event listeners: rnd Spend ── */
+  const rndInput = document.querySelector('#id_rnd_spend');
+  if (rndInput) rndInput.addEventListener('input', updateRnDCumCost);
+
   /* ── event listeners: insurance coverage selects ── */
   document.querySelectorAll('select[id*="coverage_taken"]').forEach(function(sel) {
     sel.addEventListener('change', function() {
@@ -1294,6 +1374,7 @@ document.addEventListener('DOMContentLoaded', function () {
   /* ── seed dataset values so cross-calls work on first run ── */
   grandTotalCostDisplay.dataset.value = 0;
   expansionTotalDisplay.dataset.value = 0;
+  cumulativeRNDDisplay.dataset.value = 0;
   if (adCostDisplay) adCostDisplay.dataset.value = 0;
 
 /* ── persist form inputs across navigation (turn-scoped) ── */
@@ -1354,6 +1435,7 @@ document.addEventListener('DOMContentLoaded', function () {
   updateCalculations();
   updateExpansionCost();
   updateAdCost();
+  updateRnDCumCost();
 
   const s = getCurrentSpends();
   updateSpendCard(s.cogs, s.capex, s.ad, getInsurancePremiumCost());

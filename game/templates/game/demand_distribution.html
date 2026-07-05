@@ -1,9 +1,14 @@
 {% extends "game/base.html" %}
 
 {% block content %}
-<h2>Toy Demand Distribution - % of Manufactured Toys Sold per Dice Roll</h2>
+<h2>Toy Demand Distribution</h2>
+
+
 
 <table class="table table-bordered text-center">
+    <div class="table-header">
+        <p class="text-muted">Table shows the percentage of manufactured toys sold based on a roll of the 20-sided-dice. Gray toys can be unlocked by investing in R&D.</p>
+    </div>
     <thead class="table-dark">
         <tr>
             <th>Toy</th>
@@ -14,7 +19,11 @@
     </thead>
     <tbody>
         {% for item in toy_distributions %}
-        <tr>
+        {% if item.toy.enabled == True %}
+            <tr class="table-hover">
+        {% else %}
+            <tr class="table-dark">
+        {% endif %}
             <td>{{ item.toy.name }}</td>
             {% for prob in item.percentages %}
                 <td>{{ prob|floatformat:0 }}%</td>

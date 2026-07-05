@@ -3,8 +3,9 @@ from django.shortcuts import render, get_object_or_404, redirect
 import datetime
 from django.contrib.auth.models import User
 from .models import Post, Toy, Player, Turn, ToyProductionOutcome, Difficulty, Game, AdvertisingProfile, \
-    AdvertisingCampaign, InsuranceEvent, Equipment, PlayerLoan, InterestRateProfile
+    AdvertisingCampaign, InsuranceEvent, Equipment, PlayerLoan, InterestRateProfile, Toy_Basket
 from .services.game_engine import GameEngine
+from .services.distributions import calculate_product_chances, toy_settings
 from django.views.generic import (
     ListView,
     DetailView,
@@ -18,7 +19,7 @@ class PostListView(ListView):
 
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from .forms import UnitsManufacturedForm, BaseUnitsFormSet, FactoryExpansionForm, AdvertisementCampaignForm, \
-    InsuranceCoverageTakenForm, BaseCoverageFormSet, EquipmentForm, LoanForm
+    InsuranceCoverageTakenForm, BaseCoverageFormSet, EquipmentForm, LoanForm, RnDSpendForm
 from django.forms import formset_factory
 import json
 from .icons import get_toy_color
@@ -105,8 +106,23 @@ def game_begin(request):
             company_name = company_name
         )
 
+
+        toy_basket = Toy_Basket.objects.create()
+
+        for toy in toy_settings:
+            Toy.objects.create(
+                name=toy["name"],
+                price_per_unit=toy["Price"],
+                cost_per_unit=toy["Cost"],
+                demand_distribution_json = toy["distribution"],
+                toy_basket=toy_basket,
+                enabled=toy["default"],
+                default_toy=toy["default"],
+            )
+
         game = Game.objects.create(
-            player=player
+            player=player,
+            toy_basket=toy_basket
         )
 
         return redirect("game-production")
@@ -119,7 +135,15 @@ def game(request):
     game = Game.objects.last()
     player = game.player
 
-    toys = Toy.objects.all()
+    toy_basket = Toy_Basket.objects.filter(game=game).first()
+
+    all_enabled = True
+    for toy in toy_basket.toys.all():
+        if not toy.enabled:
+            all_enabled = False
+
+    toys = toy_basket.toys.filter(enabled=True)
+
 
     UnitsFormSet = formset_factory(
         UnitsManufacturedForm,
@@ -216,12 +240,13 @@ def game(request):
         toyformset = UnitsFormSet(request.POST, factory_space=player.factory_space, prefix="toys")
         coverageformset = CoverageFormSet(request.POST, prefix="coverage")
         inv_expansion_form = FactoryExpansionForm(request.POST)
+        rnd_form = RnDSpendForm(request.POST)
         loan_form = LoanForm(request.POST)
         ad_form = AdvertisementCampaignForm(request.POST, difficulty=player.difficulty)
         equipment_form = EquipmentForm(request.POST, equipment_bought=player.equipment_bought)
 
         if toyformset.is_valid() and inv_expansion_form.is_valid() and ad_form.is_valid() and coverageformset.is_valid() and equipment_form.is_valid()\
-                and loan_form.is_valid():
+                and loan_form.is_valid() and rnd_form.is_valid():
 
             difficulty = player.difficulty
 
@@ -272,6 +297,13 @@ def game(request):
 
             expansion_cost = extra_space * factory_space_cost
 
+            if difficulty.rnd_enabled:
+                rnd_spend = rnd_form.cleaned_data.get("rnd_spend", 0)
+                player.cumulative_rnd_spend += rnd_spend
+            else:
+                rnd_spend = 0
+
+
 
             if difficulty.financing_enabled:
                 borrowed_amount = loan_form.cleaned_data.get("borrowed_amount", 0)
@@ -287,7 +319,7 @@ def game(request):
                 # ... proceed with existing spend check and game engine logic
                 rent = player.difficulty.rent_cost
                 cogs = toy_cost
-                opex = rent + ad_cost + premium_cost
+                opex = rent + ad_cost + premium_cost + rnd_spend
                 capex = expansion_cost + equipment_cost
 
                 total_proposed_spend = cogs + opex + capex
@@ -327,7 +359,7 @@ def game(request):
                     }
 
                     engine = GameEngine()
-                    turn = engine.process_turn(player, toy_production_choices, insurance_coverage_choices, ad_cost, capex_choices, cost_savings_coefficient, borrowed_amount)
+                    turn = engine.process_turn(player, toy_production_choices, toy_basket, insurance_coverage_choices, ad_cost, rnd_spend, capex_choices, cost_savings_coefficient, borrowed_amount)
                     return render(request, "game/dice_roll.html", {"turn": turn})
 
     elif request.method == "GET":
@@ -343,6 +375,8 @@ def game(request):
                 f"⚙️ {player.equipment_name} now installed! "
                 f"Cost per unit on all toys is reduced by {savings_pct}%."
             )
+        if last_turn and last_turn.new_product_produced:
+            success_notifications.append(f"New Toy Unlocked {player.unlocked_toy_name}!")
         two_turns_ago = Turn.objects.filter(player=player, turn_number=current_turn - 2).first()
         first_eligible_turn = (player.turn_number == min_years_of_financial_history + 1) and player.difficulty.financing_enabled
         if two_turns_ago:
@@ -358,6 +392,7 @@ def game(request):
         toyformset = UnitsFormSet(factory_space=player.factory_space, prefix="toys")
         coverageformset = CoverageFormSet(prefix="coverage")
         inv_expansion_form = FactoryExpansionForm()
+        rnd_form = RnDSpendForm()
         loan_form = LoanForm()
         ad_form = AdvertisementCampaignForm(difficulty=player.difficulty)
         equipment_form = EquipmentForm(equipment_bought=player.equipment_bought)
@@ -409,9 +444,11 @@ def game(request):
             "current_boost":current_boost,
             "toyformset": toyformset,
             "form_and_toys": form_and_toys,
+            "all_enabled" : all_enabled,
             "coverageformset": coverageformset,
             "insurance_events": insurance_events,
             "inv_expansion_form": inv_expansion_form,
+            "rnd_form": rnd_form,
             "loan_offer": loan_offer,
             "loan_form": loan_form,
             "outstanding_loan": outstanding_loan,
@@ -516,7 +553,9 @@ def financial_history(request):
 
 @login_required
 def demand_distribution_view(request):
-    toys = Toy.objects.all()
+    game = Game.objects.last()
+    toy_basket = Toy_Basket.objects.filter(game=game).first()
+    toys = toy_basket.toys.all()
     toy_distributions = []
     for toy in toys:
         # Use the toy's stored distribution
@@ -571,3 +610,38 @@ def interest_rate_distribution_view(request):
         "rate_profiles": rate_profiles,
     }
     return render(request, "game/interest_rate_distribution.html", context)
+
+
+@login_required
+def rnd_new_product_success_distribution_view(request):
+    game = Game.objects.last()
+    player = game.player
+    m = player.difficulty.new_product_success_cost_coefficient
+    b = player.difficulty.new_product_success_b
+    toy_basket = Toy_Basket.objects.filter(game=game).first()
+    toys = toy_basket.toys.all()
+
+    default_locked_toys = toys.filter(default_toy=False).all()
+
+    product_probabilities = {}
+    new_product_profile = {}
+    for x in range(1, 251):
+        if x % 25 == 0:
+            y = m*x + b
+            new_product_profile[str(x)] = y
+            probabilities = calculate_product_chances(x, player.difficulty.slope_racecar, player.difficulty.intercept_racecar, player.difficulty.slope_doll, player.difficulty.peak_doll, player.difficulty.intercept_doll, default_locked_toys)
+            product_probabilities[str(x)] = probabilities
+
+    toy_names = []
+    for toy in product_probabilities['25']:
+        toy_names.append(toy)
+
+
+
+    context = {
+        "new_product_profile": new_product_profile,
+        "product_probabilities": product_probabilities,
+        "toy_names": toy_names,
+        "toys": toys,
+    }
+    return render(request, "game/new_product_success_distribution.html", context)

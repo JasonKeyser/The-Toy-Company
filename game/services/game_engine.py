@@ -2,7 +2,7 @@ from decimal import Decimal
 from django.db import transaction
 from django.utils.text import normalize_newlines
 
-from .distributions import pick_from_distribution, pick_from_disaster_distribution
+from .distributions import pick_from_distribution, pick_from_disaster_distribution, calculate_probability_of_new_product_success, pick_from_new_product_distribution, calculate_product_chances, pick_unlocked_toy
 from game.models import Turn, ToyProductionOutcome, Player, InsuranceEventOutcome
 
 
@@ -30,7 +30,7 @@ def get_total_boost(player, current_turn):
 
 class GameEngine:
     @transaction.atomic
-    def process_turn(self, player, toy_production_choices, insurance_choices, ad_cost, capex_choices, cost_savings_coefficient, borrowed_amount):
+    def process_turn(self, player, toy_production_choices, toy_basket, insurance_choices, ad_cost, rnd_spend, capex_choices, cost_savings_coefficient, borrowed_amount):
 
         total_revenue = Decimal("0.00")
         total_cogs = Decimal("0.00")
@@ -98,10 +98,30 @@ class GameEngine:
                 premium_cost = premium_cost
             )
 
+        # if cumulative spend on R&D is > 0 and the player has not already unlocked a new toy; roll the dice
+        if player.cumulative_rnd_spend > 0:
+            prob = calculate_probability_of_new_product_success(player.cumulative_rnd_spend, player.difficulty.new_product_success_cost_coefficient, player.difficulty.new_product_success_b)
+            roll = pick_from_new_product_distribution()
+            threshold = round(prob * 100, 0)
+            turn.new_product_roll = roll
+            turn.new_product_threshold = threshold
 
+            if threshold > roll:
+                turn.new_product_produced = True
+                default_locked_toys = toy_basket.toys.filter(default_toy=False).all()
+                # if roll succeeds - roll to see what kind of toy is unlocked
+                toy_unlocked_probabilities = calculate_product_chances(player.cumulative_rnd_spend, player.difficulty.slope_racecar, player.difficulty.intercept_racecar,
+                                                                       player.difficulty.slope_doll, player.difficulty.peak_doll, player.difficulty.intercept_doll, default_locked_toys)
+                unlocked_toy = pick_unlocked_toy(toy_unlocked_probabilities)
+                player.unlocked_toy_name = unlocked_toy[0]
+                unlocked_toy = toy_basket.toys.filter(name=unlocked_toy[0]).first()
+                unlocked_toy.enabled = True
+                unlocked_toy.save(update_fields=['enabled'])
+                # if roll succeeds - unlock a new toy; reset cumulative spend to $0
+                player.cumulative_rnd_spend = 0
 
         total_gross_profit = total_revenue - total_cogs
-        operating_expenses = player.difficulty.rent_cost + ad_cost + total_disaster_cost_realized + total_premium_cost
+        operating_expenses = player.difficulty.rent_cost + ad_cost + total_disaster_cost_realized + total_premium_cost + rnd_spend
         EBITDA = total_gross_profit - operating_expenses
 
         if player.turn_number < player.depreciation_expense_ends_turn:
@@ -124,7 +144,7 @@ class GameEngine:
         # income statement inputs
         EBT = EBITDA - round(depreciation + interest_expense,2)
         tax_expense = max( round( EBT * player.difficulty.tax_rate, 2), 0)
-        other_costs = round(tax_expense + depreciation + interest_expense, 2)
+        other_costs = round( tax_expense + depreciation + interest_expense, 2)
         total_cost = round( total_cogs + operating_expenses + other_costs, 2)
         net_income = round( total_revenue - total_cost, 2)
 
@@ -198,6 +218,7 @@ class GameEngine:
         turn.ad_cost = ad_cost
         turn.disaster_cost = total_disaster_cost_realized
         turn.premium_cost = total_premium_cost
+        turn.rnd_cost = rnd_spend
         turn.interest_tax_shield = interest_tax_shield
 
         turn.free_cash_flow = free_cash_flow

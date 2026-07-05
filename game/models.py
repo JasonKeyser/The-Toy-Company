@@ -3,6 +3,13 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 
 
+class Toy_Basket(models.Model):
+    name = models.CharField(max_length=100, default="basket")
+
+    def __str__(self):
+        return self.name
+
+
 class Toy(models.Model):
     name = models.CharField(max_length=50)
     price_per_unit = models.DecimalField(max_digits=10, decimal_places=2)
@@ -11,6 +18,9 @@ class Toy(models.Model):
         default=list,  # e.g., [0.05, 0.10, 0.15, ..., 0.05] 20 values
         help_text="Discrete probability distribution for demand (6 steps)"
     )
+    toy_basket = models.ForeignKey(Toy_Basket, on_delete=models.CASCADE, null=True, blank=True, related_name="toys")
+    enabled = models.BooleanField(default=False, null=True)
+    default_toy = models.BooleanField(default=False, null=True)
 
     def adjusted_cost(self, coefficient):
         return self.cost_per_unit * coefficient
@@ -65,6 +75,18 @@ class Difficulty(models.Model):
     rent_cost = models.DecimalField(max_digits=12, decimal_places=2)
     tax_rate = models.DecimalField(max_digits=12, decimal_places=2)
 
+    new_product_success_cost_coefficient = models.DecimalField(max_digits=12, decimal_places=6, null=True)
+    new_product_success_b = models.DecimalField(max_digits=12, decimal_places=2, null=True)
+
+
+    # new toy unlocking inputs
+    slope_racecar = models.DecimalField(max_digits=12, decimal_places=6, null=True)
+    intercept_racecar = models.DecimalField(max_digits=12, decimal_places=6, null=True)
+    slope_doll = models.DecimalField(max_digits=12, decimal_places=6, null=True)
+    intercept_doll = models.DecimalField(max_digits=12, decimal_places=6, null=True)
+    peak_doll = models.DecimalField(max_digits=12, decimal_places=6, null=True)
+
+
     #financing related
     min_loan_amount = models.DecimalField(max_digits=12, decimal_places=2, default=100)
     min_years_of_financial_history = models.IntegerField(default=3)
@@ -73,6 +95,7 @@ class Difficulty(models.Model):
     financing_enabled = models.BooleanField(default=True)
     ads_enabled = models.BooleanField(default=True)
     equipment_enabled = models.BooleanField(default=True)
+    rnd_enabled = models.BooleanField(default=True)
 
 
     def __str__(self):
@@ -107,7 +130,13 @@ class Player(models.Model):
     equipment_name = models.CharField(max_length=100, default="None")
     depreciation_expense_ends_turn = models.IntegerField(default=0)
     depreciation_expense_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
     next_offered_rate = models.DecimalField(max_digits=6, decimal_places=4, default=0.10)
+
+    cumulative_rnd_spend = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    unlocked_toy_name = models.CharField(max_length=100, default="None")
+
 
     def __str__(self):
         return self.name
@@ -174,6 +203,7 @@ class Turn(models.Model):
     ad_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     disaster_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     premium_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    rnd_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
 
     # cash flow statement
@@ -221,13 +251,20 @@ class Turn(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # new product success inputs
+    new_product_produced = models.BooleanField(default=False)
+    new_product_roll = models.IntegerField(null=True, blank=True)
+    new_product_threshold = models.IntegerField(null=True, blank=True)
+
+
+
     def __str__(self):
         return f"Turn {self.turn_number} - {self.player.name}"
 
 
 class Game(models.Model):
     player = models.ForeignKey(Player, on_delete=models.CASCADE)
-
+    toy_basket = models.ForeignKey(Toy_Basket, on_delete=models.CASCADE, null=True, blank=True)
 
 class AdvertisingProfile(models.Model):
     difficulty = models.ForeignKey(Difficulty, on_delete=models.CASCADE, related_name='advertising_profiles')
@@ -296,8 +333,6 @@ class InterestRateProfile(models.Model):
 
     def __str__(self):
         return self.name
-
-
 
 
 class Post(models.Model):

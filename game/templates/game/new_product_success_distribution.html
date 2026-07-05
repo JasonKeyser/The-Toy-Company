@@ -1,0 +1,59 @@
+{% extends "game/base.html" %}
+{% load accounting_tags %}
+{% block content %}
+
+<div class="container mt-4">
+  <h2>New Product Success Distribution</h2>
+  <p class="text-muted">Chance of research and development project success is determined by a dice roll at the start of each turn.</p>
+
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-0">
+      <table class="table table-bordered table-sm mb-0">
+        <thead class="table-secondary">
+          <tr>
+            <th colspan="2" class="text-center">Probability of Unlock on any given turn</th> <!-- Merged for 2 columns -->
+            <th colspan="3" class="text-center">Probability of Toy given successful Unlock</th> <!-- Merged for 2 columns -->
+          </tr>
+          <tr>
+            <th>Cumulative R&D Investment</th>
+            <th>New Product Unlock</th>
+            <th>Racecar</th>
+            <th>Doll</th>
+            <th>Teddy Bear</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for spend, prob in new_product_profile.items %}
+          <tr>
+            <td>{{ spend|accounting }}</td>
+            <td>{{ prob|percentage }}</td>
+            {% for toy in toy_names %}
+              {% for p_spend, dict in product_probabilities.items %}
+                {% for toy_name, p_prob in dict.items %}
+                  {% if toy_name == toy %}
+                    {% if spend == p_spend %}
+                      <td>{{ p_prob|percentage }}</td>
+                    {% endif %}
+                  {% endif %}
+                {% endfor %}
+              {% endfor%}
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="flex: 0 0 50%; max-width: 50%; display: flex; justify-content: flex-start;">
+    <div style="width: 100%; max-width: 460px;">
+      {% include "game/new_product_unlocked_distribution.html" %}
+    </div>
+  </div>
+
+
+  <br>
+  <a href="{% url 'game-production' %}" class="btn btn-outline-secondary btn-sm">← Back to Production</a>
+</div>
+
+{% endblock content %}

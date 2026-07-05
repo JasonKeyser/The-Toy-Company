@@ -18,6 +18,24 @@ class FactoryExpansionForm(forms.Form):
         space = self.cleaned_data.get("extra_space") or 0
         return space
 
+class RnDSpendForm(forms.Form):
+    rnd_spend = forms.IntegerField(
+        min_value=0,
+        required=False,
+        initial=0,
+        label="Spend This Turn",
+        widget=forms.NumberInput(attrs={
+            "class": "form-control",
+            "placeholder": "$0"
+        })
+    )
+
+    def clean_rnd_spend(self):
+        spend = self.cleaned_data.get("rnd_spend") or 0
+        return spend
+
+
+
 class AdvertisementCampaignForm(forms.Form):
     ad_campaign = forms.ModelChoiceField(
         queryset=AdvertisingProfile.objects.none(),
@@ -74,11 +92,6 @@ class LoanForm(forms.Form):
 
     def clean_borrowed_amount(self):
         borrowed = self.cleaned_data.get("borrowed_amount") or 0
-        # max_credit_offering = self.cleaned_data.get("max_credit") or 0
-        # if borrowed > max_credit_offering:
-        #     raise ValidationError(
-        #         f"Borrowed Amount {borrowed} exceeds your maximum credit offering {max_credit_offering}!"
-        #     )
 
         return borrowed
 

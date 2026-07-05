@@ -356,7 +356,7 @@ function toggle(id) {
 
       <div class="fin-row expandable" onclick="toggle('capex')">
         <span class="fin-label muted"><span class="expand-icon" id="icon-capex">&#9658;</span> Investing cash flow</span>
-        {% for t in turns %}<span class="fin-value">{{ t.investing_cf|accounting_round_exp }}</span>{% endfor %}
+        {% for t in turns %}<span class="fin-value">{{ t.total_capex|accounting_round }}</span>{% endfor %}
       </div>
       <div class="fin-children" id="children-capex">
         <div class="fin-child-row">

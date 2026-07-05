@@ -20,6 +20,7 @@ class Toy(models.Model):
     )
     toy_basket = models.ForeignKey(Toy_Basket, on_delete=models.CASCADE, null=True, blank=True, related_name="toys")
     enabled = models.BooleanField(default=False, null=True)
+    default_toy = models.BooleanField(default=False, null=True)
 
     def adjusted_cost(self, coefficient):
         return self.cost_per_unit * coefficient

@@ -108,12 +108,16 @@ class GameEngine:
 
             if threshold > roll:
                 turn.new_product_produced = True
-
+                default_locked_toys = toy_basket.toys.filter(default_toy=False).all()
+                # locked_toy_names = ['Racecar', 'Doll', 'TeddyBear']
+                # default_locked_toys = []
+                # for toy in toy_basket.toys.all():
+                #     if toy.name in locked_toy_names:
+                #         default_locked_toys.append(toy)
                 # if roll succeeds - roll to see what kind of toy is unlocked
                 toy_unlocked_probabilities = calculate_product_chances(player.cumulative_rnd_spend, player.difficulty.slope_racecar, player.difficulty.intercept_racecar,
-                                                                       player.difficulty.slope_doll, player.difficulty.peak_doll, player.difficulty.intercept_doll)
+                                                                       player.difficulty.slope_doll, player.difficulty.peak_doll, player.difficulty.intercept_doll, default_locked_toys)
                 unlocked_toy = pick_unlocked_toy(toy_unlocked_probabilities)
-                player.toy_unlocked = True
                 player.unlocked_toy_name = unlocked_toy[0]
                 unlocked_toy = toy_basket.toys.filter(name=unlocked_toy[0]).first()
                 unlocked_toy.enabled = True

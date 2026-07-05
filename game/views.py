@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from .models import Post, Toy, Player, Turn, ToyProductionOutcome, Difficulty, Game, AdvertisingProfile, \
     AdvertisingCampaign, InsuranceEvent, Equipment, PlayerLoan, InterestRateProfile, Toy_Basket
 from .services.game_engine import GameEngine
-from .services.distributions import calculate_product_chances
+from .services.distributions import calculate_product_chances, toy_settings
 from django.views.generic import (
     ListView,
     DetailView,
@@ -108,16 +108,17 @@ def game_begin(request):
 
 
         toy_basket = Toy_Basket.objects.create()
-        toys = Toy.objects.all()
 
-        default_toys = ['Kites', 'Yo-Yo', 'Bike']
-        for toy in toys:
-            toy.toy_basket= toy_basket
-            if toy.name in default_toys:
-                toy.enabled = True
-            else:
-                toy.enabled = False
-            toy.save()
+        for toy in toy_settings:
+            Toy.objects.create(
+                name=toy["name"],
+                price_per_unit=toy["Price"],
+                cost_per_unit=toy["Cost"],
+                demand_distribution_json = toy["distribution"],
+                toy_basket=toy_basket,
+                enabled=toy["default"],
+                default_toy=toy["default"],
+            )
 
         game = Game.objects.create(
             player=player,
@@ -545,7 +546,9 @@ def financial_history(request):
 
 @login_required
 def demand_distribution_view(request):
-    toys = Toy.objects.all()
+    game = Game.objects.last()
+    toy_basket = Toy_Basket.objects.filter(game=game).first()
+    toys = toy_basket.toys.all()
     toy_distributions = []
     for toy in toys:
         # Use the toy's stored distribution
@@ -611,13 +614,15 @@ def rnd_new_product_success_distribution_view(request):
     toy_basket = Toy_Basket.objects.filter(game=game).first()
     toys = toy_basket.toys.all()
 
+    default_locked_toys = toys.filter(default_toy=False).all()
+
     product_probabilities = {}
     new_product_profile = {}
     for x in range(1, 251):
         if x % 25 == 0:
             y = m*x + b
             new_product_profile[str(x)] = y
-            probabilities = calculate_product_chances(x, player.difficulty.slope_racecar, player.difficulty.intercept_racecar, player.difficulty.slope_doll, player.difficulty.peak_doll, player.difficulty.intercept_doll)
+            probabilities = calculate_product_chances(x, player.difficulty.slope_racecar, player.difficulty.intercept_racecar, player.difficulty.slope_doll, player.difficulty.peak_doll, player.difficulty.intercept_doll, default_locked_toys)
             product_probabilities[str(x)] = probabilities
 
     toy_names = []

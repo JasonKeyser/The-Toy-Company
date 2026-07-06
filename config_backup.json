@@ -1,0 +1,251 @@
+[
+{
+  "model": "auth.user",
+  "pk": 1,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$o2qigkqVHvAXu87dO1qmFk$2x5v7ys82DBgJT18pDzg5+ow0c9wsmS+h4YFjqNx3gw=",
+    "last_login": "2026-06-25T00:44:00.031Z",
+    "is_superuser": true,
+    "username": "jasonkeyser",
+    "first_name": "",
+    "last_name": "",
+    "email": "jasonk2@vt.edu",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-02-23T00:21:28.797Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 2,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$QOTpulZmALHXkyiBOzTOgZ$9K1b2/1AWc4GXKK9Azeu4Pf70U+bSGy7FhNxYDYGaew=",
+    "last_login": "2026-04-05T13:36:47.427Z",
+    "is_superuser": false,
+    "username": "okeyser",
+    "first_name": "",
+    "last_name": "",
+    "email": "orinkeyser@gmail.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-04-05T13:36:16.372Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "game.difficulty",
+  "pk": 1,
+  "fields": {
+    "name": "easy",
+    "starting_cash": "500.00",
+    "max_turns": 25,
+    "starting_factory_space": 30,
+    "factory_space_cost_coefficient": "0.10",
+    "winning_networth": "1000.00",
+    "rent_cost": "5.00",
+    "tax_rate": "0.15",
+    "new_product_success_cost_coefficient": "0.002462",
+    "new_product_success_b": "0.01",
+    "slope_racecar": null,
+    "intercept_racecar": null,
+    "slope_doll": null,
+    "intercept_doll": null,
+    "peak_doll": null,
+    "min_loan_amount": "100.00",
+    "min_years_of_financial_history": 3,
+    "insurance_enabled": false,
+    "financing_enabled": false,
+    "ads_enabled": false,
+    "equipment_enabled": true,
+    "rnd_enabled": false
+  }
+},
+{
+  "model": "game.difficulty",
+  "pk": 2,
+  "fields": {
+    "name": "medium",
+    "starting_cash": "250.00",
+    "max_turns": 25,
+    "starting_factory_space": 25,
+    "factory_space_cost_coefficient": "0.25",
+    "winning_networth": "1000.00",
+    "rent_cost": "10.00",
+    "tax_rate": "0.20",
+    "new_product_success_cost_coefficient": "0.002462",
+    "new_product_success_b": "0.01",
+    "slope_racecar": null,
+    "intercept_racecar": null,
+    "slope_doll": null,
+    "intercept_doll": null,
+    "peak_doll": null,
+    "min_loan_amount": "100.00",
+    "min_years_of_financial_history": 3,
+    "insurance_enabled": true,
+    "financing_enabled": false,
+    "ads_enabled": true,
+    "equipment_enabled": true,
+    "rnd_enabled": false
+  }
+},
+{
+  "model": "game.difficulty",
+  "pk": 3,
+  "fields": {
+    "name": "hard",
+    "starting_cash": "300.00",
+    "max_turns": 25,
+    "starting_factory_space": 20,
+    "factory_space_cost_coefficient": "0.50",
+    "winning_networth": "1000.00",
+    "rent_cost": "12.00",
+    "tax_rate": "0.20",
+    "new_product_success_cost_coefficient": "0.002462",
+    "new_product_success_b": "0.01",
+    "slope_racecar": "0.006700",
+    "intercept_racecar": "1.000000",
+    "slope_doll": "0.003300",
+    "intercept_doll": "0.660000",
+    "peak_doll": "100.000000",
+    "min_loan_amount": "100.00",
+    "min_years_of_financial_history": 2,
+    "insurance_enabled": true,
+    "financing_enabled": true,
+    "ads_enabled": true,
+    "equipment_enabled": true,
+    "rnd_enabled": true
+  }
+},
+{
+  "model": "game.advertisingprofile",
+  "pk": 1,
+  "fields": {
+    "difficulty": 1,
+    "boost_schedule": [0.15, 0.0, 0.0],
+    "cost": "25.00",
+    "name": "Quick Boost"
+  }
+},
+{
+  "model": "game.advertisingprofile",
+  "pk": 2,
+  "fields": {
+    "difficulty": 1,
+    "boost_schedule": [0.05, 0.05, 0.05],
+    "cost": "20.00",
+    "name": "Slow Burn"
+  }
+},
+{
+  "model": "game.advertisingprofile",
+  "pk": 3,
+  "fields": {
+    "difficulty": 2,
+    "boost_schedule": [0.05, 0.05, 0.05],
+    "cost": "25.00",
+    "name": "Slow Burn"
+  }
+},
+{
+  "model": "game.advertisingprofile",
+  "pk": 4,
+  "fields": {
+    "difficulty": 3,
+    "boost_schedule": [0.05, 0.05, 0.05],
+    "cost": "25.00",
+    "name": "Slow Burn"
+  }
+},
+{
+  "model": "game.advertisingprofile",
+  "pk": 5,
+  "fields": {
+    "difficulty": 2,
+    "boost_schedule": [0.15, 0.0, 0.0],
+    "cost": "25.00",
+    "name": "Quick Boost"
+  }
+},
+{
+  "model": "game.advertisingprofile",
+  "pk": 6,
+  "fields": {
+    "difficulty": 3,
+    "boost_schedule": [0.15, 0.0, 0.0],
+    "cost": "30.00",
+    "name": "Quick Boost"
+  }
+},
+{
+  "model": "game.insuranceevent",
+  "pk": 1,
+  "fields": {
+    "name": "Fire",
+    "premium_cost": "20.00",
+    "disaster_cost": "225.00",
+    "demand_distribution_json": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,225]
+  }
+},
+{
+  "model": "game.insuranceevent",
+  "pk": 2,
+  "fields": {
+    "name": "Flood",
+    "premium_cost": "20.00",
+    "disaster_cost": "20.00",
+    "demand_distribution_json": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,100,100,100,100]
+  }
+},
+{
+  "model": "game.insuranceevent",
+  "pk": 3,
+  "fields": {
+    "name": "General Liability",
+    "premium_cost": "10.00",
+    "disaster_cost": "10.00",
+    "demand_distribution_json": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,25,25,25,25,25]
+  }
+},
+{
+  "model": "game.insuranceevent",
+  "pk": 4,
+  "fields": {
+    "name": "Theft",
+    "premium_cost": "5.00",
+    "disaster_cost": "10.00",
+    "demand_distribution_json": [0,0,0,0,0,0,10,10,10,10,10,10,10,10,10,10,10,10,10,10]
+  }
+},
+{
+  "model": "game.equipment",
+  "pk": 1,
+  "fields": {
+    "name": "Milling Machine Standard",
+    "cost_savings_percent": "0.91",
+    "cost": "100.00",
+    "useful_life": 10
+  }
+},
+{
+  "model": "game.equipment",
+  "pk": 2,
+  "fields": {
+    "name": "Milling Machine Pro",
+    "cost_savings_percent": "0.85",
+    "cost": "200.00",
+    "useful_life": 10
+  }
+},
+{
+  "model": "game.interestrateprofile",
+  "pk": 1,
+  "fields": {
+    "difficulty": 3,
+    "name": "Standard Rate Profile",
+    "rate_distribution_json": [[0.03,5],[0.05,5],[0.07,25],[0.1,25],[0.12,25],[0.13,10],[0.14,5]]
+  }
+}
+]

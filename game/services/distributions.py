@@ -102,36 +102,50 @@ def pick_from_new_product_distribution():
 
 def calculate_product_chances(cumulative_spend, slope_racecar, racecar_intercept, slope_doll, doll_peak, doll_intercept, toys):
     # y = mx + b
+
+
+
     cumulative_spend = float(cumulative_spend)
     probabilities = {}
 
-    racecar_prob = max( (float(-1 * slope_racecar) * cumulative_spend) + float( racecar_intercept), 0)
-
-    if cumulative_spend <= doll_peak:
-        doll_prob = max( float(slope_doll) * cumulative_spend, 0 )
-    else:
-        doll_prob = max( (-1 * float(slope_doll) * cumulative_spend) + float( doll_intercept ), 0)
-
-    teddy_bear_prob = 1 - (racecar_prob + doll_prob)
-
-    probabilities['Racecar'] = racecar_prob
-    probabilities['Doll'] = doll_prob
-    probabilities['TeddyBear'] = teddy_bear_prob
-
-
-    # this section deals with the logic if one or more toys have already been unlocked
-    lost_prob = 0
-    enabled_count = 0
-    for toy in toys:
-      if toy.enabled:
-          lost_prob += probabilities[toy.name]
-          probabilities[toy.name] = 0
-          enabled_count += 1
-    added_prob = lost_prob / (3 - enabled_count)
-
+    all_enabled = True
     for toy in toys:
         if not toy.enabled:
-            probabilities[toy.name] += added_prob
+            all_enabled = False
+
+    if all_enabled:
+        probabilities['Racecar'] = 0
+        probabilities['Doll'] = 0
+        probabilities['TeddyBear'] = 0
+
+    else:
+        racecar_prob = max( (float(-1 * slope_racecar) * cumulative_spend) + float( racecar_intercept), 0)
+
+        if cumulative_spend <= doll_peak:
+            doll_prob = max( float(slope_doll) * cumulative_spend, 0 )
+        else:
+            doll_prob = max( (-1 * float(slope_doll) * cumulative_spend) + float( doll_intercept ), 0)
+
+        teddy_bear_prob = 1 - (racecar_prob + doll_prob)
+
+        probabilities['Racecar'] = racecar_prob
+        probabilities['Doll'] = doll_prob
+        probabilities['TeddyBear'] = teddy_bear_prob
+
+
+        # this section deals with the logic if one or more toys have already been unlocked
+        lost_prob = 0
+        enabled_count = 0
+        for toy in toys:
+          if toy.enabled:
+              lost_prob += probabilities[toy.name]
+              probabilities[toy.name] = 0
+              enabled_count += 1
+        added_prob = lost_prob / (3 - enabled_count)
+
+        for toy in toys:
+            if not toy.enabled:
+                probabilities[toy.name] += added_prob
 
     return probabilities
 

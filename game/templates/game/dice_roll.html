@@ -295,10 +295,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (rndSection) rndSection.classList.add("visible");
 
-    const finalVal  = parseInt(rndWrap.dataset.roll) || 1;
-    const isSuccess = rndWrap.dataset.success === '1';
-    const face      = rndWrap.querySelector('.d20-face');
-    const numSpan   = face.querySelector('.d20-num');
+    const finalVal   = parseInt(rndWrap.dataset.roll) || 1;
+    // Display is inverted from the underlying roll so a HIGH shown number reads as a win:
+    // the game succeeds on a low internal roll, so we mirror it (101 - roll) for display only.
+    const displayVal = 101 - finalVal;
+    const isSuccess  = rndWrap.dataset.success === '1';
+    const face       = rndWrap.querySelector('.d20-face');
+    const numSpan    = face.querySelector('.d20-num');
 
     let step = 0;
     const totalSteps = 12 + Math.floor(Math.random() * 8);
@@ -326,7 +329,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function finalize() {
       face.style.transform = "translateY(0) scaleY(1)";
-      numSpan.textContent  = finalVal + '%';
+      numSpan.textContent  = displayVal + '%';
 
       face.classList.remove('roll-high', 'roll-mid', 'roll-low');
       face.classList.add(isSuccess ? 'ins-safe' : 'ins-disaster');

@@ -17,3 +17,4 @@ media/
 # Secrets (CRITICAL)
 .env
 secrets.py
+config_backup.json

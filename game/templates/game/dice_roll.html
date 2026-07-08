@@ -85,6 +85,57 @@
   #rnd-section.visible {
     opacity: 1;
   }
+
+  /* ── R&D suspense gauge ── */
+  .rnd-gauge-track {
+    position: relative;
+    width: 220px;
+    height: 12px;
+    border-radius: 999px;
+    background: #ffe3e3;
+    margin: 14px auto 4px;
+  }
+
+  .rnd-gauge-win-zone {
+    position: absolute;
+    top: 0; bottom: 0; right: 0;
+    background: #d3f9d8;
+    border-radius: 0 999px 999px 0;
+  }
+
+  .rnd-gauge-tick {
+    position: absolute;
+    top: -5px;
+    width: 2px;
+    height: 22px;
+    background: #495057;
+    opacity: 0.55;
+  }
+
+  .rnd-gauge-tick-label {
+    position: absolute;
+    top: -22px;
+    transform: translateX(-50%);
+    font-size: 0.65rem;
+    color: #868e96;
+    white-space: nowrap;
+  }
+
+  .rnd-gauge-marker {
+    position: absolute;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #dee2e6;
+    border: 3px solid #fff;
+    transform: translate(-50%, -50%);
+    transition: background 0.2s ease, border-color 0.2s ease;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  }
+
+  .rnd-gauge-marker.win  { background: #2f9e44; border-color: #d3f9d8; }
+  .rnd-gauge-marker.lose { background: #c92a2a; border-color: #ffe3e3; }
 </style>
 
 <!-- ── Toy demand dice ── -->
@@ -175,11 +226,20 @@
         <div class="rnd-dice-wrap"
              style="height:90px; display:flex; align-items:center; justify-content:center;"
              data-roll="{{ turn.new_product_roll }}"
+             data-threshold="{{ turn.new_product_threshold }}"
              data-success="{{ turn.new_product_produced|yesno:'1,0' }}">
           <div class="d20-face">
             <span class="d20-num">1</span>
           </div>
         </div>
+
+        <div class="rnd-gauge-track">
+          <div class="rnd-gauge-win-zone"></div>
+          <div class="rnd-gauge-tick"></div>
+          <div class="rnd-gauge-tick-label"></div>
+          <div class="rnd-gauge-marker"></div>
+        </div>
+
         <div class="dice-info rnd-info"></div>
 
       </div>
@@ -296,19 +356,37 @@ document.addEventListener("DOMContentLoaded", function () {
     if (rndSection) rndSection.classList.add("visible");
 
     const finalVal   = parseInt(rndWrap.dataset.roll) || 1;
+    const threshold  = parseInt(rndWrap.dataset.threshold) || 0;
     // Display is inverted from the underlying roll so a HIGH shown number reads as a win:
     // the game succeeds on a low internal roll, so we mirror it (101 - roll) for display only.
     const displayVal = 101 - finalVal;
-    const isSuccess  = rndWrap.dataset.success === '1';
-    const face       = rndWrap.querySelector('.d20-face');
-    const numSpan    = face.querySelector('.d20-num');
+    // Mirror of the same inversion, applied to the threshold instead of the roll,
+    // to get the lowest displayed number that still counts as a win.
+    const needDisplay = Math.max(1, Math.min(100, 102 - threshold));
+    const isSuccess   = rndWrap.dataset.success === '1';
+    const face        = rndWrap.querySelector('.d20-face');
+    const numSpan     = face.querySelector('.d20-num');
+
+    const gaugeTrack = rndWrap.closest('.dice-box').querySelector('.rnd-gauge-track');
+    const winZone    = gaugeTrack.querySelector('.rnd-gauge-win-zone');
+    const tick       = gaugeTrack.querySelector('.rnd-gauge-tick');
+    const tickLabel  = gaugeTrack.querySelector('.rnd-gauge-tick-label');
+    const marker     = gaugeTrack.querySelector('.rnd-gauge-marker');
+
+    const tickPct = ((needDisplay - 1) / 99) * 100;
+    winZone.style.width   = (100 - tickPct) + '%';
+    tick.style.left       = tickPct + '%';
+    tickLabel.style.left  = tickPct + '%';
+    tickLabel.textContent = needDisplay + '%';
 
     let step = 0;
     const totalSteps = 12 + Math.floor(Math.random() * 8);
     let currentDelay = 25;
 
     function animate() {
-      numSpan.textContent = (Math.floor(Math.random() * 100) + 1) + '%';
+      const flicker = Math.floor(Math.random() * 100) + 1;
+      numSpan.textContent = flicker + '%';
+      marker.style.left = (((flicker - 1) / 99) * 100) + '%';
 
       const maxHeight   = 35;
       const currentJump = Math.max(0, maxHeight - (step * 2.5));
@@ -330,6 +408,8 @@ document.addEventListener("DOMContentLoaded", function () {
     function finalize() {
       face.style.transform = "translateY(0) scaleY(1)";
       numSpan.textContent  = displayVal + '%';
+      marker.style.left    = (((displayVal - 1) / 99) * 100) + '%';
+      marker.classList.add(isSuccess ? 'win' : 'lose');
 
       face.classList.remove('roll-high', 'roll-mid', 'roll-low');
       face.classList.add(isSuccess ? 'ins-safe' : 'ins-disaster');

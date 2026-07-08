@@ -379,12 +379,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const toyPickWrap    = document.querySelector(".toy-pick-wrap");
   const continueBtn  = document.getElementById("continue-btn");
 
-  // TODO: swap these emoji for real <img> tags once the icon files are in the project.
-  const TOY_ICONS = { Racecar: "🏎️", Doll: "🪆", TeddyBear: "🧸" };
-  const TOY_ICON_FALLBACK = "🎁";
-  // cycled by position, not by name, so this keeps working if more unlockable toys are added later
-  const ZONE_COLORS = ["#4fc3b0", "#9775fa", "#f0a94e", "#4dabf7", "#f783ac"];
-
   let toyAnimsRemaining = toyWraps.length;
 
   /* ── Add hexagon outline SVG to a face on finalize ── */
@@ -543,7 +537,7 @@ document.addEventListener("DOMContentLoaded", function () {
         : `<small class="text-muted">No breakthrough this turn</small>`;
 
       if (isSuccess && toyPickWrap) {
-        setTimeout(runToyPickDice, 500);
+        setTimeout(runToyPickDice, 1500);
       } else {
         setTimeout(function () { continueBtn.style.display = 'block'; }, 400);
       }
@@ -562,11 +556,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const total = options.reduce((sum, o) => sum + o.probability, 0) || 1;
     let cumulative = 0;
-    const zones = options.map((o, i) => {
+    const zones = options.map((o) => {
       const frac = o.probability / total;
       const start = cumulative;
       cumulative += frac;
-      return { ...o, frac, start, end: cumulative, color: ZONE_COLORS[i % ZONE_COLORS.length] };
+      return { ...o, frac, start, end: cumulative };
     });
 
     // same (roll - 1) / 99 mapping the server used to pick the winner, so the
@@ -597,12 +591,12 @@ document.addEventListener("DOMContentLoaded", function () {
       icon.dataset.toy = z.name;
       icon.style.left = (mid * 100) + "%";
       icon.style.animationDelay = (Math.random() * 1.2) + "s";
-      icon.innerHTML = `<span class="icon-glyph">${TOY_ICONS[z.name] || TOY_ICON_FALLBACK}</span><span class="icon-pct">${Math.round(z.frac * 100)}%</span>`;
+      icon.innerHTML = `<span class="icon-glyph">${z.icon}</span><span class="icon-pct">${Math.round(z.frac * 100)}%</span>`;
       iconsHost.appendChild(icon);
     });
 
     let step = 0;
-    const totalSteps = 12 + Math.floor(Math.random() * 8);
+    const totalSteps = 18 + Math.floor(Math.random() * 7);
     let currentDelay = 25;
 
     function place(rollVal) {
@@ -624,7 +618,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       step++;
       if (step < totalSteps) {
-        currentDelay += 15;
+        currentDelay += 18;
         setTimeout(animate, currentDelay);
       } else {
         finalize();
@@ -646,7 +640,7 @@ document.addEventListener("DOMContentLoaded", function () {
       });
 
       const infoDiv = toyPickWrap.closest('.dice-box').querySelector('.toy-pick-info');
-      infoDiv.innerHTML = `<small class="text-success fw-semibold">${TOY_ICONS[winner.name] || TOY_ICON_FALLBACK} ${winner.name} unlocked!</small>`;
+      infoDiv.innerHTML = `<small class="text-success fw-semibold">${winner.icon} ${winner.name} unlocked!</small>`;
 
       setTimeout(function () { continueBtn.style.display = 'block'; }, 400);
     }

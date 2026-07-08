@@ -4,7 +4,7 @@ from django.utils.text import normalize_newlines
 
 from .distributions import pick_from_distribution, pick_from_disaster_distribution, calculate_probability_of_new_product_success, pick_from_new_product_distribution, calculate_product_chances, pick_unlocked_toy
 from game.models import Turn, ToyProductionOutcome, Player, InsuranceEventOutcome
-
+from game.icons import get_toy_icon, get_toy_color
 
 def check_player_status(player):
     if player.total_equity >= player.difficulty.winning_networth:
@@ -116,7 +116,12 @@ class GameEngine:
                 player.unlocked_toy_name = unlocked_toy_name
                 turn.toy_pick_roll = toy_pick_roll
                 turn.toy_pick_options_json = [
-                    {"name": name, "probability": prob}
+                    {
+                        "name": name,
+                        "probability": prob,
+                        "icon": get_toy_icon(name),
+                        "color": get_toy_color(name),
+                    }
                     for name, prob in toy_unlocked_probabilities.items()
                     if prob > 0
                 ]

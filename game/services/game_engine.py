@@ -112,9 +112,15 @@ class GameEngine:
                 # if roll succeeds - roll to see what kind of toy is unlocked
                 toy_unlocked_probabilities = calculate_product_chances(player.cumulative_rnd_spend, player.difficulty.slope_racecar, player.difficulty.intercept_racecar,
                                                                        player.difficulty.slope_doll, player.difficulty.peak_doll, player.difficulty.intercept_doll, default_locked_toys)
-                unlocked_toy = pick_unlocked_toy(toy_unlocked_probabilities)
-                player.unlocked_toy_name = unlocked_toy[0]
-                unlocked_toy = toy_basket.toys.filter(name=unlocked_toy[0]).first()
+                unlocked_toy_name, toy_pick_roll = pick_unlocked_toy(toy_unlocked_probabilities)
+                player.unlocked_toy_name = unlocked_toy_name
+                turn.toy_pick_roll = toy_pick_roll
+                turn.toy_pick_options_json = [
+                    {"name": name, "probability": prob}
+                    for name, prob in toy_unlocked_probabilities.items()
+                    if prob > 0
+                ]
+                unlocked_toy = toy_basket.toys.filter(name=unlocked_toy_name).first()
                 unlocked_toy.enabled = True
                 unlocked_toy.save(update_fields=['enabled'])
                 # if roll succeeds - unlock a new toy; reset cumulative spend to $0

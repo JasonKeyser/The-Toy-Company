@@ -136,6 +136,83 @@
 
   .rnd-gauge-marker.win  { background: #2f9e44; border-color: #d3f9d8; }
   .rnd-gauge-marker.lose { background: #c92a2a; border-color: #ffe3e3; }
+
+  /* ── toy pick fade-in ── */
+  #toy-pick-section {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  #toy-pick-section.visible {
+    opacity: 1;
+  }
+
+  /* ── toy pick suspense gauge ── */
+  .toy-pick-icons {
+    position: relative;
+    width: 220px;
+    height: 58px;
+    margin: 0 auto;
+  }
+
+  .toy-pick-icon {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    font-size: 1.8rem;
+    filter: grayscale(0) brightness(1);
+    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), filter 0.4s ease, opacity 0.4s ease;
+    animation: toy-pick-float 2.6s ease-in-out infinite;
+  }
+
+  .toy-pick-icon .icon-glyph { display: block; }
+  .toy-pick-icon .icon-pct {
+    display: block;
+    text-align: center;
+    font-size: 0.62rem;
+    color: #868e96;
+    margin-top: 2px;
+  }
+
+  @keyframes toy-pick-float {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50%      { transform: translateX(-50%) translateY(-6px); }
+  }
+
+  .toy-pick-icon.dim    { opacity: 0.28; filter: grayscale(0.8); animation-play-state: paused; }
+  .toy-pick-icon.winner { transform: translateX(-50%) scale(1.35); animation-play-state: paused; }
+
+  /* wrap is the positioned ancestor for the marker; track just clips the zone fills */
+  .toy-pick-track-wrap {
+    position: relative;
+    width: 220px;
+    height: 14px;
+    margin: 8px auto 0;
+  }
+
+  .toy-pick-track {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    overflow: hidden;
+    background: #dee2e6;
+    display: flex;
+  }
+
+  .toy-pick-zone { height: 100%; transition: filter 0.4s ease; }
+  .toy-pick-zone.dim { filter: brightness(0.55) saturate(0.6); }
+
+  .toy-pick-marker {
+    position: absolute;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #495057;
+    border: 3px solid #fff;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+    transition: background 0.15s ease;
+  }
 </style>
 
 <!-- ── Toy demand dice ── -->
@@ -248,6 +325,41 @@
 </div>
 {% endif %}
 
+<!-- ── Which Toy dice (only rolls when R&D actually produced a new toy) ── -->
+{% if turn.new_product_produced %}
+<div id="toy-pick-section" class="mt-4">
+
+  <h5 class="text-center mb-3">🎁 Which Toy?</h5>
+
+  <div class="d-flex flex-wrap justify-content-center gap-3">
+    <div class="col-auto text-center">
+      <div class="dice-box bg-light border rounded py-2 fs-5 p-2">
+
+        <div class="mb-1">New Product</div>
+
+        <div class="toy-pick-wrap"
+             style="display:flex; flex-direction:column; align-items:center;"
+             data-roll="{{ turn.toy_pick_roll }}">
+          <div class="d20-face" style="margin-bottom:14px;">
+            <span class="d20-num">1</span>
+          </div>
+
+          <div class="toy-pick-icons"></div>
+          <div class="toy-pick-track-wrap">
+            <div class="toy-pick-track"></div>
+            <div class="toy-pick-marker"></div>
+          </div>
+        </div>
+
+        <div class="dice-info toy-pick-info"></div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{{ turn.toy_pick_options_json|json_script:"toy-pick-options" }}
+{% endif %}
+
 <button class="btn btn-primary w-100 mt-3"
         id="continue-btn"
         style="display:none;"
@@ -258,12 +370,20 @@
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 
-  const toyWraps    = document.querySelectorAll(".dice-roll-wrap");
-  const insWraps    = document.querySelectorAll(".ins-dice-wrap");
-  const insSection  = document.getElementById("insurance-section");
-  const rndSection  = document.getElementById("rnd-section");
-  const rndWrap     = document.querySelector(".rnd-dice-wrap");
-  const continueBtn = document.getElementById("continue-btn");
+  const toyWraps      = document.querySelectorAll(".dice-roll-wrap");
+  const insWraps      = document.querySelectorAll(".ins-dice-wrap");
+  const insSection    = document.getElementById("insurance-section");
+  const rndSection    = document.getElementById("rnd-section");
+  const rndWrap       = document.querySelector(".rnd-dice-wrap");
+  const toyPickSection = document.getElementById("toy-pick-section");
+  const toyPickWrap    = document.querySelector(".toy-pick-wrap");
+  const continueBtn  = document.getElementById("continue-btn");
+
+  // TODO: swap these emoji for real <img> tags once the icon files are in the project.
+  const TOY_ICONS = { Racecar: "🏎️", Doll: "🪆", TeddyBear: "🧸" };
+  const TOY_ICON_FALLBACK = "🎁";
+  // cycled by position, not by name, so this keeps working if more unlockable toys are added later
+  const ZONE_COLORS = ["#4fc3b0", "#9775fa", "#f0a94e", "#4dabf7", "#f783ac"];
 
   let toyAnimsRemaining = toyWraps.length;
 
@@ -421,6 +541,112 @@ document.addEventListener("DOMContentLoaded", function () {
       infoDiv.innerHTML = isSuccess
         ? `<small class="text-success fw-semibold">🎉 New product unlocked!</small>`
         : `<small class="text-muted">No breakthrough this turn</small>`;
+
+      if (isSuccess && toyPickWrap) {
+        setTimeout(runToyPickDice, 500);
+      } else {
+        setTimeout(function () { continueBtn.style.display = 'block'; }, 400);
+      }
+    }
+
+    setTimeout(animate, 0);
+  }
+
+  /* ── Called once R&D lands on a success ── */
+  function runToyPickDice() {
+    if (toyPickSection) toyPickSection.classList.add("visible");
+
+    const finalRoll = parseInt(toyPickWrap.dataset.roll) || 1;
+    const optionsEl = document.getElementById("toy-pick-options");
+    const options = optionsEl ? JSON.parse(optionsEl.textContent) : [];
+
+    const total = options.reduce((sum, o) => sum + o.probability, 0) || 1;
+    let cumulative = 0;
+    const zones = options.map((o, i) => {
+      const frac = o.probability / total;
+      const start = cumulative;
+      cumulative += frac;
+      return { ...o, frac, start, end: cumulative, color: ZONE_COLORS[i % ZONE_COLORS.length] };
+    });
+
+    // same (roll - 1) / 99 mapping the server used to pick the winner, so the
+    // zone the marker lands in always matches the toy that actually got unlocked
+    const finalFrac = (finalRoll - 1) / 99;
+    const winner = zones.find(z => finalFrac >= z.start && finalFrac < z.end) || zones[zones.length - 1];
+
+    const face      = toyPickWrap.querySelector('.d20-face');
+    const numSpan   = face.querySelector('.d20-num');
+    const iconsHost = toyPickWrap.querySelector('.toy-pick-icons');
+    const track     = toyPickWrap.querySelector('.toy-pick-track');
+    const marker    = toyPickWrap.querySelector('.toy-pick-marker');
+
+    iconsHost.innerHTML = "";
+    track.innerHTML = "";
+
+    zones.forEach(z => {
+      const zoneEl = document.createElement("div");
+      zoneEl.className = "toy-pick-zone";
+      zoneEl.style.width = (z.frac * 100) + "%";
+      zoneEl.style.background = z.color;
+      zoneEl.dataset.toy = z.name;
+      track.appendChild(zoneEl);
+
+      const mid = (z.start + z.end) / 2;
+      const icon = document.createElement("div");
+      icon.className = "toy-pick-icon";
+      icon.dataset.toy = z.name;
+      icon.style.left = (mid * 100) + "%";
+      icon.style.animationDelay = (Math.random() * 1.2) + "s";
+      icon.innerHTML = `<span class="icon-glyph">${TOY_ICONS[z.name] || TOY_ICON_FALLBACK}</span><span class="icon-pct">${Math.round(z.frac * 100)}%</span>`;
+      iconsHost.appendChild(icon);
+    });
+
+    let step = 0;
+    const totalSteps = 12 + Math.floor(Math.random() * 8);
+    let currentDelay = 25;
+
+    function place(rollVal) {
+      const frac = (rollVal - 1) / 99;
+      numSpan.textContent = rollVal;
+      marker.style.left = (frac * 100) + '%';
+    }
+
+    function animate() {
+      place(Math.floor(Math.random() * 100) + 1);
+
+      const maxHeight   = 35;
+      const currentJump = Math.max(0, maxHeight - (step * 2.5));
+      const yOffset     = step % 2 === 0 ? -currentJump : 0;
+      const squash      = (step % 2 !== 0 && step > totalSteps - 4) ? 0.85 : 1;
+
+      face.style.transform  = `translateY(${yOffset}px) scaleY(${squash})`;
+      face.style.transition = `transform ${currentDelay}ms ease-out`;
+
+      step++;
+      if (step < totalSteps) {
+        currentDelay += 15;
+        setTimeout(animate, currentDelay);
+      } else {
+        finalize();
+      }
+    }
+
+    function finalize() {
+      face.style.transform = "translateY(0) scaleY(1)";
+      place(finalRoll);
+      face.style.background = winner.color;
+      marker.style.background = winner.color;
+
+      iconsHost.querySelectorAll('.toy-pick-icon').forEach(el => {
+        if (el.dataset.toy === winner.name) el.classList.add('winner');
+        else el.classList.add('dim');
+      });
+      track.querySelectorAll('.toy-pick-zone').forEach(el => {
+        if (el.dataset.toy !== winner.name) el.classList.add('dim');
+      });
+
+      const infoDiv = toyPickWrap.closest('.dice-box').querySelector('.toy-pick-info');
+      infoDiv.innerHTML = `<small class="text-success fw-semibold">${TOY_ICONS[winner.name] || TOY_ICON_FALLBACK} ${winner.name} unlocked!</small>`;
 
       setTimeout(function () { continueBtn.style.display = 'block'; }, 400);
     }

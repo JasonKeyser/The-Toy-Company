@@ -1,3 +1,5 @@
+from _pyrepl.commands import delete
+
 from django.contrib.admin.helpers import AdminForm
 from django.shortcuts import render, get_object_or_404, redirect
 import datetime
@@ -22,7 +24,7 @@ from .forms import UnitsManufacturedForm, BaseUnitsFormSet, FactoryExpansionForm
     InsuranceCoverageTakenForm, BaseCoverageFormSet, EquipmentForm, LoanForm, RnDSpendForm
 from django.forms import formset_factory
 import json
-from .icons import get_toy_color
+from .icons import get_toy_color, get_toy_icon
 
 class PostListView(ListView):
     model = Post
@@ -376,7 +378,8 @@ def game(request):
                 f"Cost per unit on all toys is reduced by {savings_pct}%."
             )
         if last_turn and last_turn.new_product_produced:
-            success_notifications.append(f"New Toy Unlocked {player.unlocked_toy_name}!")
+            toy_icon = get_toy_icon(player.unlocked_toy_name)
+            success_notifications.append(f"New Toy Unlocked {toy_icon}{player.unlocked_toy_name}!")
         two_turns_ago = Turn.objects.filter(player=player, turn_number=current_turn - 2).first()
         first_eligible_turn = (player.turn_number == min_years_of_financial_history + 1) and player.difficulty.financing_enabled
         if two_turns_ago:

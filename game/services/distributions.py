@@ -151,7 +151,17 @@ def calculate_product_chances(cumulative_spend, slope_racecar, racecar_intercept
 
 
 def pick_unlocked_toy(toy_probabilities):
-    toys = list( toy_probabilities.keys() )
-    weights = list( toy_probabilities.values() )
-    selection = random.choices(toys, weights=weights, k=1)
-    return selection
+    """
+    Rolls 1-100 and walks the cumulative probability ranges to pick a toy.
+    Mathematically the same odds as weights=... would give, but produces an
+    explicit roll number the UI can display and animate.
+    """
+    roll = random.randint(1, 100)
+    total = sum(toy_probabilities.values()) or 1
+    frac = (roll - 1) / 99
+    cumulative = 0
+    for name, prob in toy_probabilities.items():
+        cumulative += prob / total
+        if frac < cumulative:
+            return name, roll
+    return list(toy_probabilities.keys())[-1], roll

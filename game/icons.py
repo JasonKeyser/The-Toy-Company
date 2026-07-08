@@ -1,4 +1,4 @@
-TOY_ICONS = {"kite": "🪁", "yo-yo": "🪀", "bike": "🚲"}
+TOY_ICONS = {"Kite": "🪁", "Yo-Yo": "🪀", "Bike": "🚲", "Racecar": "🏎", "Doll": "&#129670", "TeddyBear": "🧸"}
 DEFAULT_TOY_ICON = "🧸"
 ICONS = {  # all other game icons, by descriptive key
     "toy_company": "🧸", "money": "💰", "warning": "⚠", "funding": "💵",

@@ -422,6 +422,28 @@ def game(request):
         (form, toy, toy.adjusted_cost(player.cost_savings_coefficient))
         for form, toy in zip(toyformset, toys)
     ]
+
+    default_locked_toys = toy_basket.toys.filter(default_toy=False).all()
+    rnd_odds_json = {
+        "success_cost_coefficient": float(player.difficulty.new_product_success_cost_coefficient or 0),
+        "success_b": float(player.difficulty.new_product_success_b or 0),
+        "slope_racecar": float(player.difficulty.slope_racecar or 0),
+        "intercept_racecar": float(player.difficulty.intercept_racecar or 0),
+        "slope_doll": float(player.difficulty.slope_doll or 0),
+        "peak_doll": float(player.difficulty.peak_doll or 0),
+        "intercept_doll": float(player.difficulty.intercept_doll or 0),
+        "locked_toys": [
+            {
+                "name": t.name,
+                "enabled": t.enabled,
+                "icon": get_toy_icon(t.name),
+                "color": get_toy_color(t.name),
+            }
+            for t in default_locked_toys
+        ],
+    }
+
+
     ad_profiles_json = {
         str(p.id): {
             "cost": float(p.cost),
@@ -461,6 +483,7 @@ def game(request):
             "current_boost": round(current_boost * 100),
             "upcoming_boosts": upcoming_boosts,
             "ad_profiles_json": ad_profiles_json,
+            "rnd_odds_json": rnd_odds_json,
             "equipment_form": equipment_form,
             "equipment_json": equipment_json,
             'success_notifications': success_notifications,

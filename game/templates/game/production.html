@@ -167,19 +167,22 @@
     font-style: italic;
   }
 
-    #spend-card .sc-rnd-track-wrap {
+  #spend-card .sc-row-tight { margin-bottom: 4px; }
+
+  #spend-card .sc-gauge-wrap {
     position: relative;
     width: 100%;
     height: 10px;
-    margin-top: 4px;
+    margin-top: 6px;
   }
 
-  #spend-card .sc-rnd-track {
+  #spend-card .sc-gauge-track {
     position: absolute;
     inset: 0;
     border-radius: 999px;
     overflow: hidden;
-    background: #ffe3e3;
+    background: #e9ecef;
+    display: flex;
   }
 
   #spend-card .sc-rnd-win-zone {
@@ -189,6 +192,8 @@
     border-radius: 0 999px 999px 0;
     width: 0%;
   }
+
+  #spend-card .sc-toy-zone { height: 100%; transition: width 0.3s ease; }
 
   #spend-card .sc-rnd-tick {
     position: absolute;
@@ -201,7 +206,7 @@
 
   #spend-card .sc-rnd-tick-label {
     position: absolute;
-    top: -16px;
+    top: 14px;
     transform: translateX(-50%);
     font-size: 9px;
     color: #868e96;
@@ -210,8 +215,8 @@
 
   #spend-card .sc-toy-icons {
     position: relative;
-    height: 34px;
-    margin-top: 10px;
+    height: 40px;
+    margin-top: 4px;
   }
 
   #spend-card .sc-toy-icon {
@@ -220,26 +225,15 @@
     transform: translateX(-50%);
     font-size: 1.1rem;
     text-align: center;
+    line-height: 1.2;
   }
 
   #spend-card .sc-toy-icon .icon-pct {
     display: block;
     font-size: 8px;
     color: #868e96;
-    margin-top: 1px;
+    margin-top: 2px;
   }
-
-  #spend-card .sc-toy-track {
-    position: relative;
-    width: 100%;
-    height: 8px;
-    border-radius: 999px;
-    overflow: hidden;
-    background: #e9ecef;
-    display: flex;
-  }
-
-  #spend-card .sc-toy-zone { height: 100%; transition: width 0.3s ease; }
 
 
   @media (max-width: 1200px) {
@@ -561,11 +555,11 @@
 
   <div class="sc-row">
     <div class="sc-row-header">
-      <span class="sc-label">Breakthrough chance</span>
+      <span class="sc-label">Breakthrough Probability</span>
       <span class="sc-amount" id="sc-rnd-chance">0%</span>
     </div>
-    <div class="sc-rnd-track-wrap">
-      <div class="sc-rnd-track"><div class="sc-rnd-win-zone" id="sc-rnd-win-zone"></div></div>
+    <div class="sc-gauge-wrap">
+      <div class="sc-gauge-track"><div class="sc-rnd-win-zone" id="sc-rnd-win-zone"></div></div>
       <div class="sc-rnd-tick" id="sc-rnd-tick"></div>
       <div class="sc-rnd-tick-label" id="sc-rnd-tick-label"></div>
     </div>
@@ -573,10 +567,12 @@
 
   <div class="sc-row">
     <div class="sc-row-header">
-      <span class="sc-label">If it succeeds</span>
+      <span class="sc-label">Toy Unlock Probabilities</span>
     </div>
     <div class="sc-toy-icons" id="sc-toy-icons"></div>
-    <div class="sc-toy-track" id="sc-toy-track"></div>
+    <div class="sc-gauge-wrap">
+      <div class="sc-gauge-wrap" id="sc-toy-track"></div>
+    </div>
   </div>
   {% endif %}
 
@@ -588,6 +584,7 @@
 <!-- Pass ad profile data from Django to JS -->
 {{ ad_profiles_json|json_script:"ad-profiles-data" }}
 {{ equipment_json|json_script:"equipment-data" }}
+{{ rnd_odds_json|json_script:"rnd-odds-data" }}
 
 <!-- Wrap all main content so it stays left of the card -->
 <div class="production-content">

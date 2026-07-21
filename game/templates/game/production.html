@@ -1638,14 +1638,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const successProb = calcSuccessChance(cumulativeSpend);
     const threshold = Math.round(successProb * 100);
-    const needDisplay = Math.max(1, Math.min(100, 102 - threshold));
+    const needDisplay = Math.max(1, Math.min(100, 100 - threshold));
     const tickPct = ((needDisplay - 1) / 99) * 100;
 
     chanceEl.textContent = threshold + '%';
     winZoneEl.style.width = (100 - tickPct) + '%';
     tickEl.style.left = tickPct + '%';
     tickLabelEl.style.left = tickPct + '%';
-    tickLabelEl.textContent = needDisplay + '%';
+    tickLabelEl.textContent = 'Threshold ' + needDisplay + '%';
 
     const toyProbs = calcToyProbabilities(cumulativeSpend);
     const toys = (rndOddsData.locked_toys || []).filter(t => (toyProbs[t.name] || 0) > 0);

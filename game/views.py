@@ -517,7 +517,7 @@ def gross_profit_analysis(request):
     game = Game.objects.last()
     player = game.player
     turns = Turn.objects.filter(player=player).order_by("turn_number")
-    toys = Toy.objects.all()
+    toys = game.toy_basket.toys.filter(enabled=True)
 
 
     chart_data = {}

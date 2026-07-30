@@ -288,14 +288,13 @@
 </div>
 {% endif %}
 
-<!-- ── New Product R&D dice ── -->
+<!-- ── New Product R&D dice, and Which-Toy dice beside it ── -->
 {% if turn.new_product_roll != None %}
-<div id="rnd-section" class="mt-4">
+<div class="mt-4">
+  <div class="d-flex flex-wrap justify-content-center align-items-start gap-3">
 
-  <h5 class="text-center mb-3">🧪 New Product Roll</h5>
-
-  <div class="d-flex flex-wrap justify-content-center gap-3">
-    <div class="col-auto text-center">
+    <div id="rnd-section" class="col-auto text-center">
+      <h5 class="mb-3">🧪 New Product Roll</h5>
       <div class="dice-box bg-light border rounded py-2 fs-5 p-2">
 
         <div class="mb-1">R&D</div>
@@ -321,18 +320,11 @@
 
       </div>
     </div>
-  </div>
-</div>
-{% endif %}
 
-<!-- ── Which Toy dice (only rolls when R&D actually produced a new toy) ── -->
-{% if turn.new_product_produced %}
-<div id="toy-pick-section" class="mt-4">
 
-  <h5 class="text-center mb-3">🎁 Which Toy?</h5>
-
-  <div class="d-flex flex-wrap justify-content-center gap-3">
-    <div class="col-auto text-center">
+    <div id="toy-pick-section" class="col-auto text-center">
+      {% if turn.new_product_produced %}
+      <h5 class="mb-3">🎁 Which Toy?</h5>
       <div class="dice-box bg-light border rounded py-2 fs-5 p-2">
 
         <div class="mb-1">New Product</div>
@@ -355,9 +347,11 @@
 
       </div>
     </div>
+    {{ turn.toy_pick_options_json|json_script:"toy-pick-options" }}
+    {% endif %}
+
   </div>
 </div>
-{{ turn.toy_pick_options_json|json_script:"toy-pick-options" }}
 {% endif %}
 
 <button class="btn btn-primary w-100 mt-3"
@@ -476,7 +470,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const displayVal = 101 - finalVal;
     // Mirror of the same inversion, applied to the threshold instead of the roll,
     // to get the lowest displayed number that still counts as a win.
-    const needDisplay = Math.max(1, Math.min(100, 102 - threshold));
+    const needDisplay = Math.max(1, Math.min(100, 100 - threshold));
     const isSuccess   = rndWrap.dataset.success === '1';
     const face        = rndWrap.querySelector('.d20-face');
     const numSpan     = face.querySelector('.d20-num');

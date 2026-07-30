@@ -291,9 +291,9 @@
 <!-- ── New Product R&D dice, and Which-Toy dice beside it ── -->
 {% if turn.new_product_roll != None %}
 <div class="mt-4">
-  <div class="d-flex flex-wrap justify-content-center align-items-start gap-3">
+  <div class="d-flex flex-wrap justify-content-center gap-3">
 
-    <div id="rnd-section" class="col-auto text-center">
+    <div id="rnd-section" class="col-auto text-center d-flex flex-column" style="min-width: 260px;">
       <h5 class="mb-3">🧪 New Product Roll</h5>
       <div class="dice-box bg-light border rounded py-2 fs-5 p-2">
 
@@ -322,7 +322,7 @@
     </div>
 
 
-    <div id="toy-pick-section" class="col-auto text-center">
+    <div id="toy-pick-section" class="col-auto text-center d-flex flex-column" style="min-width: 260px;">
       {% if turn.new_product_produced %}
       <h5 class="mb-3">🎁 Which Toy?</h5>
       <div class="dice-box bg-light border rounded py-2 fs-5 p-2">

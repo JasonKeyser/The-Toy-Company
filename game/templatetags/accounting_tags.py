@@ -96,16 +96,6 @@ def toy_icon(toy_name):
             return emoji
     return DEFAULT_TOY_ICON
 
-TOY_COLORS = {
-    "kite": "#228be6",
-    "yo-yo": "#fa5252",
-    "yoyo": "#fa5252",
-    "bike": "#2f9e44",
-    "bicycle": "#2f9e44",
-}
-
-DEFAULT_TOY_COLOR = "#868e96"
-
 
 @register.filter
 def toy_color(toy_name):

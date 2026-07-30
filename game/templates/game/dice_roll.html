@@ -288,14 +288,15 @@
 </div>
 {% endif %}
 
-<!-- ── New Product R&D dice, and Which-Toy dice beside it ── -->
+<!-- ── New Product R&D dice ── -->
 {% if turn.new_product_roll != None %}
-<div class="mt-4">
-  <div class="d-flex flex-wrap justify-content-center gap-3">
+<div id="rnd-section" class="mt-4">
 
-    <div id="rnd-section" class="col-auto text-center d-flex flex-column" style="min-width: 260px;">
-      <h5 class="mb-3">🧪 New Product Roll</h5>
-      <div class="dice-box bg-light border rounded py-2 fs-5 p-2 flex-grow-1">
+  <h5 class="text-center mb-3">🧪 New Product Roll</h5>
+
+  <div class="d-flex flex-wrap justify-content-center gap-3">
+    <div class="col-auto text-center">
+      <div class="dice-box bg-light border rounded py-2 fs-5 p-2">
 
         <div class="mb-1">R&D</div>
 
@@ -320,12 +321,19 @@
 
       </div>
     </div>
+  </div>
+</div>
+{% endif %}
 
+<!-- ── Which Toy dice (only rolls when R&D actually produced a new toy) ── -->
+{% if turn.new_product_produced %}
+<div id="toy-pick-section" class="mt-4">
 
-    <div id="toy-pick-section" class="col-auto text-center d-flex flex-column" style="min-width: 260px;">
-      {% if turn.new_product_produced %}
-      <h5 class="mb-3">🎁 Which Toy?</h5>
-      <div class="dice-box bg-light border rounded py-2 fs-5 p-2 flex-grow-1">
+  <h5 class="text-center mb-3">🎁 Which Toy?</h5>
+
+  <div class="d-flex flex-wrap justify-content-center gap-3">
+    <div class="col-auto text-center">
+      <div class="dice-box bg-light border rounded py-2 fs-5 p-2">
 
         <div class="mb-1">New Product</div>
 
@@ -347,11 +355,9 @@
 
       </div>
     </div>
-    {{ turn.toy_pick_options_json|json_script:"toy-pick-options" }}
-    {% endif %}
-
   </div>
 </div>
+{{ turn.toy_pick_options_json|json_script:"toy-pick-options" }}
 {% endif %}
 
 <button class="btn btn-primary w-100 mt-3"
@@ -363,25 +369,6 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-
-
-  /* ── Force the R&D and Which-Toy cards to the same height, regardless of flex quirks ── */
-  (function equalizeDiceBoxHeights() {
-    const rndBox = document.querySelector('#rnd-section .dice-box');
-    const toyBox = document.querySelector('#toy-pick-section .dice-box');
-    if (!rndBox) return;
-
-    rndBox.style.height = 'auto';
-    if (toyBox) toyBox.style.height = 'auto';
-
-    const maxHeight = toyBox
-      ? Math.max(rndBox.offsetHeight, toyBox.offsetHeight)
-      : rndBox.offsetHeight;
-
-    rndBox.style.height = maxHeight + 'px';
-    if (toyBox) toyBox.style.height = maxHeight + 'px';
-  })();
-
 
   const toyWraps      = document.querySelectorAll(".dice-roll-wrap");
   const insWraps      = document.querySelectorAll(".ins-dice-wrap");
@@ -561,7 +548,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
   /* ── Called once R&D lands on a success ── */
   function runToyPickDice() {
-    if (toyPickSection) toyPickSection.classList.add("visible");
+    if (toyPickSection) {
+      toyPickSection.classList.add("visible");
+      toyPickSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
 
     const finalRoll = parseInt(toyPickWrap.dataset.roll) || 1;
     const optionsEl = document.getElementById("toy-pick-options");

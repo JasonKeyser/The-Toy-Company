@@ -364,6 +364,25 @@
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 
+
+  /* ── Force the R&D and Which-Toy cards to the same height, regardless of flex quirks ── */
+  (function equalizeDiceBoxHeights() {
+    const rndBox = document.querySelector('#rnd-section .dice-box');
+    const toyBox = document.querySelector('#toy-pick-section .dice-box');
+    if (!rndBox) return;
+
+    rndBox.style.height = 'auto';
+    if (toyBox) toyBox.style.height = 'auto';
+
+    const maxHeight = toyBox
+      ? Math.max(rndBox.offsetHeight, toyBox.offsetHeight)
+      : rndBox.offsetHeight;
+
+    rndBox.style.height = maxHeight + 'px';
+    if (toyBox) toyBox.style.height = maxHeight + 'px';
+  })();
+
+
   const toyWraps      = document.querySelectorAll(".dice-roll-wrap");
   const insWraps      = document.querySelectorAll(".ins-dice-wrap");
   const insSection    = document.getElementById("insurance-section");

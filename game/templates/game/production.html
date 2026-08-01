@@ -748,7 +748,7 @@
                 <div class="tooltip-box">
                   Purchase equipment to reduce your cost per unit on all toys. <br><br>
                   Equipment can only be purchased once per game and takes effect on the following turn.
-                  Equipment is depreciated over a useful life of 10 years (cost savings will continue).
+                  Equipment is depreciated for tax purposes over a useful life of 10 years (cost savings will continue).
                 </div>
               </div>
             </div>
@@ -789,7 +789,7 @@
               <div class="ad-tooltip-wrap">
                 <span class="qmark">?</span>
                 <div class="tooltip-box">
-                  Advertising campaigns boost demand for your toys over the next few turns Min( 100%, (new demand % = demand % +  boost %) ), then tapers off to zero. <br><br>
+                  Advertising campaigns boost demand for your toys over the next few turns Min( 100%, (new demand % = demand % × (1 + boost %)) ), then tapers off to zero. <br><br>
                   The cost is deducted immediately this turn. Boosts will be applied in the next turn.
                 </div>
               </div>
@@ -1011,18 +1011,16 @@
                   <tr>
                     <th>Interest Rate</th>
                     <th>Loan Tenure</th>
-                    <th>Avg. Trailing 3 yrs EBITDA</th>
-                    <th>Max Leverage Ratio</th>
-                    <th>Min Credit Offering</th>
                     <th>
-                      Max Credit Offer
+                      Credit Rating
                       <div class="ad-tooltip-wrap">
                         <span class="qmark">?</span>
                         <div class="tooltip-box">
-                          Calculated as Max of (T3yr EBITDA * Max Leverage Ratio) and (Min Credit Offering).
+                          Based on how many of your last 5 turns had non-negative EBITDA. See the Credit Rating table for the full breakdown.
                       </div>
                     </div>
                     </th>
+                    <th>Max Credit Offer</th>
                     <th>Borrowed Amount</th>
                   </tr>
                 </thead>
@@ -1030,10 +1028,8 @@
                   <tr>
                     <td><span class="interest-rate-box" id="interestRateBox">{{ loan_offer.interest_rate|percentage }}</span></td>
                     <td>{{ loan_offer.loan_length }} years</td>
-                    <td>{{ loan_offer.trailing_ebitda|accounting }}</td>
-                    <td>{{ loan_offer.max_leverage_ratio }}x</td>
-                    <td>{{ loan_offer.min_credit|accounting }}</td>
-                    <td>{{ loan_offer.max_credit|accounting }}</td>
+                    <td>{{ loan_offer.credit_rating|accounting }}</td>
+                    <td>{{ loan_offer.max_credit }}x</td>
                     <td>
                       {% if loan_offer.eligible %}
                         {{ loan_form.borrowed_amount }}

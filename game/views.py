@@ -132,6 +132,15 @@ def game_begin(request):
     return render(request, "game/game_begin.html")
 
 
+CREDIT_RATING_TIERS = {
+    0: ("B", 75),
+    1: ("B", 75),
+    2: ("BBB", 125),
+    3: ("A", 175),
+    4: ("AA", 225),
+    5: ("AAA", 275),
+}
+
 
 def game(request):
     game = Game.objects.last()
@@ -179,23 +188,13 @@ def game(request):
     success_notifications = []
     error_notifications = []
 
-    max_leverage_ratio = 5
 
-    minimum_credit_available = player.difficulty.min_loan_amount
     min_years_of_financial_history = player.difficulty.min_years_of_financial_history
     min_yrs_met = player.turn_number > min_years_of_financial_history
 
-    if min_yrs_met:
-        last_three_turns = Turn.objects.filter(player=player).order_by("-turn_number")[:3]
-        ebitdas = []
-        for turn in last_three_turns:
-            ebitdas.append(turn.EBITDA)
-
-        trailing_ebitda = sum(ebitdas) / len(ebitdas)
-    else:
-        trailing_ebitda = 0
-
-
+    recent_turns = Turn.objects.filter(player=player).order_by("-turn_number")[:5]
+    credit_score = sum(1 for t in recent_turns if t.EBITDA >= 0)
+    credit_rating, credit_rating_max_credit = CREDIT_RATING_TIERS[credit_score]
 
     active_loans = player.loans.filter(is_paid_off=False)
     if active_loans.count() > 0:
@@ -206,7 +205,7 @@ def game(request):
     eligible = (min_yrs_met == True) and (current_loan_outstanding == False)
 
     if eligible:
-        max_credit = round( max( trailing_ebitda * max_leverage_ratio, minimum_credit_available ), 0)
+        max_credit = credit_rating_max_credit
     else:
         max_credit = "N/A"
 
@@ -214,9 +213,8 @@ def game(request):
     loan_offer = {
         "interest_rate": rolled_rate,
         "loan_length": 7,
-        "max_leverage_ratio": max_leverage_ratio,
-        "trailing_ebitda": trailing_ebitda,
-        "min_credit" : minimum_credit_available,
+        "credit_score": credit_score,
+        "credit_rating": credit_rating,
         "max_credit": max_credit,
         "eligible": eligible,
         "min_yrs_met": min_yrs_met,
@@ -632,8 +630,14 @@ def interest_rate_distribution_view(request):
     player = game.player
     rate_profiles = InterestRateProfile.objects.filter(difficulty=player.difficulty)
 
+    credit_rating_tiers = [
+        {"years_positive": score, "rating": rating, "max_credit": amount}
+        for score, (rating, amount) in CREDIT_RATING_TIERS.items()
+    ]
+
     context = {
         "rate_profiles": rate_profiles,
+        'credit_rating_tiers': credit_rating_tiers,
     }
     return render(request, "game/interest_rate_distribution.html", context)
 

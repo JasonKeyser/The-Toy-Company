@@ -6,6 +6,56 @@
   <h2>Interest Rate Distribution</h2>
   <p class="text-muted">The interest rate on any loan is determined by a dice roll at the start of each turn.</p>
 
+  <h4 class="mt-4">Credit Rating</h4>
+  <p class="text-muted">
+    Your credit rating is based on how many of your last 5 completed turns had non-negative EBITDA —
+    it doesn't matter how large the profit was, only that it wasn't a loss. Turns before your business
+    existed can't count in your favor, so newer businesses start out at a lower rating by default.
+  </p>
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-0">
+      <table class="table table-bordered table-sm mb-0">
+        <thead class="table-secondary">
+          <tr>
+            <th>Years Non-Negative EBITDA (of last 5)</th>
+            <th>Credit Rating</th>
+            <th>Max Credit Offer</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for tier in credit_rating_tiers %}
+          <tr>
+            <td>{{ tier.years_positive }}</td>
+            <td>{{ tier.rating }}</td>
+            <td>{{ tier.max_credit|accounting }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <h4 class="mt-4">Interest Rate Distribution</h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   {% for profile in rate_profiles %}
   <div class="card shadow-sm border-0 mb-4">
     <div class="card-header">

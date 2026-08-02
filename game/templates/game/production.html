@@ -986,7 +986,7 @@
 
       <div class="collapse" id="financingPanel">
         <div class="px-3 pt-2 pb-1">
-          <a href="{% url 'interest_rate_distribution' %}" class="small">Interest Rate Distribution</a>
+          <a href="{% url 'interest_rate_distribution' %}" class="small">Bank Loan Distributions</a>
         </div>
         <div class="card-body bg-light">
 
@@ -1029,7 +1029,7 @@
                     <td><span class="interest-rate-box" id="interestRateBox">{{ loan_offer.interest_rate|percentage }}</span></td>
                     <td>{{ loan_offer.loan_length }} years</td>
                     <td>{{ loan_offer.credit_rating|accounting }}</td>
-                    <td>{{ loan_offer.max_credit }}x</td>
+                    <td>{{ loan_offer.max_credit|accounting }}</td>
                     <td>
                       {% if loan_offer.eligible %}
                         {{ loan_form.borrowed_amount }}

@@ -1,4 +1,4 @@
-TOY_ICONS = {"kite": "🪁", "yo-yo": "🪀", "bike": "🚲"}
+TOY_ICONS = {"kite": "🪁", "yo-yo": "🪀", "bike": "🚲", "racecar": "🏎", "doll": "🪆", "teddybear": "🧸"}
 DEFAULT_TOY_ICON = "🧸"
 ICONS = {  # all other game icons, by descriptive key
     "toy_company": "🧸", "money": "💰", "warning": "⚠", "funding": "💵",
@@ -33,6 +33,9 @@ TOY_COLORS = {
     "yoyo": "#fa5252",
     "bike": "#2f9e44",
     "bicycle": "#2f9e44",
+    "racecar": "#f76707",
+    "doll": "#e64980",
+    "teddybear": "#8b5e34",
 }
 
 DEFAULT_TOY_COLOR = "#868e96"

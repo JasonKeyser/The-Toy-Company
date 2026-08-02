@@ -4,7 +4,7 @@ from django.utils.text import normalize_newlines
 
 from .distributions import pick_from_distribution, pick_from_disaster_distribution, calculate_probability_of_new_product_success, pick_from_new_product_distribution, calculate_product_chances, pick_unlocked_toy
 from game.models import Turn, ToyProductionOutcome, Player, InsuranceEventOutcome
-
+from game.icons import get_toy_icon, get_toy_color
 
 def check_player_status(player):
     if player.total_equity >= player.difficulty.winning_networth:
@@ -48,7 +48,7 @@ class GameEngine:
 
             boost = get_total_boost(player, player.turn_number)
             roll, fraction = pick_from_distribution(toy)
-            boosted_fraction = min(1.0, fraction + boost)
+            boosted_fraction = min(1.0, fraction * (1 + boost))
 
             units_sold = int( round( units_manufactured * boosted_fraction, 0) )
 
@@ -112,9 +112,20 @@ class GameEngine:
                 # if roll succeeds - roll to see what kind of toy is unlocked
                 toy_unlocked_probabilities = calculate_product_chances(player.cumulative_rnd_spend, player.difficulty.slope_racecar, player.difficulty.intercept_racecar,
                                                                        player.difficulty.slope_doll, player.difficulty.peak_doll, player.difficulty.intercept_doll, default_locked_toys)
-                unlocked_toy = pick_unlocked_toy(toy_unlocked_probabilities)
-                player.unlocked_toy_name = unlocked_toy[0]
-                unlocked_toy = toy_basket.toys.filter(name=unlocked_toy[0]).first()
+                unlocked_toy_name, toy_pick_roll = pick_unlocked_toy(toy_unlocked_probabilities)
+                player.unlocked_toy_name = unlocked_toy_name
+                turn.toy_pick_roll = toy_pick_roll
+                turn.toy_pick_options_json = [
+                    {
+                        "name": name,
+                        "probability": prob,
+                        "icon": get_toy_icon(name),
+                        "color": get_toy_color(name),
+                    }
+                    for name, prob in toy_unlocked_probabilities.items()
+                    if prob > 0
+                ]
+                unlocked_toy = toy_basket.toys.filter(name=unlocked_toy_name).first()
                 unlocked_toy.enabled = True
                 unlocked_toy.save(update_fields=['enabled'])
                 # if roll succeeds - unlock a new toy; reset cumulative spend to $0

@@ -167,6 +167,75 @@
     font-style: italic;
   }
 
+  #spend-card .sc-row-tight { margin-bottom: 4px; }
+
+  #spend-card .sc-gauge-wrap {
+    position: relative;
+    width: 100%;
+    height: 10px;
+    margin-top: 6px;
+  }
+
+  #spend-card .sc-gauge-track {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    overflow: hidden;
+    background: #e9ecef;
+    display: flex;
+  }
+
+  #spend-card .sc-rnd-win-zone {
+    position: absolute;
+    top: 0; bottom: 0; right: 0;
+    background: #d3f9d8;
+    border-radius: 0 999px 999px 0;
+    width: 0%;
+  }
+
+  #spend-card .sc-toy-zone { height: 100%; transition: width 0.3s ease; }
+
+  #spend-card .sc-rnd-tick {
+    position: absolute;
+    top: -4px;
+    width: 2px;
+    height: 18px;
+    background: #495057;
+    opacity: 0.5;
+  }
+
+  #spend-card .sc-rnd-tick-label {
+    position: absolute;
+    top: 14px;
+    transform: translateX(-50%);
+    font-size: 9px;
+    color: #868e96;
+    white-space: nowrap;
+  }
+
+  #spend-card .sc-toy-icons {
+    position: relative;
+    height: 40px;
+    margin-top: 4px;
+  }
+
+  #spend-card .sc-toy-icon {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    font-size: 1.1rem;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  #spend-card .sc-toy-icon .icon-pct {
+    display: block;
+    font-size: 8px;
+    color: #868e96;
+    margin-top: 2px;
+  }
+
+
   @media (max-width: 1200px) {
     #spend-card {
       position: static;
@@ -479,13 +548,45 @@
     <span class="sc-no-campaign">No active campaign</span>
   {% endif %}
 
+
+  {% if player.difficulty.rnd_enabled and not all_enabled %}
+  <div id="sc-rnd-odds-section">
+    <hr class="sc-divider">
+    <div class="sc-title">🧪 R&D odds</div>
+
+    <div class="sc-row">
+      <div class="sc-row-header">
+        <span class="sc-label">Breakthrough Probability</span>
+        <span class="sc-amount" id="sc-rnd-chance">0%</span>
+      </div>
+      <div class="sc-gauge-wrap">
+        <div class="sc-gauge-track"><div class="sc-rnd-win-zone" id="sc-rnd-win-zone"></div></div>
+        <div class="sc-rnd-tick" id="sc-rnd-tick"></div>
+        <div class="sc-rnd-tick-label" id="sc-rnd-tick-label"></div>
+      </div>
+    </div>
+
+    <div class="sc-row">
+      <div class="sc-row-header">
+        <span class="sc-label">Toy Unlock Probabilities</span>
+      </div>
+      <div class="sc-toy-icons" id="sc-toy-icons"></div>
+      <div class="sc-gauge-wrap">
+        <div class="sc-gauge-track" id="sc-toy-track"></div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
 </div>
+
 <!-- ════════════════════════════════════════════════════ -->
 
 
 <!-- Pass ad profile data from Django to JS -->
 {{ ad_profiles_json|json_script:"ad-profiles-data" }}
 {{ equipment_json|json_script:"equipment-data" }}
+{{ rnd_odds_json|json_script:"rnd-odds-data" }}
 
 <!-- Wrap all main content so it stays left of the card -->
 <div class="production-content">
@@ -647,7 +748,7 @@
                 <div class="tooltip-box">
                   Purchase equipment to reduce your cost per unit on all toys. <br><br>
                   Equipment can only be purchased once per game and takes effect on the following turn.
-                  Equipment is depreciated over a useful life of 10 years (cost savings will continue).
+                  Equipment is depreciated for tax purposes over a useful life of 10 years (cost savings will continue).
                 </div>
               </div>
             </div>
@@ -688,7 +789,7 @@
               <div class="ad-tooltip-wrap">
                 <span class="qmark">?</span>
                 <div class="tooltip-box">
-                  Advertising campaigns boost demand for your toys over the next few turns Min( 100%, (new demand % = demand % +  boost %) ), then tapers off to zero. <br><br>
+                  Advertising campaigns boost demand for your toys over the next few turns Min( 100%, (new demand % = demand % × (1 + boost %)) ), then tapers off to zero. <br><br>
                   The cost is deducted immediately this turn. Boosts will be applied in the next turn.
                 </div>
               </div>
@@ -885,7 +986,7 @@
 
       <div class="collapse" id="financingPanel">
         <div class="px-3 pt-2 pb-1">
-          <a href="{% url 'interest_rate_distribution' %}" class="small">Interest Rate Distribution</a>
+          <a href="{% url 'interest_rate_distribution' %}" class="small">Bank Loan Distributions</a>
         </div>
         <div class="card-body bg-light">
 
@@ -910,18 +1011,16 @@
                   <tr>
                     <th>Interest Rate</th>
                     <th>Loan Tenure</th>
-                    <th>Avg. Trailing 3 yrs EBITDA</th>
-                    <th>Max Leverage Ratio</th>
-                    <th>Min Credit Offering</th>
                     <th>
-                      Max Credit Offer
+                      Credit Rating
                       <div class="ad-tooltip-wrap">
                         <span class="qmark">?</span>
                         <div class="tooltip-box">
-                          Calculated as Max of (T3yr EBITDA * Max Leverage Ratio) and (Min Credit Offering).
+                          Based on how many of your last 5 turns had non-negative EBITDA. See the Credit Rating table for the full breakdown.
                       </div>
                     </div>
                     </th>
+                    <th>Max Credit Offer</th>
                     <th>Borrowed Amount</th>
                   </tr>
                 </thead>
@@ -929,9 +1028,7 @@
                   <tr>
                     <td><span class="interest-rate-box" id="interestRateBox">{{ loan_offer.interest_rate|percentage }}</span></td>
                     <td>{{ loan_offer.loan_length }} years</td>
-                    <td>{{ loan_offer.trailing_ebitda|accounting }}</td>
-                    <td>{{ loan_offer.max_leverage_ratio }}x</td>
-                    <td>{{ loan_offer.min_credit|accounting }}</td>
+                    <td>{{ loan_offer.credit_rating|accounting }}</td>
                     <td>{{ loan_offer.max_credit|accounting }}</td>
                     <td>
                       {% if loan_offer.eligible %}
@@ -1080,6 +1177,54 @@ document.addEventListener('DOMContentLoaded', function () {
   const rentCost               = {{ player.difficulty.rent_cost|unlocalize }};
   const historical_rnd_spend   = {{ player.cumulative_rnd_spend|unlocalize }};
 
+  /* ── R&D odds preview (mirrors distributions.py exactly) ── */
+  const rndOddsDataEl = document.getElementById('rnd-odds-data');
+  const rndOddsData = rndOddsDataEl ? JSON.parse(rndOddsDataEl.textContent) : {};
+
+  function calcSuccessChance(cumulativeSpend) {
+    const m = rndOddsData.success_cost_coefficient || 0;
+    const b = rndOddsData.success_b || 0;
+    return Math.max(0, Math.min(1, m * cumulativeSpend + b));
+  }
+
+  // mirrors calculate_product_chances() in distributions.py step for step, including
+  // the "3" (locked-toy-count) that's hardcoded there today, so the preview always
+  // agrees with what the actual roll would produce
+  function calcToyProbabilities(cumulativeSpend) {
+    const toys = rndOddsData.locked_toys || [];
+    const probs = {};
+    if (toys.length === 0) return probs;
+
+    const allEnabled = toys.every(t => t.enabled);
+    if (allEnabled) {
+      toys.forEach(t => probs[t.name] = 0);
+      return probs;
+    }
+
+    const racecarProb = Math.max((-1 * rndOddsData.slope_racecar) * cumulativeSpend + rndOddsData.intercept_racecar, 0);
+    let dollProb;
+    if (cumulativeSpend <= rndOddsData.peak_doll) {
+      dollProb = Math.max(rndOddsData.slope_doll * cumulativeSpend, 0);
+    } else {
+      dollProb = Math.max((-1 * rndOddsData.slope_doll) * cumulativeSpend + rndOddsData.intercept_doll, 0);
+    }
+    const teddyProb = 1 - (racecarProb + dollProb);
+
+    probs['Racecar'] = racecarProb;
+    probs['Doll'] = dollProb;
+    probs['TeddyBear'] = teddyProb;
+
+    let lostProb = 0, enabledCount = 0;
+    toys.forEach(t => {
+      if (t.enabled) { lostProb += (probs[t.name] || 0); probs[t.name] = 0; enabledCount++; }
+    });
+    const addedProb = lostProb / (3 - enabledCount);
+    toys.forEach(t => {
+      if (!t.enabled) probs[t.name] = (probs[t.name] || 0) + addedProb;
+    });
+    return probs;
+  }
+
   const maxCreditAvailable = parseFloat("{{ loan_offer.max_credit|default:0 }}") || 0;
 
   const adProfiles = JSON.parse(document.getElementById('ad-profiles-data').textContent);
@@ -1227,6 +1372,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     cumulativeRNDDisplay.textContent = fmt(total);
     cumulativeRNDDisplay.dataset.value = total;
+
+    updateRnDOddsGauges(total);
 
     const s = getCurrentSpends();
     updateSpendCard(s.cogs, s.capex, s.ad, getInsurancePremiumCost());
@@ -1467,7 +1614,60 @@ document.addEventListener('DOMContentLoaded', function () {
     thisTurnBoostRow.classList.add('anim-glow-orange');
   }
 
+  function updateRnDOddsGauges(cumulativeSpend) {
+      const section = document.getElementById('sc-rnd-odds-section');
+    if (!section) return; // R&D disabled or all toys already unlocked
 
+    if (cumulativeSpend <= 0) {
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = '';
+
+    const chanceEl    = document.getElementById('sc-rnd-chance');
+    const winZoneEl   = document.getElementById('sc-rnd-win-zone');
+    const tickEl      = document.getElementById('sc-rnd-tick');
+    const tickLabelEl = document.getElementById('sc-rnd-tick-label');
+    const iconsHost   = document.getElementById('sc-toy-icons');
+    const toyTrack    = document.getElementById('sc-toy-track');
+    if (!chanceEl) return; // R&D disabled or all toys already unlocked
+
+    const successProb = calcSuccessChance(cumulativeSpend);
+    const threshold = Math.round(successProb * 100);
+    const needDisplay = Math.max(1, Math.min(100, 100 - threshold));
+    const tickPct = ((needDisplay - 1) / 99) * 100;
+
+    chanceEl.textContent = threshold + '%';
+    winZoneEl.style.width = (100 - tickPct) + '%';
+    tickEl.style.left = tickPct + '%';
+    tickLabelEl.style.left = tickPct + '%';
+    tickLabelEl.textContent = 'Threshold ' + needDisplay + '%';
+
+    const toyProbs = calcToyProbabilities(cumulativeSpend);
+    const toys = (rndOddsData.locked_toys || []).filter(t => (toyProbs[t.name] || 0) > 0);
+    const total = toys.reduce((sum, t) => sum + toyProbs[t.name], 0) || 1;
+
+    iconsHost.innerHTML = '';
+    toyTrack.innerHTML = '';
+    let cumulative = 0;
+    toys.forEach(t => {
+      const frac = toyProbs[t.name] / total;
+      const mid = cumulative + frac / 2;
+      cumulative += frac;
+
+      const zone = document.createElement('div');
+      zone.className = 'sc-toy-zone';
+      zone.style.width = (frac * 100) + '%';
+      zone.style.background = t.color;
+      toyTrack.appendChild(zone);
+
+      const icon = document.createElement('div');
+      icon.className = 'sc-toy-icon';
+      icon.style.left = (mid * 100) + '%';
+      icon.innerHTML = `${t.icon}<span class="icon-pct">${Math.round(frac * 100)}%</span>`;
+      iconsHost.appendChild(icon);
+    });
+  }
 
 });
 </script>

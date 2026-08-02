@@ -3,9 +3,40 @@
 {% block content %}
 
 <div class="container mt-4">
-  <h2>Interest Rate Distribution</h2>
-  <p class="text-muted">The interest rate on any loan is determined by a dice roll at the start of each turn.</p>
+  <h2>Bank Loan Distributions</h2>
 
+
+  <h4 class="mt-4">Credit Rating</h4>
+  <p class="text-muted">
+    Your factory's credit rating is based on how many of the last 5 completed turns had Positive EBITDA —
+    it doesn't matter how large the profit was, only that it wasn't a loss.
+    New businesses must establish a track record before the bank will assign them a higher rating.
+  </p>
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-0">
+      <table class="table table-bordered table-sm mb-0">
+        <thead class="table-secondary">
+          <tr>
+            <th>Years Non-Negative EBITDA (of last 5)</th>
+            <th>Credit Rating</th>
+            <th>Max Credit Offer</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for tier in credit_rating_tiers %}
+          <tr>
+            <td>{{ tier.years_positive }}</td>
+            <td>{{ tier.rating }}</td>
+            <td>{{ tier.max_credit|accounting }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <h4 class="mt-4">Interest Rate Distribution</h4>
+  <p class="text-muted">The interest rate on any loan is determined by a dice roll at the start of each turn.</p>
   {% for profile in rate_profiles %}
   <div class="card shadow-sm border-0 mb-4">
     <div class="card-header">

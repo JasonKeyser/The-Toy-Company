@@ -256,6 +256,9 @@ class Turn(models.Model):
     new_product_roll = models.IntegerField(null=True, blank=True)
     new_product_threshold = models.IntegerField(null=True, blank=True)
 
+    # which-toy pick (only meaningful when new_product_produced is True)
+    toy_pick_roll = models.IntegerField(null=True, blank=True)
+    toy_pick_options_json = models.JSONField(default=list, blank=True)
 
 
     def __str__(self):

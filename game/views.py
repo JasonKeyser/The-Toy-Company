@@ -1,3 +1,5 @@
+from _pyrepl.commands import delete
+
 from django.contrib.admin.helpers import AdminForm
 from django.shortcuts import render, get_object_or_404, redirect
 import datetime
@@ -22,7 +24,7 @@ from .forms import UnitsManufacturedForm, BaseUnitsFormSet, FactoryExpansionForm
     InsuranceCoverageTakenForm, BaseCoverageFormSet, EquipmentForm, LoanForm, RnDSpendForm
 from django.forms import formset_factory
 import json
-from .icons import get_toy_color
+from .icons import get_toy_color, get_toy_icon
 
 class PostListView(ListView):
     model = Post
@@ -130,6 +132,15 @@ def game_begin(request):
     return render(request, "game/game_begin.html")
 
 
+CREDIT_RATING_TIERS = {
+    0: ("B", 75),
+    1: ("BB", 100),
+    2: ("BBB", 125),
+    3: ("A", 150),
+    4: ("AA", 175),
+    5: ("AAA", 200),
+}
+
 
 def game(request):
     game = Game.objects.last()
@@ -177,23 +188,13 @@ def game(request):
     success_notifications = []
     error_notifications = []
 
-    max_leverage_ratio = 5
 
-    minimum_credit_available = player.difficulty.min_loan_amount
     min_years_of_financial_history = player.difficulty.min_years_of_financial_history
     min_yrs_met = player.turn_number > min_years_of_financial_history
 
-    if min_yrs_met:
-        last_three_turns = Turn.objects.filter(player=player).order_by("-turn_number")[:3]
-        ebitdas = []
-        for turn in last_three_turns:
-            ebitdas.append(turn.EBITDA)
-
-        trailing_ebitda = sum(ebitdas) / len(ebitdas)
-    else:
-        trailing_ebitda = 0
-
-
+    recent_turns = Turn.objects.filter(player=player).order_by("-turn_number")[:5]
+    credit_score = sum(1 for t in recent_turns if t.EBITDA >= 0)
+    credit_rating, credit_rating_max_credit = CREDIT_RATING_TIERS[credit_score]
 
     active_loans = player.loans.filter(is_paid_off=False)
     if active_loans.count() > 0:
@@ -204,7 +205,7 @@ def game(request):
     eligible = (min_yrs_met == True) and (current_loan_outstanding == False)
 
     if eligible:
-        max_credit = round( max( trailing_ebitda * max_leverage_ratio, minimum_credit_available ), 0)
+        max_credit = credit_rating_max_credit
     else:
         max_credit = "N/A"
 
@@ -212,9 +213,8 @@ def game(request):
     loan_offer = {
         "interest_rate": rolled_rate,
         "loan_length": 7,
-        "max_leverage_ratio": max_leverage_ratio,
-        "trailing_ebitda": trailing_ebitda,
-        "min_credit" : minimum_credit_available,
+        "credit_score": credit_score,
+        "credit_rating": credit_rating,
         "max_credit": max_credit,
         "eligible": eligible,
         "min_yrs_met": min_yrs_met,
@@ -376,7 +376,8 @@ def game(request):
                 f"Cost per unit on all toys is reduced by {savings_pct}%."
             )
         if last_turn and last_turn.new_product_produced:
-            success_notifications.append(f"New Toy Unlocked {player.unlocked_toy_name}!")
+            toy_icon = get_toy_icon(player.unlocked_toy_name)
+            success_notifications.append(f"New Toy Unlocked {toy_icon}{player.unlocked_toy_name}!")
         two_turns_ago = Turn.objects.filter(player=player, turn_number=current_turn - 2).first()
         first_eligible_turn = (player.turn_number == min_years_of_financial_history + 1) and player.difficulty.financing_enabled
         if two_turns_ago:
@@ -419,6 +420,28 @@ def game(request):
         (form, toy, toy.adjusted_cost(player.cost_savings_coefficient))
         for form, toy in zip(toyformset, toys)
     ]
+
+    default_locked_toys = toy_basket.toys.filter(default_toy=False).all()
+    rnd_odds_json = {
+        "success_cost_coefficient": float(player.difficulty.new_product_success_cost_coefficient or 0),
+        "success_b": float(player.difficulty.new_product_success_b or 0),
+        "slope_racecar": float(player.difficulty.slope_racecar or 0),
+        "intercept_racecar": float(player.difficulty.intercept_racecar or 0),
+        "slope_doll": float(player.difficulty.slope_doll or 0),
+        "peak_doll": float(player.difficulty.peak_doll or 0),
+        "intercept_doll": float(player.difficulty.intercept_doll or 0),
+        "locked_toys": [
+            {
+                "name": t.name,
+                "enabled": t.enabled,
+                "icon": get_toy_icon(t.name),
+                "color": get_toy_color(t.name),
+            }
+            for t in default_locked_toys
+        ],
+    }
+
+
     ad_profiles_json = {
         str(p.id): {
             "cost": float(p.cost),
@@ -458,6 +481,7 @@ def game(request):
             "current_boost": round(current_boost * 100),
             "upcoming_boosts": upcoming_boosts,
             "ad_profiles_json": ad_profiles_json,
+            "rnd_odds_json": rnd_odds_json,
             "equipment_form": equipment_form,
             "equipment_json": equipment_json,
             'success_notifications': success_notifications,
@@ -491,7 +515,7 @@ def gross_profit_analysis(request):
     game = Game.objects.last()
     player = game.player
     turns = Turn.objects.filter(player=player).order_by("turn_number")
-    toys = Toy.objects.all()
+    toys = game.toy_basket.toys.filter(enabled=True)
 
 
     chart_data = {}
@@ -606,8 +630,14 @@ def interest_rate_distribution_view(request):
     player = game.player
     rate_profiles = InterestRateProfile.objects.filter(difficulty=player.difficulty)
 
+    credit_rating_tiers = [
+        {"years_positive": score, "rating": rating, "max_credit": amount}
+        for score, (rating, amount) in CREDIT_RATING_TIERS.items()
+    ]
+
     context = {
         "rate_profiles": rate_profiles,
+        'credit_rating_tiers': credit_rating_tiers,
     }
     return render(request, "game/interest_rate_distribution.html", context)
 

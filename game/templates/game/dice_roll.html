@@ -85,6 +85,134 @@
   #rnd-section.visible {
     opacity: 1;
   }
+
+  /* ── R&D suspense gauge ── */
+  .rnd-gauge-track {
+    position: relative;
+    width: 220px;
+    height: 12px;
+    border-radius: 999px;
+    background: #ffe3e3;
+    margin: 14px auto 4px;
+  }
+
+  .rnd-gauge-win-zone {
+    position: absolute;
+    top: 0; bottom: 0; right: 0;
+    background: #d3f9d8;
+    border-radius: 0 999px 999px 0;
+  }
+
+  .rnd-gauge-tick {
+    position: absolute;
+    top: -5px;
+    width: 2px;
+    height: 22px;
+    background: #495057;
+    opacity: 0.55;
+  }
+
+  .rnd-gauge-tick-label {
+    position: absolute;
+    top: -22px;
+    transform: translateX(-50%);
+    font-size: 0.65rem;
+    color: #868e96;
+    white-space: nowrap;
+  }
+
+  .rnd-gauge-marker {
+    position: absolute;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #dee2e6;
+    border: 3px solid #fff;
+    transform: translate(-50%, -50%);
+    transition: background 0.2s ease, border-color 0.2s ease;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  }
+
+  .rnd-gauge-marker.win  { background: #2f9e44; border-color: #d3f9d8; }
+  .rnd-gauge-marker.lose { background: #c92a2a; border-color: #ffe3e3; }
+
+  /* ── toy pick fade-in ── */
+  #toy-pick-section {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  #toy-pick-section.visible {
+    opacity: 1;
+  }
+
+  /* ── toy pick suspense gauge ── */
+  .toy-pick-icons {
+    position: relative;
+    width: 220px;
+    height: 58px;
+    margin: 0 auto;
+  }
+
+  .toy-pick-icon {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    font-size: 1.8rem;
+    filter: grayscale(0) brightness(1);
+    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), filter 0.4s ease, opacity 0.4s ease;
+    animation: toy-pick-float 2.6s ease-in-out infinite;
+  }
+
+  .toy-pick-icon .icon-glyph { display: block; }
+  .toy-pick-icon .icon-pct {
+    display: block;
+    text-align: center;
+    font-size: 0.62rem;
+    color: #868e96;
+    margin-top: 2px;
+  }
+
+  @keyframes toy-pick-float {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50%      { transform: translateX(-50%) translateY(-6px); }
+  }
+
+  .toy-pick-icon.dim    { opacity: 0.28; filter: grayscale(0.8); animation-play-state: paused; }
+  .toy-pick-icon.winner { transform: translateX(-50%) scale(1.35); animation-play-state: paused; }
+
+  /* wrap is the positioned ancestor for the marker; track just clips the zone fills */
+  .toy-pick-track-wrap {
+    position: relative;
+    width: 220px;
+    height: 14px;
+    margin: 8px auto 0;
+  }
+
+  .toy-pick-track {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    overflow: hidden;
+    background: #dee2e6;
+    display: flex;
+  }
+
+  .toy-pick-zone { height: 100%; transition: filter 0.4s ease; }
+  .toy-pick-zone.dim { filter: brightness(0.55) saturate(0.6); }
+
+  .toy-pick-marker {
+    position: absolute;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #495057;
+    border: 3px solid #fff;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+    transition: background 0.15s ease;
+  }
 </style>
 
 <!-- ── Toy demand dice ── -->
@@ -175,17 +303,61 @@
         <div class="rnd-dice-wrap"
              style="height:90px; display:flex; align-items:center; justify-content:center;"
              data-roll="{{ turn.new_product_roll }}"
+             data-threshold="{{ turn.new_product_threshold }}"
              data-success="{{ turn.new_product_produced|yesno:'1,0' }}">
           <div class="d20-face">
             <span class="d20-num">1</span>
           </div>
         </div>
+
+        <div class="rnd-gauge-track">
+          <div class="rnd-gauge-win-zone"></div>
+          <div class="rnd-gauge-tick"></div>
+          <div class="rnd-gauge-tick-label"></div>
+          <div class="rnd-gauge-marker"></div>
+        </div>
+
         <div class="dice-info rnd-info"></div>
 
       </div>
     </div>
   </div>
 </div>
+{% endif %}
+
+<!-- ── Which Toy dice (only rolls when R&D actually produced a new toy) ── -->
+{% if turn.new_product_produced %}
+<div id="toy-pick-section" class="mt-4">
+
+  <h5 class="text-center mb-3">🎁 Which Toy?</h5>
+
+  <div class="d-flex flex-wrap justify-content-center gap-3">
+    <div class="col-auto text-center">
+      <div class="dice-box bg-light border rounded py-2 fs-5 p-2">
+
+        <div class="mb-1">New Product</div>
+
+        <div class="toy-pick-wrap"
+             style="display:flex; flex-direction:column; align-items:center;"
+             data-roll="{{ turn.toy_pick_roll }}">
+          <div class="d20-face" style="margin-bottom:14px;">
+            <span class="d20-num">1</span>
+          </div>
+
+          <div class="toy-pick-icons"></div>
+          <div class="toy-pick-track-wrap">
+            <div class="toy-pick-track"></div>
+            <div class="toy-pick-marker"></div>
+          </div>
+        </div>
+
+        <div class="dice-info toy-pick-info"></div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{{ turn.toy_pick_options_json|json_script:"toy-pick-options" }}
 {% endif %}
 
 <button class="btn btn-primary w-100 mt-3"
@@ -198,12 +370,14 @@
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 
-  const toyWraps    = document.querySelectorAll(".dice-roll-wrap");
-  const insWraps    = document.querySelectorAll(".ins-dice-wrap");
-  const insSection  = document.getElementById("insurance-section");
-  const rndSection  = document.getElementById("rnd-section");
-  const rndWrap     = document.querySelector(".rnd-dice-wrap");
-  const continueBtn = document.getElementById("continue-btn");
+  const toyWraps      = document.querySelectorAll(".dice-roll-wrap");
+  const insWraps      = document.querySelectorAll(".ins-dice-wrap");
+  const insSection    = document.getElementById("insurance-section");
+  const rndSection    = document.getElementById("rnd-section");
+  const rndWrap       = document.querySelector(".rnd-dice-wrap");
+  const toyPickSection = document.getElementById("toy-pick-section");
+  const toyPickWrap    = document.querySelector(".toy-pick-wrap");
+  const continueBtn  = document.getElementById("continue-btn");
 
   let toyAnimsRemaining = toyWraps.length;
 
@@ -296,19 +470,37 @@ document.addEventListener("DOMContentLoaded", function () {
     if (rndSection) rndSection.classList.add("visible");
 
     const finalVal   = parseInt(rndWrap.dataset.roll) || 1;
+    const threshold  = parseInt(rndWrap.dataset.threshold) || 0;
     // Display is inverted from the underlying roll so a HIGH shown number reads as a win:
     // the game succeeds on a low internal roll, so we mirror it (101 - roll) for display only.
     const displayVal = 101 - finalVal;
-    const isSuccess  = rndWrap.dataset.success === '1';
-    const face       = rndWrap.querySelector('.d20-face');
-    const numSpan    = face.querySelector('.d20-num');
+    // Mirror of the same inversion, applied to the threshold instead of the roll,
+    // to get the lowest displayed number that still counts as a win.
+    const needDisplay = Math.max(1, Math.min(100, 100 - threshold));
+    const isSuccess   = rndWrap.dataset.success === '1';
+    const face        = rndWrap.querySelector('.d20-face');
+    const numSpan     = face.querySelector('.d20-num');
+
+    const gaugeTrack = rndWrap.closest('.dice-box').querySelector('.rnd-gauge-track');
+    const winZone    = gaugeTrack.querySelector('.rnd-gauge-win-zone');
+    const tick       = gaugeTrack.querySelector('.rnd-gauge-tick');
+    const tickLabel  = gaugeTrack.querySelector('.rnd-gauge-tick-label');
+    const marker     = gaugeTrack.querySelector('.rnd-gauge-marker');
+
+    const tickPct = ((needDisplay - 1) / 99) * 100;
+    winZone.style.width   = (100 - tickPct) + '%';
+    tick.style.left       = tickPct + '%';
+    tickLabel.style.left  = tickPct + '%';
+    tickLabel.textContent = needDisplay + '%';
 
     let step = 0;
     const totalSteps = 12 + Math.floor(Math.random() * 8);
     let currentDelay = 25;
 
     function animate() {
-      numSpan.textContent = (Math.floor(Math.random() * 100) + 1) + '%';
+      const flicker = Math.floor(Math.random() * 100) + 1;
+      numSpan.textContent = flicker + '%';
+      marker.style.left = (((flicker - 1) / 99) * 100) + '%';
 
       const maxHeight   = 35;
       const currentJump = Math.max(0, maxHeight - (step * 2.5));
@@ -330,6 +522,8 @@ document.addEventListener("DOMContentLoaded", function () {
     function finalize() {
       face.style.transform = "translateY(0) scaleY(1)";
       numSpan.textContent  = displayVal + '%';
+      marker.style.left    = (((displayVal - 1) / 99) * 100) + '%';
+      marker.classList.add(isSuccess ? 'win' : 'lose');
 
       face.classList.remove('roll-high', 'roll-mid', 'roll-low');
       face.classList.add(isSuccess ? 'ins-safe' : 'ins-disaster');
@@ -341,6 +535,115 @@ document.addEventListener("DOMContentLoaded", function () {
       infoDiv.innerHTML = isSuccess
         ? `<small class="text-success fw-semibold">🎉 New product unlocked!</small>`
         : `<small class="text-muted">No breakthrough this turn</small>`;
+
+      if (isSuccess && toyPickWrap) {
+        setTimeout(runToyPickDice, 1500);
+      } else {
+        setTimeout(function () { continueBtn.style.display = 'block'; }, 400);
+      }
+    }
+
+    setTimeout(animate, 0);
+  }
+
+  /* ── Called once R&D lands on a success ── */
+  function runToyPickDice() {
+    if (toyPickSection) {
+      toyPickSection.classList.add("visible");
+      toyPickSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    const finalRoll = parseInt(toyPickWrap.dataset.roll) || 1;
+    const optionsEl = document.getElementById("toy-pick-options");
+    const options = optionsEl ? JSON.parse(optionsEl.textContent) : [];
+
+    const total = options.reduce((sum, o) => sum + o.probability, 0) || 1;
+    let cumulative = 0;
+    const zones = options.map((o) => {
+      const frac = o.probability / total;
+      const start = cumulative;
+      cumulative += frac;
+      return { ...o, frac, start, end: cumulative };
+    });
+
+    // same (roll - 1) / 99 mapping the server used to pick the winner, so the
+    // zone the marker lands in always matches the toy that actually got unlocked
+    const finalFrac = (finalRoll - 1) / 99;
+    const winner = zones.find(z => finalFrac >= z.start && finalFrac < z.end) || zones[zones.length - 1];
+
+    const face      = toyPickWrap.querySelector('.d20-face');
+    const numSpan   = face.querySelector('.d20-num');
+    const iconsHost = toyPickWrap.querySelector('.toy-pick-icons');
+    const track     = toyPickWrap.querySelector('.toy-pick-track');
+    const marker    = toyPickWrap.querySelector('.toy-pick-marker');
+
+    iconsHost.innerHTML = "";
+    track.innerHTML = "";
+
+    zones.forEach(z => {
+      const zoneEl = document.createElement("div");
+      zoneEl.className = "toy-pick-zone";
+      zoneEl.style.width = (z.frac * 100) + "%";
+      zoneEl.style.background = z.color;
+      zoneEl.dataset.toy = z.name;
+      track.appendChild(zoneEl);
+
+      const mid = (z.start + z.end) / 2;
+      const icon = document.createElement("div");
+      icon.className = "toy-pick-icon";
+      icon.dataset.toy = z.name;
+      icon.style.left = (mid * 100) + "%";
+      icon.style.animationDelay = (Math.random() * 1.2) + "s";
+      icon.innerHTML = `<span class="icon-glyph">${z.icon}</span><span class="icon-pct">${Math.round(z.frac * 100)}%</span>`;
+      iconsHost.appendChild(icon);
+    });
+
+    let step = 0;
+    const totalSteps = 18 + Math.floor(Math.random() * 7);
+    let currentDelay = 25;
+
+    function place(rollVal) {
+      const frac = (rollVal - 1) / 99;
+      numSpan.textContent = rollVal;
+      marker.style.left = (frac * 100) + '%';
+    }
+
+    function animate() {
+      place(Math.floor(Math.random() * 100) + 1);
+
+      const maxHeight   = 35;
+      const currentJump = Math.max(0, maxHeight - (step * 2.5));
+      const yOffset     = step % 2 === 0 ? -currentJump : 0;
+      const squash      = (step % 2 !== 0 && step > totalSteps - 4) ? 0.85 : 1;
+
+      face.style.transform  = `translateY(${yOffset}px) scaleY(${squash})`;
+      face.style.transition = `transform ${currentDelay}ms ease-out`;
+
+      step++;
+      if (step < totalSteps) {
+        currentDelay += 18;
+        setTimeout(animate, currentDelay);
+      } else {
+        finalize();
+      }
+    }
+
+    function finalize() {
+      face.style.transform = "translateY(0) scaleY(1)";
+      place(finalRoll);
+      face.style.background = winner.color;
+      marker.style.background = winner.color;
+
+      iconsHost.querySelectorAll('.toy-pick-icon').forEach(el => {
+        if (el.dataset.toy === winner.name) el.classList.add('winner');
+        else el.classList.add('dim');
+      });
+      track.querySelectorAll('.toy-pick-zone').forEach(el => {
+        if (el.dataset.toy !== winner.name) el.classList.add('dim');
+      });
+
+      const infoDiv = toyPickWrap.closest('.dice-box').querySelector('.toy-pick-info');
+      infoDiv.innerHTML = `<small class="text-success fw-semibold">${winner.icon} ${winner.name} unlocked!</small>`;
 
       setTimeout(function () { continueBtn.style.display = 'block'; }, 400);
     }

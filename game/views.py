@@ -1,12 +1,8 @@
-from _pyrepl.commands import delete
-
-from django.contrib.admin.helpers import AdminForm
 from django.shortcuts import render, get_object_or_404, redirect
-import datetime
 from django.contrib.auth.models import User
 from .models import Post, Toy, Player, Turn, ToyProductionOutcome, Difficulty, Game, AdvertisingProfile, \
-    AdvertisingCampaign, InsuranceEvent, Equipment, PlayerLoan, InterestRateProfile, Toy_Basket
-from .services.game_engine import GameEngine
+    AdvertisingCampaign, InsuranceEvent, Equipment, PlayerLoan, InterestRateProfile, Toy_Basket, ChallengeRun
+from .services.game_engine import GameEngine, mark_player_lost, check_challenge_timeout
 from .services.distributions import calculate_product_chances, toy_settings
 from django.views.generic import (
     ListView,
@@ -90,46 +86,71 @@ def about(request):
     }
     return render(request, 'game/about.html', context)
 
+def _start_new_playthrough(user, difficulty_obj, company_name, mode, challenge_run=None):
+    player = Player.objects.create(
+        user=user,
+        difficulty=difficulty_obj,
+        name=user.username,
+        cash=difficulty_obj.starting_cash,
+        total_equity=difficulty_obj.starting_cash,
+        factory_space=difficulty_obj.starting_factory_space,
+        company_name=company_name,
+        mode=mode,
+        challenge_run=challenge_run,
+    )
+
+    toy_basket = Toy_Basket.objects.create()
+    for toy in toy_settings:
+        Toy.objects.create(
+            name=toy["name"],
+            price_per_unit=toy["Price"],
+            cost_per_unit=toy["Cost"],
+            demand_distribution_json=toy["distribution"],
+            toy_basket=toy_basket,
+            enabled=toy["default"],
+            default_toy=toy["default"],
+        )
+
+    Game.objects.create(player=player, toy_basket=toy_basket)
+    return player
+
 @login_required
 def game_begin(request):
     user = request.user
     if request.method == "POST":
-        difficulty_value = request.POST.get("difficulty")
-        difficulty_obj = Difficulty.objects.get(name=difficulty_value)
+        mode = request.POST.get("mode", "freeplay")
         company_name = request.POST.get("factory_name")
 
-        player = Player.objects.create(
-            user=user,
-            difficulty=difficulty_obj,
-            name=user.username,
-            cash=difficulty_obj.starting_cash,
-            total_equity = difficulty_obj.starting_cash, # no liabilities or other assets at game begin so need this for it BS to balance
-            factory_space = difficulty_obj.starting_factory_space,
-            company_name = company_name
-        )
-
-
-        toy_basket = Toy_Basket.objects.create()
-
-        for toy in toy_settings:
-            Toy.objects.create(
-                name=toy["name"],
-                price_per_unit=toy["Price"],
-                cost_per_unit=toy["Cost"],
-                demand_distribution_json = toy["distribution"],
-                toy_basket=toy_basket,
-                enabled=toy["default"],
-                default_toy=toy["default"],
+        if mode == "challenge":
+            difficulty_obj = Difficulty.objects.get(name="hard")
+            challenge_run = ChallengeRun.objects.create(
+                user=user,
+                difficulty=difficulty_obj,
+                company_name=company_name
             )
+        else:
+            difficulty_value = request.POST.get("difficulty")
+            difficulty_obj = Difficulty.objects.get(name=difficulty_value)
+            challenge_run = None
 
-        game = Game.objects.create(
-            player=player,
-            toy_basket=toy_basket
-        )
+        _start_new_playthrough(user, difficulty_obj, company_name, mode, challenge_run)
 
         return redirect("game-production")
 
     return render(request, "game/game_begin.html")
+
+
+@login_required
+def challenge_continue(request, run_id):
+    run = get_object_or_404(ChallengeRun, id=run_id, user=request.user)
+
+    if run.status != "in_progress" or run.lives_remaining <= 0:
+        return redirect("game-begin")
+
+    _start_new_playthrough(run.user, run.difficulty, run.company_name, "challenge", run)
+
+    return redirect("game-production")
+
 
 
 CREDIT_RATING_TIERS = {
@@ -145,6 +166,9 @@ CREDIT_RATING_TIERS = {
 def game(request):
     game = Game.objects.last()
     player = game.player
+
+    if check_challenge_timeout(player):
+        return render(request, "game/game_over.html", {"player": player, "run": player.challenge_run})
 
     toy_basket = Toy_Basket.objects.filter(game=game).first()
 
@@ -227,10 +251,8 @@ def game(request):
     # this as bankruptcy now instead of leaving them stuck on an unsubmittable page.
     max_possible_borrowing = max_credit if (eligible and current_loan_outstanding == False) else 0
     if player.cash + max_possible_borrowing < player.difficulty.rent_cost:
-        player.status = "lost"
-        player.lost_reason = "went bankrupt"
-        player.save()
-        return render(request, "game/game_over.html", {"player": player})
+        mark_player_lost(player, "went bankrupt")
+        return render(request, "game/game_over.html", {"player": player, "run": player.challenge_run})
 
     # y = mx + b
     factory_space_cost = (player.difficulty.factory_space_cost_coefficient * player.factory_space) + 5
@@ -508,7 +530,7 @@ def turn_summary(request):
         })
 
     else:
-        return render(request, "game/game_over.html", {"player" : player})
+        return render(request, "game/game_over.html", {"player": player, "run": player.challenge_run})
 
 
 def gross_profit_analysis(request):

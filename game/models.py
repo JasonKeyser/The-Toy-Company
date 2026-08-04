@@ -102,6 +102,43 @@ class Difficulty(models.Model):
         return self.get_name_display()
 
 
+class ChallengeRun(models.Model):
+    STATUS_CHOICES = [
+        ("in_progress", "In Progress"),
+        ("won", "Won"),
+        ("lost_lives", "Lost - Out of Lives"),
+        ("lost_timeout", "Lost - Out of Time"),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="challenge_runs")
+    difficulty = models.ForeignKey(Difficulty, on_delete=models.PROTECT)
+    company_name = models.CharField(max_length=100, default="None")
+
+    lives_total = models.IntegerField(default=3)
+    lives_remaining = models.IntegerField(default=3)
+
+    time_limit_seconds = models.IntegerField(default=105 * 60)  # 1h45m
+    started_at = models.DateTimeField(auto_now_add=True)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="in_progress")
+
+    def seconds_elapsed(self):
+        from django.utils import timezone
+        return (timezone.now() - self.started_at).total_seconds()
+
+    def seconds_remaining(self):
+        return max(0, self.time_limit_seconds - self.seconds_elapsed())
+
+    def is_time_expired(self):
+        return self.seconds_elapsed() >= self.time_limit_seconds
+
+    def __str__(self):
+        return f"Challenge Run for {self.user.username} ({self.status})"
+
+
+
+
+
 class Player(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
@@ -136,6 +173,15 @@ class Player(models.Model):
     cumulative_rnd_spend = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
     unlocked_toy_name = models.CharField(max_length=100, default="None")
+
+    MODE_CHOICES = [
+        ("freeplay", "Freeplay"),
+        ("challenge", "Challenge Mode"),
+    ]
+    mode = models.CharField(max_length=10, choices=MODE_CHOICES, default="freeplay")
+    challenge_run = models.ForeignKey(
+        ChallengeRun, on_delete=models.CASCADE, null=True, blank=True, related_name="attempts"
+    )
 
 
     def __str__(self):

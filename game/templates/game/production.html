@@ -614,6 +614,11 @@
         <span class="stat-pill"><span class="pill-label">Factory Spaces</span> {{ player.factory_space }}</span>
         <span class="stat-pill" style="margin-bottom: 5px;"><span class="pill-label">Cash</span> {{ player.cash|accounting }}</span>
         <span class="stat-pill" style="margin-bottom: 5px;"><span class="pill-label">Networth</span> {{ player.total_equity|accounting }} <span class="pill-sep">/</span> <span class="pill-sub">{{ player.difficulty.winning_networth|accounting }}</span></span>
+        <span class="stat-pill" style="margin-bottom: 5px;"><span class="pill-label">Networth</span> {{ player.total_equity|accounting }} <span class="pill-sep">/</span> <span class="pill-sub">{{ player.difficulty.winning_networth|accounting }}</span></span>
+        {% if player.mode == "challenge" %}
+        <span class="stat-pill"><span class="pill-label">Lives</span> {{ player.challenge_run.lives_remaining }} / {{ player.challenge_run.lives_total }}</span>
+        <span class="stat-pill"><span class="pill-label">Time Left</span> <span id="challenge-timer">--:--:--</span></span>
+        {% endif %}
         <br>
         <div id="extra-pills">
           <span class="stat-pill"><span class="pill-label">Rent</span> {{ player.difficulty.rent_cost|accounting }}</span>
@@ -1671,5 +1676,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
 });
 </script>
+
+
+{% if player.mode == "challenge" %}
+<script>
+  (function () {
+    let secondsRemaining = {{ player.challenge_run.seconds_remaining|floatformat:"0" }};
+    const timerEl = document.getElementById('challenge-timer');
+
+    function render() {
+      const clamped = Math.max(0, secondsRemaining);
+      const h = Math.floor(clamped / 3600);
+      const m = Math.floor((clamped % 3600) / 60);
+      const s = Math.floor(clamped % 60);
+      timerEl.textContent = `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    render();
+    setInterval(function () {
+      secondsRemaining -= 1;
+      render();
+    }, 1000);
+  })();
+</script>
+{% endif %}
+
 
 {% endblock content %}

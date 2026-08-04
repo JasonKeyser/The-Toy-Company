@@ -18,6 +18,7 @@ urlpatterns = [
     path('post/<int:pk>/delete', PostDeleteView.as_view(), name='post-delete'),
     path('about/', views.about, name='blog-about'),
     path('game/game_begin', views.game_begin, name='game-begin'),
+    path('game/challenge/<int:run_id>/continue/', views.challenge_continue, name='challenge-continue'),
     path('game/production', views.game, name='game-production'),
     path('demand/', views.demand_distribution_view, name='demand_distribution'),
     path('insurance/', views.insurance_distribution_view, name='insurance_distribution'),

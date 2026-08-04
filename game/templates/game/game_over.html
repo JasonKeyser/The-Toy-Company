@@ -4,10 +4,12 @@
 
 <div class="d-flex flex-column justify-content-center align-items-center" style="min-height: 70vh;">
 
-  <!-- Win / Lose Alert -->
   {% if player.status == "won" %}
     <div class="alert alert-success text-center py-4 w-100">
-      <h1 class="display-4">{{ player.company_name }} won on {{ player.difficulty.name }} mode!</h1>
+      <h1 class="display-4">
+        {{ player.company_name }} won
+        {% if player.mode == "challenge" %}Challenge Mode{% else %}on {{ player.difficulty.name }} mode{% endif %}!
+      </h1>
       <p class="lead">Congratulations! {% icon 'celebration' %}</p>
     </div>
 
@@ -42,12 +44,26 @@
       document.getElementById('beach-house-img').src = randomUrl;
     </script>
 
+  {% elif player.mode == "challenge" and run.status == "in_progress" %}
+    <div class="alert alert-warning text-center py-4 w-100">
+      <h1 class="display-4">Life Lost</h1>
+      <p class="lead">{{ player.company_name }} {{ player.lost_reason }}.</p>
+      <p>You have {{ run.lives_remaining }} of {{ run.lives_total }} lives left. The clock keeps running!</p>
+    </div>
 
   {% else %}
     <div class="alert alert-danger text-center py-4 w-100">
-      <h1 class="display-4">Game Over</h1>
+      <h1 class="display-4">
+        {% if player.mode == "challenge" %}Challenge Failed{% else %}Game Over{% endif %}
+      </h1>
       <p class="lead">
-          {{player.company_name }} {{ player.lost_reason }}
+        {% if player.mode == "challenge" and run.status == "lost_timeout" %}
+          {{ player.company_name }} ran out of time.
+        {% elif player.mode == "challenge" %}
+          {{ player.company_name }} lost their final life ({{ player.lost_reason }}).
+        {% else %}
+          {{ player.company_name }} {{ player.lost_reason }}
+        {% endif %}
       </p>
     </div>
   {% endif %}
@@ -61,8 +77,14 @@
     </div>
   </div>
 
-  <!-- New Game Button -->
-  <a href="{% url 'game-begin' %}" class="btn btn-warning btn-lg">Play Again</a>
+  {% if player.mode == "challenge" and run.status == "in_progress" %}
+    <form method="post" action="{% url 'challenge-continue' run.id %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-warning btn-lg">Continue Challenge ({{ run.lives_remaining }} lives left)</button>
+    </form>
+  {% else %}
+    <a href="{% url 'game-begin' %}" class="btn btn-warning btn-lg">Play Again</a>
+  {% endif %}
 </div>
 
 {% endblock content %}

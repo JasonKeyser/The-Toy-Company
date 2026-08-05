@@ -358,6 +358,13 @@
     white-space: nowrap;
   }
 
+    .stat-pills-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
   .challenge-banner {
     background: linear-gradient(90deg, #fff0f3, #ffe3ea);
     border: 1px solid #ffc2d1;
@@ -634,7 +641,7 @@
 <div class="production-content">
 
   <!-- Header Row -->
-  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap">
+<div class="d-flex align-items-start justify-content-between mb-3 flex-wrap">
 
     <!-- Left: Profile Image + Name -->
     <div class="d-flex align-items-center mb-2 mb-md-0">
@@ -650,42 +657,38 @@
       </div>
     </div>
 
-    <!-- Right: Player Stats -->
-    <div class="d-flex flex-column align-items-end">
-      {% if player.mode == "challenge" %}
-      <div class="challenge-widget mb-2">
-        <span class="lives-hearts" title="{{ player.challenge_run.lives_remaining }} of {{ player.challenge_run.lives_total }} lives left">
-          {% for i in "123" %}
-            {% if forloop.counter <= player.challenge_run.lives_remaining %}
-              <span class="heart-full">&#9829;</span>
-            {% else %}
-              <span class="heart-empty">&#9825;</span>
-            {% endif %}
-          {% endfor %}
-        </span>
-        <span class="challenge-widget-time" id="challenge-timer">--:--:--</span>
-      </div>
-      {% endif %}
-
-      <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap">
-        <span class="stat-pill"><span class="pill-label">Turn</span> {{ player.turn_number }} / {{ player.difficulty.max_turns }}</span>
-        <span class="stat-pill"><span class="pill-label">Factory Spaces</span> {{ player.factory_space }}</span>
-        <span class="stat-pill" style="margin-bottom: 5px;"><span class="pill-label">Cash</span> {{ player.cash|accounting }}</span>
-        <span class="stat-pill" style="margin-bottom: 5px;"><span class="pill-label">Networth</span> {{ player.total_equity|accounting }} <span class="pill-sep">/</span> <span class="pill-sub">{{ player.difficulty.winning_networth|accounting }}</span></span>
-        <br>
-        <div id="extra-pills">
-          <span class="stat-pill"><span class="pill-label">Rent</span> {{ player.difficulty.rent_cost|accounting }}</span>
-          <span class="stat-pill"><span class="pill-label">Tax</span> {{ player.difficulty.tax_rate|percentage }}</span>
-
-        </div>
-
-        <button id="toggle-btn" onclick="toggleExtra()" type="button">
-          <span id="btn-text">see more</span>
-          <i class="ti ti-chevron-down"></i>
-        </button>
-      </div>
+    <!-- Right: Challenge widget only -->
+    {% if player.mode == "challenge" %}
+    <div class="challenge-widget">
+      <span class="lives-hearts" title="{{ player.challenge_run.lives_remaining }} of {{ player.challenge_run.lives_total }} lives left">
+        {% for i in "123" %}
+          {% if forloop.counter <= player.challenge_run.lives_remaining %}
+            <span class="heart-full">&#9829;</span>
+          {% else %}
+            <span class="heart-empty">&#9825;</span>
+          {% endif %}
+        {% endfor %}
+      </span>
+      <span class="challenge-widget-time" id="challenge-timer">--:--:--</span>
     </div>
+    {% endif %}
 
+  </div>
+
+  <!-- Stat Pills: now its own row beneath the player identity -->
+  <div class="stat-pills-row mb-4">
+    <span class="stat-pill"><span class="pill-label">Turn</span> {{ player.turn_number }} / {{ player.difficulty.max_turns }}</span>
+    <span class="stat-pill"><span class="pill-label">Factory Spaces</span> {{ player.factory_space }}</span>
+    <span class="stat-pill"><span class="pill-label">Cash</span> {{ player.cash|accounting }}</span>
+    <span class="stat-pill"><span class="pill-label">Networth</span> {{ player.total_equity|accounting }} <span class="pill-sep">/</span> <span class="pill-sub">{{ player.difficulty.winning_networth|accounting }}</span></span>
+    <div id="extra-pills">
+      <span class="stat-pill"><span class="pill-label">Rent</span> {{ player.difficulty.rent_cost|accounting }}</span>
+      <span class="stat-pill"><span class="pill-label">Tax</span> {{ player.difficulty.tax_rate|percentage }}</span>
+    </div>
+    <button id="toggle-btn" onclick="toggleExtra()" type="button">
+      <span id="btn-text">see more</span>
+      <i class="ti ti-chevron-down"></i>
+    </button>
   </div>
 
   <form method="POST" id="production-form">

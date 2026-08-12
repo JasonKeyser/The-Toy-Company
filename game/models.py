@@ -365,7 +365,7 @@ class PlayerLoan(models.Model):
         return P * r * (1 + r) ** n / ((1 + r) ** n - 1)
 
     def interest_due(self):
-        return self.outstanding_balance * self.annual_interest_rate
+        return round(self.outstanding_balance * self.annual_interest_rate, 2)
 
     def principal_due(self):
         return self.annual_payment - self.interest_due()

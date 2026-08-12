@@ -290,7 +290,7 @@ def game(request):
                 player.equipment_name = selected_equipment.name
                 cost_savings_coefficient = selected_equipment.cost_savings_percent
                 player.depreciation_expense_ends_turn = player.turn_number + selected_equipment.useful_life
-                player.depreciation_expense_amount = equipment_cost / selected_equipment.useful_life
+                player.depreciation_expense_amount = round( equipment_cost / selected_equipment.useful_life, 2)
             else:
                 equipment_cost = 0
                 cost_savings_coefficient = player.cost_savings_coefficient

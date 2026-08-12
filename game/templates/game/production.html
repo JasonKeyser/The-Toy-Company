@@ -372,30 +372,50 @@
     padding: 8px 16px;
   }
 
- .challenge-widget {
+   .challenge-widget {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 3px;
+    align-items: center;
+    gap: 18px;
     background: #ffffff;
     border: 1px solid #dee2e6;
-    border-radius: 9px;
-    padding: 7px 12px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border-radius: 12px;
+    padding: 12px 22px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  }
+
+  .challenge-widget-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .challenge-widget-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #6c757d;
+  }
+
+  .challenge-widget-divider {
+    width: 1px;
+    align-self: stretch;
+    background: #e9ecef;
   }
 
   .challenge-widget-time {
     font-variant-numeric: tabular-nums;
-    font-weight: 600;
-    font-size: 13px;
+    font-weight: 700;
+    font-size: 22px;
     color: #212529;
   }
 
   .lives-hearts {
     display: inline-flex;
     align-items: center;
-    gap: 2px;
-    font-size: 17px;
+    gap: 4px;
+    font-size: 26px;
     line-height: 1;
   }
 
@@ -660,16 +680,23 @@
     <!-- Right: Challenge widget only -->
     {% if player.mode == "challenge" %}
     <div class="challenge-widget">
-      <span class="lives-hearts" title="{{ player.challenge_run.lives_remaining }} of {{ player.challenge_run.lives_total }} lives left">
-        {% for i in "123" %}
-          {% if forloop.counter <= player.challenge_run.lives_remaining %}
-            <span class="heart-full">&#9829;</span>
-          {% else %}
-            <span class="heart-empty">&#9825;</span>
-          {% endif %}
-        {% endfor %}
-      </span>
-      <span class="challenge-widget-time" id="challenge-timer">--:--:--</span>
+      <div class="challenge-widget-stat">
+        <span class="challenge-widget-label">Lives</span>
+        <span class="lives-hearts" title="{{ player.challenge_run.lives_remaining }} of {{ player.challenge_run.lives_total }} lives left">
+          {% for i in "123" %}
+            {% if forloop.counter <= player.challenge_run.lives_remaining %}
+              <span class="heart-full">&#9829;</span>
+            {% else %}
+              <span class="heart-empty">&#9825;</span>
+            {% endif %}
+          {% endfor %}
+        </span>
+      </div>
+      <div class="challenge-widget-divider"></div>
+      <div class="challenge-widget-stat">
+        <span class="challenge-widget-label">Time Remaining</span>
+        <span class="challenge-widget-time" id="challenge-timer">--:--:--</span>
+      </div>
     </div>
     {% endif %}
 

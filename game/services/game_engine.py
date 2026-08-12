@@ -6,19 +6,57 @@ from .distributions import pick_from_distribution, pick_from_disaster_distributi
 from game.models import Turn, ToyProductionOutcome, Player, InsuranceEventOutcome
 from game.icons import get_toy_icon, get_toy_color
 
+def mark_player_won(player):
+    player.status = "won"
+    player.save()
+    _apply_challenge_run_outcome(player)
+
+
+def mark_player_lost(player, reason):
+    player.status = "lost"
+    player.lost_reason = reason
+    player.save()
+    _apply_challenge_run_outcome(player)
+
+
+def _apply_challenge_run_outcome(player):
+    run = player.challenge_run
+    if not run or run.status != "in_progress":
+        return
+
+    if player.status == "won":
+        run.status = "won"
+    elif player.status == "lost":
+        if player.lost_reason == "ran out of time":
+            run.status = "lost_timeout"
+        else:
+            run.lives_remaining = max(0, run.lives_remaining - 1)
+            if run.lives_remaining <= 0:
+                run.status = "lost_lives"
+    run.save()
+
+
+def check_challenge_timeout(player):
+    """Call at the top of any game-loop view. Returns True if this just ended the player's run."""
+    if player.mode != "challenge" or player.status != "still_playing":
+        return False
+    run = player.challenge_run
+    if run and run.status == "in_progress" and run.is_time_expired():
+        mark_player_lost(player, "ran out of time")
+        return True
+    return False
+
+
 def check_player_status(player):
     if player.total_equity >= player.difficulty.winning_networth:
-        player.status = "won"
+        mark_player_won(player)
     elif player.cash <= 0:
-        player.status = "lost"
-        player.lost_reason = "went bankrupt"
+        mark_player_lost(player, "went bankrupt")
     elif player.turn_number > player.difficulty.max_turns:
-        player.status = "lost"
-        player.lost_reason = "lost on turns"
-
+        mark_player_lost(player, "lost on turns")
     else:
         player.status = "still_playing"
-    player.save()
+        player.save()
 
 
 def get_total_boost(player, current_turn):

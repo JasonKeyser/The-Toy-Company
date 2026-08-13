@@ -1204,7 +1204,7 @@
         <a href="{% url 'demand_distribution' %}" class="small">Demand Distributions</a>
       </div>
 
-    <table class="table table-hover">
+    <table id="toy-table" class="table table-hover">
       <thead class="table-dark">
         <tr>
           <th>Toy</th>
@@ -1250,6 +1250,17 @@
 
 
 <script>
+  const hints = window.driverHints.hints;
+  const driverObj = driver({
+  showProgress: true,
+  steps: [
+    { element: '.toy-table', popover: { title: 'Title', description: 'Description' } },
+  ]
+});
+
+  driverObj.drive();
+
+
 document.addEventListener('DOMContentLoaded', function () {
 
   const rows                  = document.querySelectorAll('tbody:not(#insurance-table-body) tr');

@@ -1250,11 +1250,11 @@
 
 
 <script>
-  const hints = window.driverHints.hints;
+  const { driver } = window.driver.js;
   const driverObj = driver({
   showProgress: true,
   steps: [
-    { element: '.toy-table', popover: { title: 'Title', description: 'Description' } },
+    { element: '#toy-table', popover: { title: 'Title', description: 'Description' } },
   ]
 });
 

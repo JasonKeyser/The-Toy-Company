@@ -1250,18 +1250,18 @@
 
 
 <script>
+document.addEventListener('DOMContentLoaded', function () {
+
+
   const { driver } = window.driver.js;
   const driverObj = driver({
   showProgress: true,
   steps: [
     { element: '#toy-table', popover: { title: 'Title', description: 'Description' } },
-  ]
-});
+    ]
+  });
 
   driverObj.drive();
-
-
-document.addEventListener('DOMContentLoaded', function () {
 
   const rows                  = document.querySelectorAll('tbody:not(#insurance-table-body) tr');
   const totalUnitsDisplay     = document.getElementById('total-units');

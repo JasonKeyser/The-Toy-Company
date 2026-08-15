@@ -162,6 +162,16 @@ CREDIT_RATING_TIERS = {
     5: ("AAA", 200),
 }
 
+TUTORIAL_STEPS = [
+    { 'element': '#stat-pills', 'popover': { 'title': 'Player Stats', 'description': 'Keep track of your progress here; You start with some cash and a small factory (each space = 1 toy).' } },
+    { 'element': '#toy-table', 'popover': { 'title': 'Production Planning', 'description': 'Decide how many toys of each type you will produce this turn. You will be limited by your factory space and your cash.' } },
+    { 'element': '#demand-distros', 'popover': { 'title': 'Demand Distributions', 'description': 'After you hit submit, dice will roll to determine how many of each toy is sold according to their demand distributions.' } },
+    { 'element': '#investment-header', 'popover': { 'title': 'Investments', 'description': 'You can also invest money back into your business: expand factory space, purchase equipment, advertise, or research & development.' } },
+    { 'element': '#Insurance-header', 'popover': { 'title': 'Insurance', 'description': 'Insure your business against potential disasters which may befall you - also determined by a dice roll each turn.' } },
+    { 'element': '#financing-header', 'popover': { 'title': 'Financing', 'description': 'Take on a loan to help with investment/cash flow needs.' } },
+    { 'popover': { 'title': 'Good Luck', 'description': 'Make the most of your resources.' } },
+    ]
+
 
 def game(request):
     game = Game.objects.last()
@@ -506,6 +516,7 @@ def game(request):
             "rnd_odds_json": rnd_odds_json,
             "equipment_form": equipment_form,
             "equipment_json": equipment_json,
+            "TUTORIAL_STEPS": TUTORIAL_STEPS,
             'success_notifications': success_notifications,
             "error_notifications": error_notifications,
         })

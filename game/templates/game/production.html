@@ -703,7 +703,7 @@
   </div>
 
   <!-- Stat Pills: now its own row beneath the player identity -->
-  <div class="stat-pills-row mb-4">
+  <div id="stat-pills" class="stat-pills-row mb-4">
     <span class="stat-pill"><span class="pill-label">Turn</span> {{ player.turn_number }} / {{ player.difficulty.max_turns }}</span>
     <span class="stat-pill"><span class="pill-label">Factory Spaces</span> {{ player.factory_space }}</span>
     <span class="stat-pill"><span class="pill-label">Cash</span> {{ player.cash|accounting }}</span>
@@ -759,7 +759,7 @@
 
     <!-- ========== INVESTMENTS CARD ========== -->
     <div class="card shadow-sm border-0 mb-4">
-      <div class="card-header d-flex justify-content-between align-items-center">
+      <div id="investment-header" class="card-header d-flex justify-content-between align-items-center">
         <strong>🏗 Investments
         <div class="ad-tooltip-wrap">
               <span class="qmark">?</span>
@@ -977,7 +977,7 @@
 
     <!-- ========== INSURANCE CARD ========== -->
     {% if player.difficulty.insurance_enabled %}
-    <div class="card shadow-sm border-0 mb-4">
+    <div id="Insurance-header" class="card shadow-sm border-0 mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
         <strong>
           🛡 Insurance Coverage
@@ -1053,7 +1053,7 @@
         <!-- ========== Financing Card ========== -->
     {% if player.difficulty.financing_enabled %}
     <div class="card shadow-sm border-0 mb-4">
-      <div class="card-header d-flex justify-content-between align-items-center">
+      <div id="financing-header" class="card-header d-flex justify-content-between align-items-center">
         <strong>🏦 Financing
         <div class="ad-tooltip-wrap">
               <span class="qmark">?</span>
@@ -1201,7 +1201,7 @@
       </div>
 
       <div class="mt-1 mb-2">
-        <a href="{% url 'demand_distribution' %}" class="small">Demand Distributions</a>
+        <a id="demand-distros" href="{% url 'demand_distribution' %}" class="small">Demand Distributions</a>
       </div>
 
     <table id="toy-table" class="table table-hover">
@@ -1252,13 +1252,10 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-
   const { driver } = window.driver.js;
   const driverObj = driver({
   showProgress: true,
-  steps: [
-    { element: '#toy-table', popover: { title: 'Title', description: 'Description' } },
-    ]
+  steps: TUTORIAL_STEPS
   });
 
   driverObj.drive();

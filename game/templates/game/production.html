@@ -656,6 +656,8 @@
 {{ ad_profiles_json|json_script:"ad-profiles-data" }}
 {{ equipment_json|json_script:"equipment-data" }}
 {{ rnd_odds_json|json_script:"rnd-odds-data" }}
+{{ TUTORIAL_STEPS|json_script:"tutorial-steps-data" }}
+{{ show_tutorial|json_script:"show-tutorial" }}
 
 <!-- Wrap all main content so it stays left of the card -->
 <div class="production-content">
@@ -1252,11 +1254,16 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-  const { driver } = window.driver.js;
-  const driverObj = driver({
-  showProgress: true,
-  steps: TUTORIAL_STEPS
-  });
+  const show_tutorial = JSON.parse(document.getElementById('show-tutorial').textContent);
+
+  if (show_tutorial) {
+    const TUTORIAL_STEPS = JSON.parse(document.getElementById('tutorial-steps-data').textContent);
+    const { driver } = window.driver.js;
+    const driverObj = driver({
+    showProgress: true,
+    steps: TUTORIAL_STEPS
+    });
+  }
 
   driverObj.drive();
 

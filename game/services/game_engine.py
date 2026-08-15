@@ -68,7 +68,7 @@ def get_total_boost(player, current_turn):
 
 class GameEngine:
     @transaction.atomic
-    def process_turn(self, player, toy_production_choices, toy_basket, insurance_choices, ad_cost, rnd_spend, capex_choices, cost_savings_coefficient, borrowed_amount):
+    def process_turn(self, player, toy_production_choices, toy_basket, insurance_choices, ad_cost, rnd_spend, capex_choices, cost_savings_coefficient, borrowed_amount, show_tutorial):
 
         total_revenue = Decimal("0.00")
         total_cogs = Decimal("0.00")
@@ -305,6 +305,9 @@ class GameEngine:
         turn.retained_earnings = retained_earnings
         turn.total_equity = total_equity
 
+        turn.show_tutorial = show_tutorial
+
+
         turn.save()
 
         # 5️⃣ Update player AFTER Turn is saved
@@ -321,6 +324,10 @@ class GameEngine:
         if rate_profile:
             from .distributions import pick_interest_rate
             player.next_offered_rate = pick_interest_rate(rate_profile)
+
+        if show_tutorial:
+            player.user.has_seen_tutorial = True
+
         player.save()
 
 

@@ -306,6 +306,7 @@ class Turn(models.Model):
     toy_pick_roll = models.IntegerField(null=True, blank=True)
     toy_pick_options_json = models.JSONField(default=list, blank=True)
 
+    show_tutorial = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Turn {self.turn_number} - {self.player.name}"

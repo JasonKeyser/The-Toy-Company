@@ -86,6 +86,14 @@ def about(request):
     }
     return render(request, 'game/about.html', context)
 
+def get_active_player(user):
+    return (Player.objects
+            .filter(user=user, status="still_playing")
+            .order_by("-id")
+            .first())
+
+
+
 def _start_new_playthrough(user, difficulty_obj, company_name, mode, challenge_run=None):
     player = Player.objects.create(
         user=user,
@@ -162,10 +170,12 @@ CREDIT_RATING_TIERS = {
     5: ("AAA", 200),
 }
 
-
+@login_required
 def game(request):
-    game = Game.objects.last()
-    player = game.player
+    player = get_active_player(request.user)
+    if player is None:
+        return redirect("game-begin")
+    game = Game.objects.filter(player=player).first()
 
     if check_challenge_timeout(player):
         return render(request, "game/game_over.html", {"player": player, "run": player.challenge_run})
@@ -564,7 +574,7 @@ def game(request):
             "error_notifications": error_notifications,
         })
 
-
+@login_required
 def turn_summary(request):
     game = Game.objects.last()
     player = game.player
@@ -586,7 +596,7 @@ def turn_summary(request):
     else:
         return render(request, "game/game_over.html", {"player": player, "run": player.challenge_run})
 
-
+@login_required
 def gross_profit_analysis(request):
     game = Game.objects.last()
     player = game.player
@@ -634,7 +644,7 @@ def gross_profit_analysis(request):
 
 
 
-
+@login_required
 def financial_history(request):
     game = Game.objects.last()
     player = game.player

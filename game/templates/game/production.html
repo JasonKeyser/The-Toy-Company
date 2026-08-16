@@ -1018,23 +1018,20 @@
               </tr>
             </thead>
             <tbody id="insurance-table-body">
-              {% for form in coverageformset %}
-                {% with event=insurance_events|index:forloop.counter0%}
-                <tr>
-                  <td>{{ event.name }}</td>
-                  <td class="insurance-premium-val"
-                      data-premium="{{ event.premium_cost|unlocalize }}">
-                    {{ event.premium_cost|accounting }}
-                  </td>
-                  <td>
-                    {{ form.coverage_taken }}
-                    {% if form.coverage_taken.errors %}
-                      <div class="text-danger small">{{ form.coverage_taken.errors }}</div>
-                    {% endif %}
-  <!--                  {{ form.id }}-->
-                  </td>
-                </tr>
-              {% endwith %}
+              {% for form, event in form_and_events %}
+              <tr>
+                <td>{{ event.name }}</td>
+                <td class="insurance-premium-val"
+                    data-premium="{{ event.premium_cost|unlocalize }}">
+                  {{ event.premium_cost|accounting }}
+                </td>
+                <td>
+                  {{ form.coverage_taken }}
+                  {% if form.coverage_taken.errors %}
+                    <div class="text-danger small">{{ form.coverage_taken.errors }}</div>
+                  {% endif %}
+                </td>
+              </tr>
               {% empty %}
               <tr>
                 <td colspan="4" class="text-center text-muted">No insurance events available.</td>
@@ -1557,26 +1554,8 @@ document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('select[id*="coverage_taken"]').forEach(function(sel) {
     sel.addEventListener('change', function() {
       const row = sel.closest('tr');
-      const cb  = row.querySelector('.remember-checkbox');
-      if (cb && cb.checked) {
-        localStorage.setItem('insurance_{{ player.id }}_' + cb.dataset.eventId, sel.value);
-      }
       const s = getCurrentSpends();
       updateSpendCard(s.cogs, s.capex, s.ad, getInsurancePremiumCost());
-    });
-  });
-
-  /* ── event listeners: remember checkboxes ── */
-  document.querySelectorAll('.remember-checkbox').forEach(function(cb) {
-    cb.addEventListener('change', function() {
-      const eventId = cb.dataset.eventId;
-      const row     = cb.closest('tr');
-      const sel     = row.querySelector('select[id*="coverage_taken"]');
-      if (cb.checked && sel) {
-        localStorage.setItem('insurance_{{ player.id }}_' + eventId, sel.value);
-      } else {
-        localStorage.removeItem('insurance_{{ player.id }}_' + eventId);
-      }
     });
   });
 
@@ -1605,17 +1584,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  /* ── on page load: restore saved insurance choices ── */
-  document.querySelectorAll('.remember-checkbox').forEach(function(cb) {
-    const eventId = cb.dataset.eventId;
-    const saved   = localStorage.getItem('insurance_{{ player.id }}_' + eventId);
-    if (saved !== null) {
-      const row = cb.closest('tr');
-      const sel = row.querySelector('select[id*="coverage_taken"]');
-      if (sel) sel.value = saved;
-      cb.checked = true;
-    }
-  });
 
   /* ── seed dataset values so cross-calls work on first run ── */
   grandTotalCostDisplay.dataset.value = 0;

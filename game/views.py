@@ -258,6 +258,37 @@ def game(request):
     factory_space_cost = (player.difficulty.factory_space_cost_coefficient * player.factory_space) + 5
 
 
+    TUTORIAL_STEPS = [
+        {'element': '#stat-pills', 'popover': {'title': 'Player Stats',
+                                               'description': 'Keep track of your progress here; You start with some cash and a small factory (each space = 1 toy).'}},
+        {'element': '#toy-table', 'popover': {'title': 'Production Planning',
+                                              'description': 'Decide how many toys of each type you will produce this turn. You will be limited by your factory space and your cash.'}},
+        {'element': '#demand-distros', 'popover': {'title': 'Demand Distributions',
+                                                   'description': 'After you hit submit, dice will roll to determine how many of each toy is sold according to their demand distributions.'}},
+        {'element': '#investment-header', 'popover': {'title': 'Investments',
+                                                      'description': 'You can also invest money back into your business: expand factory space, purchase equipment, advertise, or research & development.'}},
+    ]
+
+    if player.difficulty.insurance_enabled:
+        TUTORIAL_STEPS.append({'element': '#Insurance-header', 'popover': {'title': 'Insurance',
+                                                     'description': 'Insure your business against potential disasters which may befall you - also determined by a dice roll each turn.'}})
+
+    if player.difficulty.financing_enabled:
+        TUTORIAL_STEPS.append(        {'element': '#financing-header',
+         'popover': {'title': 'Financing', 'description': 'Take on a loan to help with investment/cash flow needs.'}})
+
+
+    TUTORIAL_STEPS.append({'popover': {'title': 'Good Luck', 'description': 'Make the most of your resources.'}})
+
+    if player.user.profile.has_seen_tutorial:
+        show_tutorial = False
+    else:
+        show_tutorial = True
+        player.user.profile.has_seen_tutorial = True
+        player.user.profile.save()
+
+
+
     if request.method == "POST":
         toyformset = UnitsFormSet(request.POST, factory_space=player.factory_space, prefix="toys")
         coverageformset = CoverageFormSet(request.POST, prefix="coverage")
@@ -381,12 +412,13 @@ def game(request):
                     }
 
                     engine = GameEngine()
-                    turn = engine.process_turn(player, toy_production_choices, toy_basket, insurance_coverage_choices, ad_cost, rnd_spend, capex_choices, cost_savings_coefficient, borrowed_amount)
+                    turn = engine.process_turn(player, toy_production_choices, toy_basket, insurance_coverage_choices, ad_cost, rnd_spend, capex_choices, cost_savings_coefficient, borrowed_amount, show_tutorial)
                     return render(request, "game/dice_roll.html", {"turn": turn})
 
     elif request.method == "GET":
         #Alerts for new items
         last_turn = Turn.objects.filter(player=player).order_by("-turn_number").first()
+
 
         if last_turn and last_turn.expansion_cost > 0:
             success_notifications.append(f"🏭 Factory Space increased to {player.factory_space}!")
@@ -482,7 +514,6 @@ def game(request):
         for e in equipment
     }
 
-
     return render(request, "game/production.html", {
             "player": player,
             "factory_space_cost": factory_space_cost,
@@ -506,6 +537,8 @@ def game(request):
             "rnd_odds_json": rnd_odds_json,
             "equipment_form": equipment_form,
             "equipment_json": equipment_json,
+            "TUTORIAL_STEPS": TUTORIAL_STEPS,
+            "show_tutorial": show_tutorial,
             'success_notifications': success_notifications,
             "error_notifications": error_notifications,
         })

@@ -988,7 +988,8 @@
             <div class="tooltip-box">
               Pay a fixed premium now to avoid a potentially larger disaster cost this turn. <br><br>
               If you assume the risk and a disaster occurs, the full disaster cost is deducted from your cash.
-              See Insurance Event distributions to see the likelihood of a disaster for each event.
+              See Insurance Event distributions to see the likelihood of a disaster for each event. <br><br>
+              Selections are remembered from the prior turn.
             </div>
           </div>
         </strong>
@@ -1014,7 +1015,6 @@
                 <th>Event</th>
                 <th>Premium Cost</th>
                 <th>Decision</th>
-                <th>Remember Selection</th>
               </tr>
             </thead>
             <tbody id="insurance-table-body">
@@ -1032,11 +1032,6 @@
                       <div class="text-danger small">{{ form.coverage_taken.errors }}</div>
                     {% endif %}
   <!--                  {{ form.id }}-->
-                  </td>
-                  <td class="text-center">
-                    <input type="checkbox"
-                           class="remember-checkbox"
-                           data-event-id="{{ event.pk }}">
                   </td>
                 </tr>
               {% endwith %}
@@ -1613,7 +1608,7 @@ document.addEventListener('DOMContentLoaded', function () {
   /* ── on page load: restore saved insurance choices ── */
   document.querySelectorAll('.remember-checkbox').forEach(function(cb) {
     const eventId = cb.dataset.eventId;
-    const saved   = localStorage.getItem('insurance_' + eventId);
+    const saved   = localStorage.getItem('insurance_{{ player.id }}_' + eventId);
     if (saved !== null) {
       const row = cb.closest('tr');
       const sel = row.querySelector('select[id*="coverage_taken"]');

@@ -77,8 +77,6 @@ class EquipmentForm(forms.Form):
 
 
 class LoanForm(forms.Form):
-
-
     borrowed_amount = forms.IntegerField(
         min_value=0,
         required=False,

@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.models import User
 from .models import Post, Toy, Player, Turn, ToyProductionOutcome, Difficulty, Game, AdvertisingProfile, \
-    AdvertisingCampaign, InsuranceEvent, Equipment, PlayerLoan, InterestRateProfile, Toy_Basket, ChallengeRun
+    AdvertisingCampaign, InsuranceEvent, InsuranceEventOutcome,Equipment, PlayerLoan, InterestRateProfile, Toy_Basket, ChallengeRun
 from .services.game_engine import GameEngine, mark_player_lost, check_challenge_timeout
 from .services.distributions import calculate_product_chances, toy_settings
 from django.views.generic import (
@@ -445,7 +445,27 @@ def game(request):
             )
 
         toyformset = UnitsFormSet(factory_space=player.factory_space, prefix="toys")
-        coverageformset = CoverageFormSet(prefix="coverage")
+
+        prior_coverage = {}
+        if last_turn:
+            prior_coverage = {
+                d.insurance_event_id: d.coverage_active
+                for d in last_turn.insurance_decisions.all()
+            }
+
+        coverageformset = CoverageFormSet(
+            prefix="coverage",
+            initial=[
+                {"coverage_taken": "insure" if prior_coverage.get(event.pk) else "assume_risk"}
+                for event in insurance_events
+            ],
+        )
+
+        form_and_events = [
+            (form, event)
+            for form, event in zip(coverageformset, insurance_events)
+        ]
+
         inv_expansion_form = FactoryExpansionForm()
         rnd_form = RnDSpendForm()
         loan_form = LoanForm()
@@ -521,6 +541,7 @@ def game(request):
             "toyformset": toyformset,
             "form_and_toys": form_and_toys,
             "all_enabled" : all_enabled,
+            "form_and_events": form_and_events,
             "coverageformset": coverageformset,
             "insurance_events": insurance_events,
             "inv_expansion_form": inv_expansion_form,

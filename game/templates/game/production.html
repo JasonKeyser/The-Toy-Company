@@ -1564,7 +1564,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const row = sel.closest('tr');
       const cb  = row.querySelector('.remember-checkbox');
       if (cb && cb.checked) {
-        localStorage.setItem('insurance_' + cb.dataset.eventId, sel.value);
+        localStorage.setItem('insurance_{{ player.id }}_' + cb.dataset.eventId, sel.value);
       }
       const s = getCurrentSpends();
       updateSpendCard(s.cogs, s.capex, s.ad, getInsurancePremiumCost());
@@ -1629,7 +1629,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (adCostDisplay) adCostDisplay.dataset.value = 0;
 
 /* ── persist form inputs across navigation (turn-scoped) ── */
-  const STORAGE_KEY = 'production_draft_turn_' + {{ player.turn_number }};
+  const STORAGE_KEY = 'production_draft_player_{{ player.id }}_turn_' + {{ player.turn_number }};
 
   function getDraft() {
     try {

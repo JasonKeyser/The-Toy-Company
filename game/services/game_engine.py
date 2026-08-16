@@ -325,11 +325,7 @@ class GameEngine:
             from .distributions import pick_interest_rate
             player.next_offered_rate = pick_interest_rate(rate_profile)
 
-        if show_tutorial:
-            player.user.has_seen_tutorial = True
-
         player.save()
-
 
         return turn
 

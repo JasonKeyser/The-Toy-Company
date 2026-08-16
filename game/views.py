@@ -284,7 +284,8 @@ def game(request):
         show_tutorial = False
     else:
         show_tutorial = True
-
+        player.user.profile.has_seen_tutorial = True
+        player.user.profile.save()
 
 
 

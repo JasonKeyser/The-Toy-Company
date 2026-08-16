@@ -1207,7 +1207,7 @@
       </div>
 
     <table id="toy-table" class="table table-hover">
-      <thead class="table-dark">
+      <thead class="table-secondary">
         <tr>
           <th>Toy</th>
           <th>Units to Manufacture</th>
@@ -1578,9 +1578,9 @@ document.addEventListener('DOMContentLoaded', function () {
       const row     = cb.closest('tr');
       const sel     = row.querySelector('select[id*="coverage_taken"]');
       if (cb.checked && sel) {
-        localStorage.setItem('insurance_' + eventId, sel.value);
+        localStorage.setItem('insurance_{{ player.id }}_' + eventId, sel.value);
       } else {
-        localStorage.removeItem('insurance_' + eventId);
+        localStorage.removeItem('insurance_{{ player.id }}_' + eventId);
       }
     });
   });

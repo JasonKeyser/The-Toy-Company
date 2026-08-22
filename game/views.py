@@ -596,6 +596,17 @@ def turn_summary(request):
     else:
         return render(request, "game/game_over.html", {"player": player, "run": player.challenge_run})
 
+
+def game_history(request):
+    user = request.user
+    players = Player.objects.filter(user=user).exclude(status="still_playing")
+
+
+    context = {"user": user,
+               "players": players}
+    return render(request, "game/game_history.html", context=context)
+
+
 @login_required
 def gross_profit_analysis(request):
     game = Game.objects.last()
@@ -645,9 +656,9 @@ def gross_profit_analysis(request):
 
 
 @login_required
-def financial_history(request):
-    game = Game.objects.last()
-    player = game.player
+def financial_history(request, player):
+    # game = Game.objects.last()
+    # player = game.player
     turns = Turn.objects.filter(player=player)
     turn = turns.order_by("-turn_number").first()
     production_outcomes = ToyProductionOutcome.objects.filter(turn=turn)
@@ -660,6 +671,16 @@ def financial_history(request):
         "insurance_events": insurance_events,
     })
 
+@login_required
+def financial_summary_card(request):
+    game = Game.objects.last()
+    player = game.player
+    turns = Turn.objects.filter(player=player)
+
+    return render(request, "game/financial_summary_card.html", {
+        "turns": turns,
+        "player": player,
+    })
 
 @login_required
 def demand_distribution_view(request):
@@ -761,3 +782,4 @@ def rnd_new_product_success_distribution_view(request):
         "toys": toys,
     }
     return render(request, "game/new_product_success_distribution.html", context)
+

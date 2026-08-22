@@ -228,7 +228,7 @@ function toggle(id) {
   <div class="fin-title">
     Financial Summary
     {% if show_history_link %}
-      <a href="{% url 'financial-history' %}" class="small">History</a>
+      <a href="{% url 'financial-history' player.pk %}" class="small">History</a>
     {% endif %}
   </div>
 

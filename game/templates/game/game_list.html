@@ -1,0 +1,19 @@
+<div>
+  {% for player in players %}
+    <div class = "card">
+        <span>
+            {{ player.company_name }}
+            {{ player.turn_number }}
+            {{ player.mode }}
+            {{ player.status }}
+            {{ player.lost_reason }}
+            {{ player.difficulty }}
+            <a href="{% url 'financial-history' player.pk %}" class="btn btn-primary mt-3">
+                See more detail
+            </a>
+        </span>
+    </div>
+
+  {% endfor %}
+
+</div>

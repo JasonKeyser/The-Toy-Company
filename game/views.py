@@ -21,6 +21,7 @@ from .forms import UnitsManufacturedForm, BaseUnitsFormSet, FactoryExpansionForm
 from django.forms import formset_factory
 import json
 from .icons import get_toy_color, get_toy_icon
+from .filters import PlayerFilter
 
 class PostListView(ListView):
     model = Post
@@ -600,10 +601,10 @@ def turn_summary(request):
 def game_history(request):
     user = request.user
     players = Player.objects.filter(user=user).exclude(status="still_playing")
-
+    f = PlayerFilter(request.GET, queryset=players)
 
     context = {"user": user,
-               "players": players}
+               "filter": f}
     return render(request, "game/game_history.html", context=context)
 
 
@@ -679,7 +680,6 @@ def financial_summary_card(request):
 
     return render(request, "game/financial_summary_card.html", {
         "turns": turns,
-        "player": player,
     })
 
 @login_required

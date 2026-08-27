@@ -1,5 +1,38 @@
+<style>
+    /* Lines everything up horizontally and aligns items to the bottom so the button matches the dropdowns */
+    .horizontal-filter-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: flex-end;
+        margin-bottom: 24px;
+    }
+
+    /* Stacks the label neatly on top of its specific dropdown */
+    .filter-field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+</style>
+
+
+
 <div>
-  {% for player in players %}
+    <form method="get" class="horizontal-filter-form">
+        {% for field in filter.form %}
+            <div class="filter-field-group">
+                <label>{{ field.label }}</label>
+                {{ field }}
+            </div>
+        {% endfor %}
+        <button type="submit">Apply Filters</button>
+    </form>
+
+</div>
+
+<div>
+  {% for player in filter.qs %}
     <div class = "card">
         <span>
             {{ player.company_name }}

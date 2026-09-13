@@ -141,6 +141,7 @@ class ChallengeRun(models.Model):
 
 class Player(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_date = models.DateTimeField(auto_now_add=True)
 
     difficulty = models.ForeignKey(
         Difficulty,

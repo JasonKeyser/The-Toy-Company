@@ -600,7 +600,7 @@ def turn_summary(request):
 
 def game_history(request):
     user = request.user
-    players = Player.objects.filter(user=user).exclude(status="still_playing")
+    players = Player.objects.filter(user=user).exclude(status="still_playing").order_by("-created_date")
     f = PlayerFilter(request.GET, queryset=players)
 
     total_games = f.qs.count()

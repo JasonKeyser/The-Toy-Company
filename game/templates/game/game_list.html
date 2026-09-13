@@ -21,10 +21,26 @@
 
 
 <div>
-Total Games Played: {{ total_games }}
-Total Wins: {{ total_wins }}
-Winning Percentage: {{ win_percentage|percentage }}
-
+<div class="d-flex flex-wrap mb-4" style="gap: 12px;">
+  <div class="card text-center flex-fill">
+    <div class="card-body py-3">
+      <div class="text-muted small text-uppercase">Games Played</div>
+      <div class="h3 mb-0">{{ total_games }}</div>
+    </div>
+  </div>
+  <div class="card text-center flex-fill">
+    <div class="card-body py-3">
+      <div class="text-muted small text-uppercase">Wins</div>
+      <div class="h3 mb-0 text-success">{{ total_wins }}</div>
+    </div>
+  </div>
+  <div class="card text-center flex-fill">
+    <div class="card-body py-3">
+      <div class="text-muted small text-uppercase">Win Rate</div>
+      <div class="h3 mb-0">{{ win_percentage|percentage }}</div>
+    </div>
+  </div>
+</div>
 
 </div>
 
@@ -33,7 +49,7 @@ Winning Percentage: {{ win_percentage|percentage }}
     <form method="get" class="horizontal-filter-form">
         {% for field in filter.form %}
             <div class="filter-field-group">
-                <label>{{ field.label }}</label>
+                <label class="small text-muted mb-1">{{ field.label }}</label>
                 {{ field }}
             </div>
         {% endfor %}
@@ -44,18 +60,26 @@ Winning Percentage: {{ win_percentage|percentage }}
 
 <div>
   {% for player in filter.qs %}
-    <div class = "card">
-        <span>
-            {{ player.company_name }}
-            {{ player.turn_number }}
-            {{ player.mode }}
-            {{ player.status }}
-            {{ player.lost_reason }}
-            {{ player.difficulty }}
-            <a href="{% url 'financial-history' player.pk %}" class="btn btn-primary mt-3">
-                See more detail
-            </a>
-        </span>
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <h5 class="card-title mb-1">{{ player.company_name }}</h5>
+          {% if player.status == "won" %}
+            <span class="badge badge-success">{% icon 'celebration' %} Won</span>
+          {% elif player.status == "lost" %}
+            <span class="badge badge-danger">Lost</span>
+          {% else %}
+            <span class="badge badge-warning">In Progress</span>
+          {% endif %}
+        </div>
+        <div class="text-muted small mb-2">
+          {{ player.created_date|date:"M j, Y" }} &middot; {{ player.get_mode_display }} &middot; {{ player.difficulty }} &middot; Turn {{ player.turn_number }}
+          {% if player.status == "lost" %} &middot; {{ player.lost_reason }}{% endif %}
+        </div>
+        <a href="{% url 'financial-history' player.pk %}" class="btn btn-outline-primary btn-sm">
+          See more detail &rarr;
+        </a>
+      </div>
     </div>
 
   {% endfor %}

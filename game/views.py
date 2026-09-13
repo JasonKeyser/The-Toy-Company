@@ -603,8 +603,20 @@ def game_history(request):
     players = Player.objects.filter(user=user).exclude(status="still_playing")
     f = PlayerFilter(request.GET, queryset=players)
 
+    total_games = f.qs.count()
+    total_wins = f.qs.filter(status="won").count()
+    win_percentage = round( total_wins / total_games, 0) if total_games else 0
+
+
     context = {"user": user,
-               "filter": f}
+               "filter": f,
+               "total_games": total_games,
+               "total_wins": total_wins,
+               "win_percentage": win_percentage,}
+
+
+
+
     return render(request, "game/game_history.html", context=context)
 
 

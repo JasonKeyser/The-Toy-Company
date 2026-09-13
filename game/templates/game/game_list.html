@@ -1,3 +1,6 @@
+{% load accounting_tags %}
+
+
 <style>
     /* Lines everything up horizontally and aligns items to the bottom so the button matches the dropdowns */
     .horizontal-filter-form {
@@ -16,6 +19,14 @@
     }
 </style>
 
+
+<div>
+Total Games Played: {{ total_games }}
+Total Wins: {{ total_wins }}
+Winning Percentage: {{ win_percentage|percentage }}
+
+
+</div>
 
 
 <div>

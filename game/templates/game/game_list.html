@@ -17,6 +17,34 @@
         flex-direction: column;
         gap: 4px;
     }
+
+    .filter-toolbar {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 24px;
+  }
+  .filter-toolbar .form-control-sm {
+    border-radius: 6px;
+    border-color: #dee2e6;
+  }
+  .filter-toolbar .form-control-sm:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.15rem rgba(0,123,255,.15);
+  }
+  .filter-field-group { display: flex; flex-direction: column; gap: 4px; }
+  .more-filters-toggle {
+    font-size: 12.5px;
+    color: #6c757d;
+    text-decoration: none;
+  }
+  .more-filters-toggle:hover { color: #495057; }
+  .more-filters-toggle .caret { transition: transform 0.15s ease; display: inline-block; }
+  .more-filters-toggle[aria-expanded="true"] .caret { transform: rotate(180deg); }
+
+
+
 </style>
 
 
@@ -45,18 +73,55 @@
 </div>
 
 
-<div>
-    <form method="get" class="horizontal-filter-form">
-        {% for field in filter.form %}
-            <div class="filter-field-group">
-                <label class="small text-muted mb-1">{{ field.label }}</label>
-                {{ field }}
-            </div>
-        {% endfor %}
-        <button type="submit">Apply Filters</button>
-    </form>
+<div class="filter-toolbar">
+  <form method="get">
+    <div class="d-flex flex-wrap align-items-end" style="gap: 16px;">
+      <div class="filter-field-group">
+        <label class="small text-muted mb-1">{{ filter.form.mode.label }}</label>
+        {{ filter.form.mode }}
+      </div>
+      <div class="filter-field-group">
+        <label class="small text-muted mb-1">{{ filter.form.difficulty.label }}</label>
+        {{ filter.form.difficulty }}
+      </div>
+      <div class="filter-field-group" style="flex: 1 1 200px;">
+        <label class="small text-muted mb-1">{{ filter.form.company_name.label }}</label>
+        {{ filter.form.company_name }}
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm">Apply Filters</button>
+    </div>
 
-</div>
+    <a class="more-filters-toggle mt-3 d-inline-block" href="#moreFilters" data-toggle="collapse"
+       role="button" aria-expanded="false" aria-controls="moreFilters">
+      More filters <span class="caret">&#9662;</span>
+    </a>
+
+    <div class="collapse mt-3" id="moreFilters">
+      <div class="d-flex flex-wrap align-items-end" style="gap: 16px;">
+        <div class="filter-field-group">
+          <label class="small text-muted mb-1">{{ filter.form.status.label }}</label>
+          {{ filter.form.status }}
+        </div>
+        <div class="filter-field-group">
+          <label class="small text-muted mb-1">{{ filter.form.lost_reason.label }}</label>
+          {{ filter.form.lost_reason }}
+        </div>
+        <div class="filter-field-group">
+          <label class="small text-muted mb-1">{{ filter.form.equipment_bought.label }}</label>
+          {{ filter.form.equipment_bought }}
+        </div>
+        <div class="filter-field-group">
+          <label class="small text-muted mb-1">{{ filter.form.Min_Turn_Number.label }}</label>
+          {{ filter.form.Min_Turn_Number }}
+        </div>
+        <div class="filter-field-group">
+          <label class="small text-muted mb-1">{{ filter.form.Min_Factory_Space.label }}</label>
+          {{ filter.form.Min_Factory_Space }}
+        </div>
+      </div>
+    </div>
+  </form>
+</div
 
 <div>
   {% for player in filter.qs %}

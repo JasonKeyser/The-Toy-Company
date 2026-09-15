@@ -142,7 +142,10 @@
           {% if player.status == "lost" %} &middot; {{ player.lost_reason }}{% endif %}
         </div>
         <a href="{% url 'financial-history' player.pk %}" class="btn btn-outline-primary btn-sm">
-          See more detail &rarr;
+          See Financial History &rarr;
+        </a>
+        <a href="{% url 'gross-profit-analysis' player.pk %}" class="btn btn-outline-primary btn-sm">
+          See Gross Profit Analysis &rarr;
         </a>
       </div>
     </div>

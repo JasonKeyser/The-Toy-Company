@@ -621,10 +621,9 @@ def game_history(request):
 
 
 @login_required
-def gross_profit_analysis(request):
-    game = Game.objects.last()
-    player = game.player
+def gross_profit_analysis(request, player):
     turns = Turn.objects.filter(player=player).order_by("turn_number")
+    game = Game.objects.filter(player=player).last()
     toys = game.toy_basket.toys.filter(enabled=True)
 
 
@@ -670,8 +669,6 @@ def gross_profit_analysis(request):
 
 @login_required
 def financial_history(request, player):
-    # game = Game.objects.last()
-    # player = game.player
     turns = Turn.objects.filter(player=player)
     turn = turns.order_by("-turn_number").first()
     production_outcomes = ToyProductionOutcome.objects.filter(turn=turn)

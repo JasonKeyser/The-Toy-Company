@@ -27,6 +27,6 @@ urlpatterns = [
     path('financial_summary_card/<int:pk>/', views.financial_summary_card, name='financial-summary-card'),
     path('interest-rate-distribution/', views.interest_rate_distribution_view, name='interest_rate_distribution'),
     path('new_product_success_distribution/', views.rnd_new_product_success_distribution_view, name='new-product-success-distribution'),
-    path('gross_profit_analysis/', views.gross_profit_analysis, name='gross-profit-analysis'),
+    path('gross_profit_analysis/<str:player>/', views.gross_profit_analysis, name='gross-profit-analysis'),
     path('game/history/', views.game_history, name='game-history'),
 ]

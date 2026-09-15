@@ -44,9 +44,6 @@ class PlayerFilter(django_filters.FilterSet):
 
 
 
-
-
-
         for field in self.form.fields.values():
             existing = field.widget.attrs.get('class', '')
             field.widget.attrs['class'] = (existing + ' form-control form-control-sm').strip()

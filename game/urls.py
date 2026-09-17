@@ -29,4 +29,5 @@ urlpatterns = [
     path('new_product_success_distribution/', views.rnd_new_product_success_distribution_view, name='new-product-success-distribution'),
     path('gross_profit_analysis/<str:player>/', views.gross_profit_analysis, name='gross-profit-analysis'),
     path('game/history/', views.game_history, name='game-history'),
+    path('game/leaderboard/', views.game_leaderboard, name='game-leaderboard'),
 ]

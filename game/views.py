@@ -21,7 +21,7 @@ from .forms import UnitsManufacturedForm, BaseUnitsFormSet, FactoryExpansionForm
 from django.forms import formset_factory
 import json
 from .icons import get_toy_color, get_toy_icon
-from .filters import PlayerFilter
+from .filters import PlayerFilter, LeaderboardFilter
 
 class PostListView(ListView):
     model = Post
@@ -618,6 +618,17 @@ def game_history(request):
 
 
     return render(request, "game/game_history.html", context=context)
+
+
+def game_leaderboard(request):
+    user = request.user
+    players = Player.objects.filter(mode="challenge").exclude(status="still_playing").order_by("-created_date")
+    f = LeaderboardFilter(request.GET, queryset=players)
+
+    context = {"user": user,
+               "filter": f,}
+
+    return render(request, "game/game_leaderboard.html", context=context)
 
 
 @login_required

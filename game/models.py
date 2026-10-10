@@ -114,10 +114,10 @@ class ChallengeRun(models.Model):
     difficulty = models.ForeignKey(Difficulty, on_delete=models.PROTECT)
     company_name = models.CharField(max_length=100, default="None")
 
-    lives_total = models.IntegerField(default=3)
-    lives_remaining = models.IntegerField(default=3)
+    lives_total = models.IntegerField(default=1)
+    lives_remaining = models.IntegerField(default=1)
 
-    time_limit_seconds = models.IntegerField(default=105 * 60)  # 1h45m
+    time_limit_seconds = models.IntegerField(default=60 * 60)
     started_at = models.DateTimeField(auto_now_add=True)
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="in_progress")

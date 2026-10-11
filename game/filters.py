@@ -52,6 +52,9 @@ class PlayerFilter(django_filters.FilterSet):
 
 class LeaderboardFilter(django_filters.FilterSet):
 
+    # user_name = django_filters.CharFilter(field_name='user__name', label='User Name', lookup_expr='icontains')
+
+
     company_name = django_filters.ChoiceFilter(
         choices=[],  # populated per-user below
         empty_label="All Factories",
@@ -68,7 +71,7 @@ class LeaderboardFilter(django_filters.FilterSet):
 
     class Meta:
         model = Player
-        fields = ['status', 'lost_reason', 'company_name', 'equipment_bought']
+        fields = ['user','status', 'lost_reason', 'company_name', 'equipment_bought']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

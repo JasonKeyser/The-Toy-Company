@@ -51,17 +51,9 @@
 <div class="filter-toolbar">
   <form method="get">
     <div class="d-flex flex-wrap align-items-end" style="gap: 16px;">
-      <div class="filter-field-group">
-        <label class="small text-muted mb-1">{{ filter.form.mode.label }}</label>
-        {{ filter.form.mode }}
-      </div>
-      <div class="filter-field-group">
-        <label class="small text-muted mb-1">{{ filter.form.difficulty.label }}</label>
-        {{ filter.form.difficulty }}
-      </div>
       <div class="filter-field-group" style="flex: 1 1 200px;">
-        <label class="small text-muted mb-1">{{ filter.form.company_name.label }}</label>
-        {{ filter.form.company_name }}
+        <label class="small text-muted mb-1">{{ filter.form.user.label }}</label>
+        {{ filter.form.user }}
       </div>
       <button type="submit" class="btn btn-primary btn-sm">Apply Filters</button>
     </div>
@@ -93,12 +85,17 @@
           <label class="small text-muted mb-1">{{ filter.form.Min_Factory_Space.label }}</label>
           {{ filter.form.Min_Factory_Space }}
         </div>
+        <div class="filter-field-group">
+          <label class="small text-muted mb-1">{{ filter.form.company_name.label }}</label>
+          {{ filter.form.company_name }}
+        </div>
       </div>
     </div>
   </form>
 </div
 
 <div>
+
   {% for player in filter.qs %}
     <div class="card mb-3">
       <div class="card-body">
@@ -113,7 +110,7 @@
           {% endif %}
         </div>
         <div class="text-muted small mb-2">
-          {{ player.created_date|date:"M j, Y" }} &middot; {{ player.get_mode_display }} &middot; {{ player.difficulty }} &middot; Turn {{ player.turn_number }}
+          {{ player.created_date|date:"M j, Y" }} &middot; {{ player.user }} &middot; {{ player.get_mode_display }} &middot; {{ player.difficulty }} &middot; Turn {{ player.turn_number }}
           {% if player.status == "lost" %} &middot; {{ player.lost_reason }}{% endif %}
         </div>
         <a href="{% url 'financial-history' player.pk %}" class="btn btn-outline-primary btn-sm">

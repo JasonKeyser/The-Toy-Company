@@ -19,7 +19,7 @@ class PlayerFilter(django_filters.FilterSet):
 
     class Meta:
         model = Player
-        fields = ['status', 'lost_reason', 'company_name', 'mode', 'difficulty', 'equipment_bought']
+        fields = ['status', 'lost_reason', 'company_name', 'difficulty', 'equipment_bought']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

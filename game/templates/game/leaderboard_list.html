@@ -52,8 +52,8 @@
   <form method="get">
     <div class="d-flex flex-wrap align-items-end" style="gap: 16px;">
       <div class="filter-field-group" style="flex: 1 1 200px;">
-        <label class="small text-muted mb-1">{{ filter.form.user.label }}</label>
-        {{ filter.form.user }}
+        <label class="small text-muted mb-1">{{ game_filter.form.user.label }}</label>
+        {{ game_filter.form.user }}
       </div>
       <button type="submit" class="btn btn-primary btn-sm">Apply Filters</button>
     </div>
@@ -66,37 +66,39 @@
     <div class="collapse mt-3" id="moreFilters">
       <div class="d-flex flex-wrap align-items-end" style="gap: 16px;">
         <div class="filter-field-group">
-          <label class="small text-muted mb-1">{{ filter.form.status.label }}</label>
-          {{ filter.form.status }}
+          <label class="small text-muted mb-1">{{ game_filter.form.status.label }}</label>
+          {{ game_filter.form.status }}
         </div>
         <div class="filter-field-group">
-          <label class="small text-muted mb-1">{{ filter.form.lost_reason.label }}</label>
-          {{ filter.form.lost_reason }}
+          <label class="small text-muted mb-1">{{ game_filter.form.lost_reason.label }}</label>
+          {{ game_filter.form.lost_reason }}
         </div>
         <div class="filter-field-group">
-          <label class="small text-muted mb-1">{{ filter.form.equipment_bought.label }}</label>
-          {{ filter.form.equipment_bought }}
+          <label class="small text-muted mb-1">{{ game_filter.form.equipment_bought.label }}</label>
+          {{ game_filter.form.equipment_bought }}
         </div>
         <div class="filter-field-group">
-          <label class="small text-muted mb-1">{{ filter.form.Min_Turn_Number.label }}</label>
-          {{ filter.form.Min_Turn_Number }}
+          <label class="small text-muted mb-1">{{ game_filter.form.Min_Turn_Number.label }}</label>
+          {{ game_filter.form.Min_Turn_Number }}
         </div>
         <div class="filter-field-group">
-          <label class="small text-muted mb-1">{{ filter.form.Min_Factory_Space.label }}</label>
-          {{ filter.form.Min_Factory_Space }}
+          <label class="small text-muted mb-1">{{ game_filter.form.Min_Factory_Space.label }}</label>
+          {{ game_filter.form.Min_Factory_Space }}
         </div>
         <div class="filter-field-group">
-          <label class="small text-muted mb-1">{{ filter.form.company_name.label }}</label>
-          {{ filter.form.company_name }}
+          <label class="small text-muted mb-1">{{ game_filter.form.company_name.label }}</label>
+          {{ game_filter.form.company_name }}
         </div>
       </div>
     </div>
   </form>
-</div
+</div>
 
 <div>
 
-  {% for player in filter.qs %}
+  <h5 class="card-title mb-1">Recent Challenge Games Globally</h5>
+
+  {% for player in game_filter.qs %}
     <div class="card mb-3">
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-start">

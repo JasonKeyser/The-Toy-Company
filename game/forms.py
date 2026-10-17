@@ -161,3 +161,20 @@ class BaseUnitsFormSet(forms.BaseFormSet):
                 f"Total production {total_units} exceeds your "
                 f"factory space {self.factory_space}!"
             )
+
+
+class TimeframeForm(forms.Form):
+    TIMEFRAME_CHOICES = [
+        ('30', '30'),
+        ('60', '60'),
+        ('90', '90'),
+        ('10000', 'All Time'),
+    ]
+
+    # We use a ChoiceField rendered as a Select dropdown menu
+    days = forms.ChoiceField(
+        choices=TIMEFRAME_CHOICES,
+        initial='30',
+        required=False,
+        widget=forms.Select(attrs={'onchange': 'this.form.submit();', 'class': 'form-select border-0 border-bottom border-primary text-primary p-0 d-inline fw-bold'})
+    )

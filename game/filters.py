@@ -1,5 +1,8 @@
+from email.policy import default
+
 import django_filters
 from .models import Player
+from datetime import datetime, timezone, timedelta
 
 class PlayerFilter(django_filters.FilterSet):
 
@@ -52,9 +55,6 @@ class PlayerFilter(django_filters.FilterSet):
 
 class LeaderboardFilter(django_filters.FilterSet):
 
-    # user_name = django_filters.CharFilter(field_name='user__name', label='User Name', lookup_expr='icontains')
-
-
     company_name = django_filters.ChoiceFilter(
         choices=[],  # populated per-user below
         empty_label="All Factories",
@@ -99,3 +99,13 @@ class LeaderboardFilter(django_filters.FilterSet):
         for field in self.form.fields.values():
             existing = field.widget.attrs.get('class', '')
             field.widget.attrs['class'] = (existing + ' form-control form-control-sm').strip()
+
+
+class TopPlayerFilter(django_filters.FilterSet):
+
+    days_since = 1
+    games_played_since = django_filters.DateFilter(field_name='created_date', lookup_expr='gte', initial=datetime.now(timezone.utc) - timedelta(days=days_since) )
+
+    class Meta:
+        model = Player
+        fields = ['games_played_since']

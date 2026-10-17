@@ -1,3 +1,5 @@
+import django_filters
+from django.db.models import Count, Q
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.models import User
 from .models import Post, Toy, Player, Turn, ToyProductionOutcome, Difficulty, Game, AdvertisingProfile, \
@@ -17,11 +19,13 @@ class PostListView(ListView):
 
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from .forms import UnitsManufacturedForm, BaseUnitsFormSet, FactoryExpansionForm, AdvertisementCampaignForm, \
-    InsuranceCoverageTakenForm, BaseCoverageFormSet, EquipmentForm, LoanForm, RnDSpendForm
+    InsuranceCoverageTakenForm, BaseCoverageFormSet, EquipmentForm, LoanForm, RnDSpendForm, TimeframeForm
 from django.forms import formset_factory
 import json
 from .icons import get_toy_color, get_toy_icon
-from .filters import PlayerFilter, LeaderboardFilter
+from .filters import PlayerFilter, LeaderboardFilter, TopPlayerFilter
+from datetime import datetime, timezone, timedelta
+
 
 class PostListView(ListView):
     model = Post
@@ -623,10 +627,26 @@ def game_history(request):
 def game_leaderboard(request):
     user = request.user
     players = Player.objects.filter(mode="challenge").exclude(status="still_playing").order_by("-created_date")
-    f = LeaderboardFilter(request.GET, queryset=players)
+    f = LeaderboardFilter(request.GET.copy(), queryset=players, prefix="leaderboard")
+
+    timeframe_form = TimeframeForm(request.GET or None)
+
+    # Fallback to default initial value if form is not bound or invalid
+    selected_days = '30'
+    if timeframe_form.is_valid() and timeframe_form.cleaned_data.get('days'):
+        selected_days = timeframe_form.cleaned_data['days']
+
+    users = User.objects.filter(is_active=True).annotate( total_wins = Count( 'player', filter=Q(player__status="won") & Q(player__mode="Challenge") &  Q(player__created_date__gte=datetime.now(timezone.utc) - timedelta( days= int(selected_days) ) ) ) ).order_by("-total_wins")
+    users = users.filter( total_wins__gt=0 )
+
+
 
     context = {"user": user,
-               "filter": f,}
+               "game_filter": f,
+               "users": users,
+               'selected_days': selected_days,
+               'timeframe_form': timeframe_form
+               }
 
     return render(request, "game/game_leaderboard.html", context=context)
 

@@ -61,7 +61,7 @@
         {% if player.mode == "challenge" and run.status == "lost_timeout" %}
           {{ player.company_name }} ran out of time.
         {% elif player.mode == "challenge" %}
-          {{ player.company_name }} ({{ player.lost_reason }}).
+          {{ player.company_name }} {{ player.lost_reason }}.
         {% else %}
           {{ player.company_name }} {{ player.lost_reason }}
         {% endif %}

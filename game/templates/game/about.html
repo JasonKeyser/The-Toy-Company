@@ -151,14 +151,16 @@
 document.addEventListener('DOMContentLoaded', function () {
   var facts = [
     { fx: '=CONCAT(credentials)', out: 'CFA Charterholder, FINRA Series 79, FINRA Series 63, BS Finance' },
-    { fx: '=CONCAT(industries)', out: 'Maritime shipping + construction + data centers + insurance' },
+    { fx: '=CONCAT(industry experience)', out: 'Maritime shipping + construction + data centers + insurance' },
     { fx: '=IF( AND(game="fun", game="insightful"), TRUE, FALSE)', out: "TRUE &mdash; You won't be able to pull yourself away." },
     { fx: '=CURRENT_ROLE()', out: 'FP&amp;A Manager, Bishop Street Underwriters' },
     { fx: '=EDUCATION()', out: 'Pamplin School of Business' },
     { fx: '=COUNT(GameModes)', out: '3 - Easy, Medium, and Challenge Mode' },
     { fx: '=XLOOKUP(Interests, Activities)', out: 'Tennis, Golf, Traveling, Language Learning' },
+    { fx: '=INDEX( IT - Skills, MATCH( proficiency ), MATCH( relevancy ) )', out: 'Excel, Excel-VBA, Python, Power-BI, Claude-Code' },
+    { fx: '=find( Location )', out: 'Richmond, VA' },
   ];
-  var refs = ['C7', 'D12', 'F3', 'B19', 'E5', 'X200', 'AA4'];
+  var refs = ['C7', 'D12', 'F3', 'B19', 'E5', 'X200', 'AA4', 'KB2', 'J4'];
   var i = 0;
   var btn = document.getElementById('fx-recalc');
   var label = document.getElementById('fx-label');

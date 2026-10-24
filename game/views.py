@@ -636,7 +636,7 @@ def game_leaderboard(request):
     if timeframe_form.is_valid() and timeframe_form.cleaned_data.get('days'):
         selected_days = timeframe_form.cleaned_data['days']
 
-    users = User.objects.filter(is_active=True).annotate( total_wins = Count( 'player', filter=Q(player__status="won") & Q(player__mode="Challenge") &  Q(player__created_date__gte=datetime.now(timezone.utc) - timedelta( days= int(selected_days) ) ) ) ).order_by("-total_wins")
+    users = User.objects.filter(is_active=True).annotate( total_wins = Count( 'player', filter=Q(player__status="won") & Q(player__mode="challenge") &  Q(player__created_date__gte=datetime.now(timezone.utc) - timedelta( days= int(selected_days) ) ) ) ).order_by("-total_wins")
     users = users.filter( total_wins__gt=0 )
 
 

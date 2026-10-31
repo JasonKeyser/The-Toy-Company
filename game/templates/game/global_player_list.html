@@ -1,0 +1,75 @@
+{% load accounting_tags %}
+
+
+<style>
+    /* Lines everything up horizontally and aligns items to the bottom so the button matches the dropdowns */
+    .horizontal-filter-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: flex-end;
+        margin-bottom: 24px;
+    }
+
+    /* Stacks the label neatly on top of its specific dropdown */
+    .filter-field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .filter-toolbar {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 24px;
+  }
+  .filter-toolbar .form-control-sm {
+    border-radius: 6px;
+    border-color: #dee2e6;
+  }
+  .filter-toolbar .form-control-sm:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.15rem rgba(0,123,255,.15);
+  }
+  .filter-field-group { display: flex; flex-direction: column; gap: 4px; }
+  .more-filters-toggle {
+    font-size: 12.5px;
+    color: #6c757d;
+    text-decoration: none;
+  }
+  .more-filters-toggle:hover { color: #495057; }
+  .more-filters-toggle .caret { transition: transform 0.15s ease; display: inline-block; }
+  .more-filters-toggle[aria-expanded="true"] .caret { transform: rotate(180deg); }
+
+
+
+</style>
+
+
+<div>
+  <h5 class="card-title mb-1">Top Global Players</h5>
+  <form method="GET" action="">
+    <h7 style="display: inline-flex; align-items: center; gap: 8px;">
+        Last
+        {{ timeframe_form.days }}
+        days
+    </h7>
+
+    <!-- If you have other filters on the page, include a fallback submit button -->
+    <noscript><button type="submit">Submit</button></noscript>
+</form>
+
+
+  {% for usr in users %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <h5 class="card-title mb-1">#{{ forloop.counter }} {{ usr }} Total Wins: {{ usr.total_wins }}</h5>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+
+</div>

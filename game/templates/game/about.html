@@ -1,7 +1,178 @@
 {% extends "game/base.html" %}
-
+{% load static %}
+{% load accounting_tags %}
 {% block content %}
 
-    <h1>About Page</h1>
+<style>
+  /* About page — "the ledger": a light greenbar treatment layered on top of the
+     site's existing look (same grays, same Bootstrap blue) rather than a separate
+     visual language. Stripe + cell references are the only new idiom. */
+  .ledger-stripe { background: #eef3ee; }
+  .ledger-ref {
+    font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+    font-size: 11px; color: #8a978d; padding-top: 2px; user-select: none;
+  }
+  .ledger-row {
+    display: grid; grid-template-columns: 30px 1fr; gap: 12px;
+    padding: 14px 10px; border-bottom: 1px solid #dddddd; position: relative;
+  }
+  .ledger-row:hover { outline: 2px solid #007bff; outline-offset: -2px; }
+  .ledger-row .ledger-range {
+    position: absolute; right: 10px; top: 12px;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 10px; color: #6c757d; opacity: 0; transition: opacity .15s ease;
+    background: #ffffff; border: 1px solid #007bff; border-radius: 3px; padding: 1px 5px;
+  }
+  .ledger-row:hover .ledger-range { opacity: 1; }
+  .ledger-row h2 {
+    font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    color: #4a7a5a; margin-bottom: 8px;
+  }
+  .ledger-row p { margin: 0 0 10px; max-width: 120ch; }
+  .ledger-row p:last-child { margin-bottom: 0; }
+
+  .fx-bar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: #ffffff; border: 1px solid #dddddd; border-radius: 4px;
+    padding: 8px 12px; margin-bottom: 24px;
+  }
+  .fx-bar .fx-ref {
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 12px; font-weight: 700; color: #4a7a5a;
+    border: 1px solid #dddddd; border-radius: 4px; padding: 2px 7px;
+    min-width: 44px; text-align: center; background: #fafafa;
+  }
+  .fx-bar .fx-label {
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-style: italic; color: #6c757d; font-size: 13px;
+  }
+  .fx-bar .fx-recalc { margin-left: auto; }
+  #fx-result {
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 13.5px; margin-bottom: 22px; min-height: 1.4em;
+  }
+  #fx-result .fx-k { color: #6c757d; }
+  #fx-result .fx-v { font-weight: 700; color: #4a7a5a; }
+
+  .about-photo {
+    width: 250px; height: 300px; object-fit: cover; display: block;
+    border: 3px solid #ffffff; outline: 1px dashed #007bff; outline-offset: 4px;
+  }
+  .about-photo-wrap { position: relative; flex: 0 0 auto; }
+  .about-photo-tag {
+    position: absolute; left: -4px; bottom: -10px;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 9.5px; font-weight: 700; background: #007bff; color: #fff;
+    padding: 2px 5px; border-radius: 3px; letter-spacing: .03em;
+  }
+
+  .credential-list .badge { font-weight: 500; font-size: 11.5px; margin: 2px 6px 2px 0; }
+</style>
+
+
+
+<div class="d-flex align-items-end flex-wrap mb-4 pb-3" style="gap: 20px; border-bottom: 2px solid #4a7a5a;">
+  <div class="about-photo-wrap">
+    <img src="{% static 'myappname/jason-keyser.jpg' %}" alt="Jason Keyser" class="about-photo">
+    <span class="about-photo-tag">B2</span>
+  </div>
+  <div>
+    <h1 class="mb-0">Jason Keyser {% icon 'toy_company' %}</h1>
+    <div class="text-muted" style="font-size: 14px;">Creator, Bizness Savvy Games &middot; FP&amp;A Manager, Bishop Street Underwriters</div>
+    <div class="mt-2" style="font-size: 13px;">
+      <a href="https://www.linkedin.com/in/jason-keyser/" target="_blank" rel="noopener">LinkedIn</a>
+      <span class="text-muted mx-1">&middot;</span>
+      <a href="https://github.com/JasonKeyser" target="_blank" rel="noopener">GitHub</a>
+    </div>
+
+    <div class="fx-bar">
+      <span class="fx-ref" id="fx-ref">C7</span>
+      <span class="fx-label" id="fx-label">=INFO(creator)</span>
+      <button class="btn btn-outline-secondary btn-sm fx-recalc" type="button" id="fx-recalc">Recalculate</button>
+      </div>
+    <div id="fx-result"><span class="fx-k">&gt; </span><span class="fx-v">Click Recalculate to pull a fact.</span></div>
+
+
+
+  </div>
+</div>
+
+<div class="ledger-row">
+  <div class="ledger-ref">B3</div>
+  <div>
+    <span class="ledger-range">B3:AN3</span>
+    <h2>About the Creator</h2>
+    <p>Jason Keyser holds a BS in Finance from Virginia Tech. He has prior experience in corporate finance in the maritime shipping and data center industries, as well as experience in investment banking, where he served as a sell-side advisor on M&amp;A transactions in the lower middle market. He currently works for Bishop Street Underwriters, a private-equity-backed insurance MGA (Managing General Agent) platform, as an FP&amp;A Manager.</p>
+    <div class="credential-list">
+      <span class="badge badge-light border">CFA Charterholder</span>
+      <span class="badge badge-light border">FINRA Series 79</span>
+      <span class="badge badge-light border">FINRA Series 63</span>
+      <span class="badge badge-light border">BS, Finance &mdash; Virginia Tech</span>
+    </div>
+  </div>
+</div>
+
+<div class="ledger-row ledger-stripe">
+  <div class="ledger-ref">B4</div>
+  <div>
+    <span class="ledger-range">B4:Z4</span>
+    <p>He has extensive experience with financial modeling, financial statement analysis, business valuation, FP&amp;A, programming and data science for financial applications. He is passionate about driving intelligent business decisions through practical financial frameworks and technology enablement. He created Bizness Savvy Games as an interactive learning tool to illustrate the importance of practical financial analysis on strategic business decision making.</p>
+  </div>
+</div>
+
+<div class="ledger-row">
+  <div class="ledger-ref">J5</div>
+  <div>
+    <span class="ledger-range">J5:BX5</span>
+    <h2>About Bizness Savvy Games</h2>
+    <p>Bizness Savvy Games simulations are designed to go beyond the formulas and textbook definitions to build real intuition behind strategic business decision-making and how business performance links to the financial statements.</p>
+  </div>
+</div>
+
+<div class="ledger-row ledger-stripe">
+  <div class="ledger-ref">J6</div>
+  <div>
+    <span class="ledger-range">J6:Y6</span>
+    <p>The simulations challenge the player to make decisions about how to allocate scarce capital among various opportunities in the face of uncertain business conditions &ndash; in short, the player learns to see the world as a real business manager does. The value of understanding the financial conclusions to be drawn from each data set becomes evident, as well as the nuances which may be lost in a business textbook or a test. These simulations reveal the interconnectedness between these analyses and the unpredictability of external factors, which can lead to a myriad of outcomes from the same decision.</p>
+  </div>
+</div>
+
+<div class="ledger-row">
+  <div class="ledger-ref">J7</div>
+  <div>
+    <span class="ledger-range">J7:XFD7</span>
+    <p>Bizness Savvy Games is a memorable classroom exercise for undergrad or MBA courses, a unique interviewing tool that can separate candidates with real business intuition from those who rely on rote memorization, or simply an enjoyable way for academics and professionals to sharpen their business acumen.</p>
+  </div>
+</div>
+
+<p class="text-muted text-center mt-4" style="font-size: 11.5px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace;">Sheet1 &middot; Bizness Savvy Games</p>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var facts = [
+    { fx: '=CONCAT(credentials)', out: 'CFA Charterholder, FINRA Series 79, FINRA Series 63, BS Finance' },
+    { fx: '=CONCAT(industry experience)', out: 'Maritime shipping + construction + data centers + insurance' },
+    { fx: '=IF( AND(game="fun", game="insightful"), TRUE, FALSE)', out: "TRUE &mdash; You won't be able to pull yourself away." },
+    { fx: '=CURRENT_ROLE()', out: 'FP&amp;A Manager, Bishop Street Underwriters' },
+    { fx: '=EDUCATION()', out: 'Pamplin School of Business' },
+    { fx: '=COUNT(GameModes)', out: '3 - Easy, Medium, and Challenge Mode' },
+    { fx: '=XLOOKUP(Interests, Activities)', out: 'Tennis, Golf, Traveling, Language Learning' },
+    { fx: '=INDEX( IT - Skills, MATCH( proficiency ), MATCH( relevancy ) )', out: 'Excel, Excel-VBA, Python, Power-BI, Claude-Code' },
+    { fx: '=find( Location )', out: 'Richmond, VA' },
+  ];
+  var refs = ['C7', 'D12', 'F3', 'B19', 'E5', 'X200', 'AA4', 'KB2', 'J4'];
+  var i = 0;
+  var btn = document.getElementById('fx-recalc');
+  var label = document.getElementById('fx-label');
+  var ref = document.getElementById('fx-ref');
+  var result = document.getElementById('fx-result');
+  btn.addEventListener('click', function () {
+    i = (i + 1) % facts.length;
+    label.textContent = facts[i].fx;
+    ref.textContent = refs[i];
+    result.innerHTML = '<span class="fx-k">&gt; </span><span class="fx-v">' + facts[i].out + '</span>';
+  });
+});
+</script>
 
 {% endblock content %}

@@ -1,0 +1,129 @@
+{% load accounting_tags %}
+
+
+<style>
+    /* Lines everything up horizontally and aligns items to the bottom so the button matches the dropdowns */
+    .horizontal-filter-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: flex-end;
+        margin-bottom: 24px;
+    }
+
+    /* Stacks the label neatly on top of its specific dropdown */
+    .filter-field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .filter-toolbar {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 24px;
+  }
+  .filter-toolbar .form-control-sm {
+    border-radius: 6px;
+    border-color: #dee2e6;
+  }
+  .filter-toolbar .form-control-sm:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.15rem rgba(0,123,255,.15);
+  }
+  .filter-field-group { display: flex; flex-direction: column; gap: 4px; }
+  .more-filters-toggle {
+    font-size: 12.5px;
+    color: #6c757d;
+    text-decoration: none;
+  }
+  .more-filters-toggle:hover { color: #495057; }
+  .more-filters-toggle .caret { transition: transform 0.15s ease; display: inline-block; }
+  .more-filters-toggle[aria-expanded="true"] .caret { transform: rotate(180deg); }
+
+
+
+</style>
+
+
+<div class="filter-toolbar">
+  <form method="get">
+    <div class="d-flex flex-wrap align-items-end" style="gap: 16px;">
+      <div class="filter-field-group" style="flex: 1 1 200px;">
+        <label class="small text-muted mb-1">{{ game_filter.form.user.label }}</label>
+        {{ game_filter.form.user }}
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm">Apply Filters</button>
+    </div>
+
+    <a class="more-filters-toggle mt-3 d-inline-block" href="#moreFilters" data-toggle="collapse"
+       role="button" aria-expanded="false" aria-controls="moreFilters">
+      More filters <span class="caret">&#9662;</span>
+    </a>
+
+    <div class="collapse mt-3" id="moreFilters">
+      <div class="d-flex flex-wrap align-items-end" style="gap: 16px;">
+        <div class="filter-field-group">
+          <label class="small text-muted mb-1">{{ game_filter.form.status.label }}</label>
+          {{ game_filter.form.status }}
+        </div>
+        <div class="filter-field-group">
+          <label class="small text-muted mb-1">{{ game_filter.form.lost_reason.label }}</label>
+          {{ game_filter.form.lost_reason }}
+        </div>
+        <div class="filter-field-group">
+          <label class="small text-muted mb-1">{{ game_filter.form.equipment_bought.label }}</label>
+          {{ game_filter.form.equipment_bought }}
+        </div>
+        <div class="filter-field-group">
+          <label class="small text-muted mb-1">{{ game_filter.form.Min_Turn_Number.label }}</label>
+          {{ game_filter.form.Min_Turn_Number }}
+        </div>
+        <div class="filter-field-group">
+          <label class="small text-muted mb-1">{{ game_filter.form.Min_Factory_Space.label }}</label>
+          {{ game_filter.form.Min_Factory_Space }}
+        </div>
+        <div class="filter-field-group">
+          <label class="small text-muted mb-1">{{ game_filter.form.company_name.label }}</label>
+          {{ game_filter.form.company_name }}
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div>
+
+  <h5 class="card-title mb-1">Recent Challenge Games Globally</h5>
+
+  {% for player in game_filter.qs %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <h5 class="card-title mb-1">{{ player.company_name }}</h5>
+          {% if player.status == "won" %}
+            <span class="badge badge-success">{% icon 'celebration' %} Won</span>
+          {% elif player.status == "lost" %}
+            <span class="badge badge-danger">Lost</span>
+          {% else %}
+            <span class="badge badge-warning">In Progress</span>
+          {% endif %}
+        </div>
+        <div class="text-muted small mb-2">
+          {{ player.created_date|date:"M j, Y" }} &middot; {{ player.user }} &middot; {{ player.get_mode_display }} &middot; {{ player.difficulty }} &middot; Turn {{ player.turn_number }}
+          {% if player.status == "lost" %} &middot; {{ player.lost_reason }}{% endif %}
+        </div>
+        <a href="{% url 'financial-history' player.pk %}" class="btn btn-outline-primary btn-sm">
+          See Financial History &rarr;
+        </a>
+        <a href="{% url 'gross-profit-analysis' player.pk %}" class="btn btn-outline-primary btn-sm">
+          See Gross Profit Analysis &rarr;
+        </a>
+      </div>
+    </div>
+
+  {% endfor %}
+
+</div>

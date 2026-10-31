@@ -41,13 +41,32 @@
 </div>
 
 <!-- Next Turn Button -->
-<div>
-  <br>
-<a class="btn btn-outline-secondary btn-sm" href="{% url 'turn-summary' %}">Back to Turn Summary</a>
-</div>
 
-<a href="{% url 'game-production' %}" class="btn btn-primary mt-3">
-  Start Next Turn
-</a>
+{% if turn.player.status == "still_playing" %}
+  <div>
+    <br>
+  <a class="btn btn-outline-secondary btn-sm" href="{% url 'turn-summary' %}">Back to Turn Summary</a>
+  </div>
+
+  <a href="{% url 'game-production' %}" class="btn btn-primary mt-3">
+    Start Next Turn
+  </a>
+
+{% elif turn.player.user == request.user  %}
+
+  <a href="{% url 'game-history' %}" class="btn btn-primary mt-3">
+    Back to Stats
+  </a>
+
+
+{% else %}
+
+  <a href="{% url 'game-leaderboard' %}" class="btn btn-primary mt-3">
+    Back to Leaderboard
+  </a>
+
+
+{% endif %}
+
 
 {% endblock content %}

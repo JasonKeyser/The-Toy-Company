@@ -679,28 +679,16 @@
       </div>
     </div>
 
-    <!-- Right: Challenge widget only -->
-    {% if player.mode == "challenge" %}
     <div class="challenge-widget">
       <div class="challenge-widget-stat">
-        <span class="challenge-widget-label">Lives</span>
-        <span class="lives-hearts" title="{{ player.challenge_run.lives_remaining }} of {{ player.challenge_run.lives_total }} lives left">
-          {% for i in "123" %}
-            {% if forloop.counter <= player.challenge_run.lives_remaining %}
-              <span class="heart-full">&#9829;</span>
-            {% else %}
-              <span class="heart-empty">&#9825;</span>
-            {% endif %}
-          {% endfor %}
-        </span>
-      </div>
-      <div class="challenge-widget-divider"></div>
-      <div class="challenge-widget-stat">
+        <span class="challenge-widget-label">Difficulty: {{ player.difficulty.name }}</span>
+        {% if player.mode == "challenge" %}
         <span class="challenge-widget-label">Time Remaining</span>
         <span class="challenge-widget-time" id="challenge-timer">--:--:--</span>
+        {% endif %}
       </div>
     </div>
-    {% endif %}
+
 
   </div>
 
@@ -1099,7 +1087,7 @@
                       <div class="ad-tooltip-wrap">
                         <span class="qmark">?</span>
                         <div class="tooltip-box">
-                          Based on how many of your last 5 turns had non-negative EBITDA. See the Credit Rating table for the full breakdown.
+                          Affects the Max Credit Offer Extended - based on how many of your last 5 turns had non-negative EBITDA. See the Credit Rating table for the full breakdown.
                       </div>
                     </div>
                     </th>

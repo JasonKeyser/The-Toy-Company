@@ -1,3 +1,5 @@
+import django_filters
+from django.db.models import Count, Q
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.models import User
 from .models import Post, Toy, Player, Turn, ToyProductionOutcome, Difficulty, Game, AdvertisingProfile, \
@@ -17,10 +19,13 @@ class PostListView(ListView):
 
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from .forms import UnitsManufacturedForm, BaseUnitsFormSet, FactoryExpansionForm, AdvertisementCampaignForm, \
-    InsuranceCoverageTakenForm, BaseCoverageFormSet, EquipmentForm, LoanForm, RnDSpendForm
+    InsuranceCoverageTakenForm, BaseCoverageFormSet, EquipmentForm, LoanForm, RnDSpendForm, TimeframeForm
 from django.forms import formset_factory
 import json
 from .icons import get_toy_color, get_toy_icon
+from .filters import PlayerFilter, LeaderboardFilter, TopPlayerFilter
+from datetime import datetime, timezone, timedelta
+
 
 class PostListView(ListView):
     model = Post
@@ -85,6 +90,14 @@ def about(request):
         'title' : "About",
     }
     return render(request, 'game/about.html', context)
+
+def get_active_player(user):
+    return (Player.objects
+            .filter(user=user, status="still_playing")
+            .order_by("-id")
+            .first())
+
+
 
 def _start_new_playthrough(user, difficulty_obj, company_name, mode, challenge_run=None):
     player = Player.objects.create(
@@ -162,10 +175,12 @@ CREDIT_RATING_TIERS = {
     5: ("AAA", 200),
 }
 
-
+@login_required
 def game(request):
-    game = Game.objects.last()
-    player = game.player
+    player = get_active_player(request.user)
+    if player is None:
+        return redirect("game-begin")
+    game = Game.objects.filter(player=player).first()
 
     if check_challenge_timeout(player):
         return render(request, "game/game_over.html", {"player": player, "run": player.challenge_run})
@@ -564,7 +579,7 @@ def game(request):
             "error_notifications": error_notifications,
         })
 
-
+@login_required
 def turn_summary(request):
     game = Game.objects.last()
     player = game.player
@@ -587,10 +602,59 @@ def turn_summary(request):
         return render(request, "game/game_over.html", {"player": player, "run": player.challenge_run})
 
 
-def gross_profit_analysis(request):
-    game = Game.objects.last()
-    player = game.player
+def game_history(request):
+    user = request.user
+    players = Player.objects.filter(user=user).exclude(status="still_playing").order_by("-created_date")
+    f = PlayerFilter(request.GET, queryset=players)
+
+    total_games = f.qs.count()
+    total_wins = f.qs.filter(status="won").count()
+    win_percentage = round( total_wins / total_games, 0) if total_games else 0
+
+
+    context = {"user": user,
+               "filter": f,
+               "total_games": total_games,
+               "total_wins": total_wins,
+               "win_percentage": win_percentage,}
+
+
+
+
+    return render(request, "game/game_history.html", context=context)
+
+
+def game_leaderboard(request):
+    user = request.user
+    players = Player.objects.filter(mode="challenge").exclude(status="still_playing").order_by("-created_date")
+    f = LeaderboardFilter(request.GET.copy(), queryset=players, prefix="leaderboard")
+
+    timeframe_form = TimeframeForm(request.GET or None)
+
+    # Fallback to default initial value if form is not bound or invalid
+    selected_days = '30'
+    if timeframe_form.is_valid() and timeframe_form.cleaned_data.get('days'):
+        selected_days = timeframe_form.cleaned_data['days']
+
+    users = User.objects.filter(is_active=True).annotate( total_wins = Count( 'player', filter=Q(player__status="won") & Q(player__mode="challenge") &  Q(player__created_date__gte=datetime.now(timezone.utc) - timedelta( days= int(selected_days) ) ) ) ).order_by("-total_wins")
+    users = users.filter( total_wins__gt=0 )
+
+
+
+    context = {"user": user,
+               "game_filter": f,
+               "users": users,
+               'selected_days': selected_days,
+               'timeframe_form': timeframe_form
+               }
+
+    return render(request, "game/game_leaderboard.html", context=context)
+
+
+@login_required
+def gross_profit_analysis(request, player):
     turns = Turn.objects.filter(player=player).order_by("turn_number")
+    game = Game.objects.filter(player=player).last()
     toys = game.toy_basket.toys.filter(enabled=True)
 
 
@@ -634,10 +698,8 @@ def gross_profit_analysis(request):
 
 
 
-
-def financial_history(request):
-    game = Game.objects.last()
-    player = game.player
+@login_required
+def financial_history(request, player):
     turns = Turn.objects.filter(player=player)
     turn = turns.order_by("-turn_number").first()
     production_outcomes = ToyProductionOutcome.objects.filter(turn=turn)
@@ -650,6 +712,15 @@ def financial_history(request):
         "insurance_events": insurance_events,
     })
 
+@login_required
+def financial_summary_card(request):
+    game = Game.objects.last()
+    player = game.player
+    turns = Turn.objects.filter(player=player)
+
+    return render(request, "game/financial_summary_card.html", {
+        "turns": turns,
+    })
 
 @login_required
 def demand_distribution_view(request):
@@ -751,3 +822,4 @@ def rnd_new_product_success_distribution_view(request):
         "toys": toys,
     }
     return render(request, "game/new_product_success_distribution.html", context)
+

@@ -18,3 +18,5 @@ media/
 .env
 secrets.py
 config_backup.json
+
+staticfiles/

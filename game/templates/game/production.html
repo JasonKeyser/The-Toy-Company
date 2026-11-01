@@ -1450,6 +1450,8 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
     function updateRnDCumCost() {
+    if (!cumulativeRNDDisplay) return;  // R&D table isn't rendered when R&D is disabled (easy mode)
+
     const rndInput = document.querySelector('#id_rnd_spend');
     const rnd_current_spend = parseFloat(rndInput?.value) || 0;
     const total  = rnd_current_spend + historical_rnd_spend;
@@ -1576,7 +1578,7 @@ document.addEventListener('DOMContentLoaded', function () {
   /* ── seed dataset values so cross-calls work on first run ── */
   grandTotalCostDisplay.dataset.value = 0;
   expansionTotalDisplay.dataset.value = 0;
-  cumulativeRNDDisplay.dataset.value = 0;
+  if (cumulativeRNDDisplay) cumulativeRNDDisplay.dataset.value = 0;
   if (adCostDisplay) adCostDisplay.dataset.value = 0;
 
 /* ── persist form inputs across navigation (turn-scoped) ── */

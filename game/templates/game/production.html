@@ -2,6 +2,7 @@
 {% load accounting_tags %}
 {% load index_tags %}
 {% load l10n %}
+{% load static %}
 {% block content %}
 
 <style>
@@ -529,6 +530,29 @@
 
 
 </style>
+
+<!-- ═══════════════ TOY PILE (left gutter) ═══════════════ -->
+<link rel="stylesheet" href="{% static 'myappname/toy-pile.css' %}">
+<aside id="toy-pile" data-capacity="{{ player.factory_space }}" aria-label="Factory space used this turn">
+  <div class="tp-head">
+    <span class="tp-title">🏭 Factory</span>
+    <span class="tp-count">0 <small>/ {{ player.factory_space }}</small></span>
+  </div>
+  <div class="tp-yard">
+    <div class="tp-stacks">
+      <div class="tp-stack tp-stack-1"></div>
+      <div class="tp-stack tp-stack-2"></div>
+      <div class="tp-beacon" title="Over capacity warning"></div>
+    </div>
+    <div class="tp-roof"></div>
+    <div class="tp-building"><canvas></canvas></div>
+  </div>
+  <div class="tp-legend"></div>
+  <div class="tp-per"></div>
+</aside>
+<script src="{% static 'myappname/toy-pile.js' %}"></script>
+
+
 
 <!-- ═══════════════ FLOATING SPEND CARD ═══════════════ -->
 <div id="spend-card">
@@ -1198,7 +1222,7 @@
       </thead>
       <tbody>
         {% for form, toy, adj_cost in form_and_toys %}
-        <tr>
+        <tr data-toy-name="{{ toy.name }}" data-toy-icon="{{ toy.name|toy_icon }}" data-toy-color="{{ toy.name|toy_color }}">
           <td>{{ toy.name }}</td>
           <td>
             {{ form.units_to_manufacture }}
@@ -1436,6 +1460,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const s = getCurrentSpends();
     updateSpendCard(grandTotalCost, s.capex, s.ad, getInsurancePremiumCost());
+    if (window.ToyPile) window.ToyPile.update();
   }
 
   function updateExpansionCost() {

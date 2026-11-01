@@ -462,29 +462,28 @@ def game(request):
 
         toyformset = UnitsFormSet(factory_space=player.factory_space, prefix="toys")
 
+        prior_coverage = {}
+        if last_turn:
+            prior_coverage = {
+                d.insurance_event_id: d.coverage_active
+                for d in last_turn.insurance_decisions.all()
+            }
+
+        coverageformset = CoverageFormSet(
+            prefix="coverage",
+            initial=[
+                {"coverage_taken": "insure" if prior_coverage.get(event.pk) else "assume_risk"}
+                for event in insurance_events
+            ],
+        )
+
+
     # happens no matter what
     last_turn = Turn.objects.filter(player=player).order_by("-turn_number").first()
-
-    prior_coverage = {}
-    if last_turn:
-        prior_coverage = {
-            d.insurance_event_id: d.coverage_active
-            for d in last_turn.insurance_decisions.all()
-        }
-
-    coverageformset = CoverageFormSet(
-        prefix="coverage",
-        initial=[
-            {"coverage_taken": "insure" if prior_coverage.get(event.pk) else "assume_risk"}
-            for event in insurance_events
-        ],
-    )
-
     form_and_events = [
         (form, event)
         for form, event in zip(coverageformset, insurance_events)
     ]
-
     inv_expansion_form = FactoryExpansionForm()
     rnd_form = RnDSpendForm()
     loan_form = LoanForm()

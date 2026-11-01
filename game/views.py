@@ -392,6 +392,7 @@ def game(request):
 
                 total_proposed_spend = cogs + opex + capex
                 if total_proposed_spend > (player.cash + borrowed_amount):
+                    print('right here')
                     toyformset._non_form_errors = toyformset.error_class([
                         f"Insufficent Funds! Total planned expenditure is ${round(total_proposed_spend, 0)}, but you only have ${round(player.cash + borrowed_amount,0)}."
                     ])
@@ -461,33 +462,36 @@ def game(request):
 
         toyformset = UnitsFormSet(factory_space=player.factory_space, prefix="toys")
 
-        prior_coverage = {}
-        if last_turn:
-            prior_coverage = {
-                d.insurance_event_id: d.coverage_active
-                for d in last_turn.insurance_decisions.all()
-            }
-
-        coverageformset = CoverageFormSet(
-            prefix="coverage",
-            initial=[
-                {"coverage_taken": "insure" if prior_coverage.get(event.pk) else "assume_risk"}
-                for event in insurance_events
-            ],
-        )
-
-        form_and_events = [
-            (form, event)
-            for form, event in zip(coverageformset, insurance_events)
-        ]
-
-        inv_expansion_form = FactoryExpansionForm()
-        rnd_form = RnDSpendForm()
-        loan_form = LoanForm()
-        ad_form = AdvertisementCampaignForm(difficulty=player.difficulty)
-        equipment_form = EquipmentForm(equipment_bought=player.equipment_bought)
-
+    # happens no matter what
     last_turn = Turn.objects.filter(player=player).order_by("-turn_number").first()
+
+    prior_coverage = {}
+    if last_turn:
+        prior_coverage = {
+            d.insurance_event_id: d.coverage_active
+            for d in last_turn.insurance_decisions.all()
+        }
+
+    coverageformset = CoverageFormSet(
+        prefix="coverage",
+        initial=[
+            {"coverage_taken": "insure" if prior_coverage.get(event.pk) else "assume_risk"}
+            for event in insurance_events
+        ],
+    )
+
+    form_and_events = [
+        (form, event)
+        for form, event in zip(coverageformset, insurance_events)
+    ]
+
+    inv_expansion_form = FactoryExpansionForm()
+    rnd_form = RnDSpendForm()
+    loan_form = LoanForm()
+    ad_form = AdvertisementCampaignForm(difficulty=player.difficulty)
+    equipment_form = EquipmentForm(equipment_bought=player.equipment_bought)
+
+
     outstanding_loan_details = {}
     if last_turn and current_loan_outstanding:
         outstanding_loan = player.loans.filter(is_paid_off=False).order_by("-taken_on_turn").first()
@@ -504,7 +508,6 @@ def game(request):
         outstanding_loan = 0
 
 
-    print(f'savings {player.cost_savings_coefficient}')
     form_and_toys = [
         (form, toy, toy.adjusted_cost(player.cost_savings_coefficient))
         for form, toy in zip(toyformset, toys)

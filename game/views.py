@@ -13,6 +13,9 @@ from django.views.generic import (
     UpdateView,
     DeleteView)
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.urls import reverse
+from users.guest import is_guest_user, create_guest_user
 
 class PostListView(ListView):
     model = Post
@@ -127,12 +130,29 @@ def _start_new_playthrough(user, difficulty_obj, company_name, mode, challenge_r
     Game.objects.create(player=player, toy_basket=toy_basket)
     return player
 
-@login_required
+
 def game_begin(request):
     user = request.user
+    is_guest = is_guest_user(user)
+    signup_url = f"{reverse('register')}?next={reverse('game-begin')}"
+
     if request.method == "POST":
         mode = request.POST.get("mode", "freeplay")
         company_name = request.POST.get("factory_name")
+
+        # Challenge Mode is on the global leaderboard, so it needs a real account
+        if mode == "challenge" and (not user.is_authenticated or is_guest):
+            if is_guest:
+                messages.info(request, "Create a free account to play Challenge Mode. Your guest games will be kept.")
+            else:
+                messages.info(request, "Create a free account (or log in) to play Challenge Mode.")
+            return redirect(signup_url)
+
+        # Freeplay without an account: the page's pop-up sends play_as_guest=1
+        if not user.is_authenticated:
+            if request.POST.get("play_as_guest") != "1":
+                return redirect(signup_url)
+            user = create_guest_user(request)
 
         if mode == "challenge":
             difficulty_obj = Difficulty.objects.get(name="hard")
@@ -150,7 +170,7 @@ def game_begin(request):
 
         return redirect("game-production")
 
-    return render(request, "game/game_begin.html")
+    return render(request, "game/game_begin.html", {'is_guest': is_guest})
 
 
 @login_required
@@ -279,7 +299,7 @@ def game(request):
         {'element': '#toy-table', 'popover': {'title': 'Production Planning',
                                               'description': 'Decide how many toys of each type you will produce this turn. You will be limited by your factory space and your cash.'}},
         {'element': '#demand-distros', 'popover': {'title': 'Demand Distributions',
-                                                   'description': 'After you hit submit, dice will roll to determine how many of each toy is sold according to their demand distributions.'}},
+                                                   'description': "After you submit, dice will roll to determine how many of each toy is sold according to their demand distributions. Styles in children's toys move quickly, as a result - no inventory is kept for unsold toys."}},
         {'element': '#investment-header', 'popover': {'title': 'Investments',
                                                       'description': 'You can also invest money back into your business: expand factory space, purchase equipment, advertise, or research & development.'}},
     ]
@@ -476,18 +496,20 @@ def game(request):
             ],
         )
 
-        form_and_events = [
-            (form, event)
-            for form, event in zip(coverageformset, insurance_events)
-        ]
 
-        inv_expansion_form = FactoryExpansionForm()
-        rnd_form = RnDSpendForm()
-        loan_form = LoanForm()
-        ad_form = AdvertisementCampaignForm(difficulty=player.difficulty)
-        equipment_form = EquipmentForm(equipment_bought=player.equipment_bought)
-
+    # happens no matter what
     last_turn = Turn.objects.filter(player=player).order_by("-turn_number").first()
+    form_and_events = [
+        (form, event)
+        for form, event in zip(coverageformset, insurance_events)
+    ]
+    inv_expansion_form = FactoryExpansionForm()
+    rnd_form = RnDSpendForm()
+    loan_form = LoanForm()
+    ad_form = AdvertisementCampaignForm(difficulty=player.difficulty)
+    equipment_form = EquipmentForm(equipment_bought=player.equipment_bought)
+
+
     outstanding_loan_details = {}
     if last_turn and current_loan_outstanding:
         outstanding_loan = player.loans.filter(is_paid_off=False).order_by("-taken_on_turn").first()
@@ -504,7 +526,6 @@ def game(request):
         outstanding_loan = 0
 
 
-    print(f'savings {player.cost_savings_coefficient}')
     form_and_toys = [
         (form, toy, toy.adjusted_cost(player.cost_savings_coefficient))
         for form, toy in zip(toyformset, toys)
@@ -601,7 +622,7 @@ def turn_summary(request):
     else:
         return render(request, "game/game_over.html", {"player": player, "run": player.challenge_run})
 
-
+@login_required
 def game_history(request):
     user = request.user
     players = Player.objects.filter(user=user).exclude(status="still_playing").order_by("-created_date")
@@ -636,7 +657,7 @@ def game_leaderboard(request):
     if timeframe_form.is_valid() and timeframe_form.cleaned_data.get('days'):
         selected_days = timeframe_form.cleaned_data['days']
 
-    users = User.objects.filter(is_active=True).annotate( total_wins = Count( 'player', filter=Q(player__status="won") & Q(player__mode="challenge") &  Q(player__created_date__gte=datetime.now(timezone.utc) - timedelta( days= int(selected_days) ) ) ) ).order_by("-total_wins")
+    users = User.objects.filter(is_active=True).exclude(profile__is_guest=True).annotate( total_wins = Count( 'player', filter=Q(player__status="won") & Q(player__mode="challenge") &  Q(player__created_date__gte=datetime.now(timezone.utc) - timedelta( days= int(selected_days) ) ) ) ).order_by("-total_wins")
     users = users.filter( total_wins__gt=0 )
 
 

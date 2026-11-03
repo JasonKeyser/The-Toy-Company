@@ -62,8 +62,16 @@
       <div class="card shadow p-4">
         <h2 class="card-title text-center mb-4">Start a New Game</h2>
 
-        <form method="post" action="{% url 'game-begin' %}">
+        {% if is_guest %}
+          <div class="alert alert-info small">
+            You're playing as a guest. <a href="{% url 'register' %}?next={% url 'game-begin' %}">Create a free account</a>
+            to keep your stats and unlock Challenge Mode. Your guest games will be kept.
+          </div>
+        {% endif %}
+        <form method="post" action="{% url 'game-begin' %}" id="start-game-form">
           {% csrf_token %}
+
+          <input type="hidden" name="play_as_guest" id="play_as_guest" value="0">
 
           <!-- Game Mode Selection -->
           <div class="form-group mb-4">
@@ -135,6 +143,57 @@
           updateModeUI();
         })();
       </script>
+
+      {% if not user.is_authenticated %}
+      <!-- Account prompt for visitors who aren't logged in -->
+      <div class="modal fade" id="accountModal" tabindex="-1" role="dialog" aria-labelledby="accountModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="accountModalTitle"></h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body" id="accountModalBody"></div>
+            <div class="modal-footer d-block">
+              <a class="btn btn-primary btn-block" href="{% url 'register' %}?next={% url 'game-begin' %}">Create a free account</a>
+              <a class="btn btn-outline-secondary btn-block ml-0" href="{% url 'login' %}?next={% url 'game-begin' %}">I already have an account</a>
+              <button type="button" class="btn btn-link btn-block ml-0" id="playAsGuestBtn">Play without an account</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <script>
+        document.addEventListener('DOMContentLoaded', function () {
+          const form = document.getElementById('start-game-form');
+          const guestField = document.getElementById('play_as_guest');
+          const guestBtn = document.getElementById('playAsGuestBtn');
+          const title = document.getElementById('accountModalTitle');
+          const body = document.getElementById('accountModalBody');
+          form.addEventListener('submit', function (e) {
+            if (guestField.value === '1') return;          // already chose "play without an account"
+            e.preventDefault();
+            const isChallenge = document.getElementById('mode-challenge').checked;
+            if (isChallenge) {
+              title.textContent = 'Challenge Mode needs an account';
+              body.textContent = 'Challenge runs go on the global leaderboard, so you need a free account to play. It only takes a few seconds.';
+              guestBtn.hidden = true;
+            } else {
+              title.textContent = 'Want to keep your stats?';
+              body.textContent = 'Create a free account to save your games, wins and stats. Or jump straight in without one.';
+              guestBtn.hidden = false;
+            }
+            $('#accountModal').modal('show');
+          });
+          guestBtn.addEventListener('click', function () {
+            guestField.value = '1';
+            form.submit();
+          });
+        });
+      </script>
+      {% endif %}
+
 
     </div>
   </div>

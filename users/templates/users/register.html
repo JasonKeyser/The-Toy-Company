@@ -5,8 +5,12 @@
     <div class="content-section">
         <form method="POST">
             {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
             <fieldset class="form-group">
                 <legend class="border-bottom mb-4">Join Today</legend>
+                {% if is_guest %}
+                    <p class="text-muted">The games you played as a guest will be saved to your new account.</p>
+                {% endif %}
                 {{ form|crispy }}
             </fieldset>
             <div class="form-group">
@@ -15,7 +19,7 @@
         </form>
         <div class="border-top pt-3">
             <small class="text-muted">
-                Already Have an Account? <a class ="ml-2", href="{% url 'login' %}">Sign In</a>
+                Already Have an Account? <a class="ml-2" href="{% url 'login' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Sign In</a>
             </small>
         </div>
     </div>

@@ -50,7 +50,12 @@
                     </div>
                     <!-- Navbar Right Side -->
                     <div class="navbar-nav">
-                        {% if user.is_authenticated %}
+                        {% if user.is_authenticated and user.profile.is_guest %}
+                            <span class="nav-item nav-link">👤 Guest</span>
+                            <a class="nav-item nav-link" href="{% url 'game-history' %}">Stats</a>
+                            <a class="nav-item nav-link" href="{% url 'register' %}">Save my progress</a>
+                            <a class="nav-item nav-link" href="{% url 'login' %}">Login</a>
+                        {% elif user.is_authenticated %}
                             <a class="nav-item nav-link" href="{% url 'profile' %}">{{ user.username }}</a>
                             <a class="nav-item nav-link" href="{% url 'game-history' %}">Stats</a>
                             <a class="nav-item nav-link" href="{% url 'post-create' %}">New Post</a>
